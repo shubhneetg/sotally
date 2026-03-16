@@ -10,7 +10,7 @@ import {
   creatorTransactions,
 } from '../db/schema/index.js';
 import { authMiddleware, type AuthUser } from '../middleware/auth.js';
-import { createToolSchema } from '@sotally/shared/schemas';
+import { createToolSchema } from '@sotally/shared';
 
 const creatorRoutes = new Hono();
 
