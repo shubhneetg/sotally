@@ -5,6 +5,10 @@ import auth from './routes/auth.js';
 import credits from './routes/credits.js';
 import toolRoutes from './routes/tools.js';
 import executionRoutes from './routes/executions.js';
+import creatorRoutes from './routes/creator.js';
+import reviewRoutes from './routes/reviews.js';
+import adminRoutes from './routes/admin.js';
+import settingsRoutes from './routes/settings.js';
 import { handleWebhook } from './services/stripe.service.js';
 import { rateLimit } from './middleware/rate-limit.js';
 
@@ -22,6 +26,10 @@ app.route('/auth', auth);
 app.route('/credits', credits);
 app.route('/tools', toolRoutes);
 app.route('/executions', executionRoutes);
+app.route('/creator', creatorRoutes);
+app.route('/reviews', reviewRoutes);
+app.route('/admin', adminRoutes);
+app.route('/settings', settingsRoutes);
 
 // Stripe webhook — raw body, no auth
 app.post('/webhooks/stripe', async (c) => {

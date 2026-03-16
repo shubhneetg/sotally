@@ -55,4 +55,26 @@ export const api = {
     get: (token: string, id: string) => fetchAPI(`/executions/${id}`, { token }),
     list: (token: string, page = 1) => fetchAPI(`/executions?page=${page}`, { token }),
   },
+  creator: {
+    createTool: (token: string, data: Record<string, unknown>) =>
+      fetchAPI('/creator/tools', { method: 'POST', body: JSON.stringify(data), token }),
+    updateTool: (token: string, id: string, data: Record<string, unknown>) =>
+      fetchAPI(`/creator/tools/${id}`, { method: 'PUT', body: JSON.stringify(data), token }),
+    publishTool: (token: string, id: string) =>
+      fetchAPI(`/creator/tools/${id}/publish`, { method: 'POST', token }),
+    listTools: (token: string, params?: { status?: string; page?: number }) => {
+      const searchParams = new URLSearchParams();
+      if (params?.status) searchParams.set('status', params.status);
+      if (params?.page) searchParams.set('page', String(params.page));
+      return fetchAPI(`/creator/tools?${searchParams}`, { token });
+    },
+    getTool: (token: string, id: string) =>
+      fetchAPI(`/creator/tools/${id}`, { token }),
+    archiveTool: (token: string, id: string) =>
+      fetchAPI(`/creator/tools/${id}`, { method: 'DELETE', token }),
+    analytics: (token: string, days = 30) =>
+      fetchAPI(`/creator/analytics?days=${days}`, { token }),
+    earnings: (token: string, page = 1) =>
+      fetchAPI(`/creator/earnings?page=${page}`, { token }),
+  },
 };
