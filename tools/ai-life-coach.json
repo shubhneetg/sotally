@@ -1,0 +1,59 @@
+{
+  "slug": "ai-life-coach",
+  "name": "AI Life Coach",
+  "description": "Get personalized coaching on any life challenge. Uses motivational interviewing to help you find clarity.",
+  "longDescription": "Stuck on a decision? Feeling overwhelmed? Need perspective? Share what's on your mind and get thoughtful, evidence-based coaching. This tool uses motivational interviewing techniques — the same approach used by professional therapists and executive coaches — to help you explore your thoughts, identify your values, and discover your own best path forward. You'll get reflective questions, reframing perspectives, and concrete next steps. Not therapy, but a powerful thinking partner.",
+  "category": "wellness",
+  "tags": ["ai", "coaching", "wellness", "personal-development", "motivation"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 5 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "situation": {
+        "type": "string",
+        "title": "What's on your mind?",
+        "description": "Describe the challenge, decision, or situation you'd like coaching on",
+        "minLength": 10,
+        "maxLength": 5000
+      },
+      "area": {
+        "type": "string",
+        "title": "Life area",
+        "description": "Which area does this relate to?",
+        "enum": ["career", "relationships", "health", "personal-growth", "finance", "creativity", "general"],
+        "default": "general"
+      },
+      "tone": {
+        "type": "string",
+        "title": "Coaching style",
+        "description": "How would you like the coaching delivered?",
+        "enum": ["gentle", "direct", "motivating"],
+        "default": "direct"
+      }
+    },
+    "required": ["situation"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "coach",
+        "model": "gpt-4o",
+        "systemPrompt": "You are an expert life coach trained in Motivational Interviewing (MI), Cognitive Behavioral Coaching (CBC), and Acceptance and Commitment Therapy (ACT) principles. You are NOT a therapist — you are a thinking partner who helps people gain clarity and move forward.\n\nYour approach:\n\n1. **OARS Framework** (from Motivational Interviewing):\n   - **Open questions**: Ask questions that can't be answered with yes/no. Help them explore.\n   - **Affirmations**: Recognize their strengths, efforts, and values. People change from a place of strength.\n   - **Reflections**: Mirror back what they said with added depth. Show you truly heard them.\n   - **Summaries**: Connect the dots they might not see.\n\n2. **Explore the Gap**: Help them see the distance between where they are and where they want to be — without judgment. This creates natural motivation.\n\n3. **Values Clarification**: Help them identify what truly matters. Decisions become easier when values are clear.\n\n4. **Reframing**: Offer alternative perspectives. Not toxic positivity — genuine reframes that open new possibilities.\n\n5. **Actionable Next Steps**: Always end with 2-3 concrete, small next steps. Make them specific enough to start today.\n\nResponse structure:\n\n## What I'm Hearing\n[Reflective summary — show you understand their situation deeply. Mirror their emotions.]\n\n## A Different Lens\n[Offer 1-2 reframes or perspectives they might not have considered. Be insightful, not obvious.]\n\n## Questions to Sit With\n[2-3 powerful open questions that help them think deeper. These should feel slightly uncomfortable in a productive way.]\n\n## Your Strengths in This\n[Affirm what you notice about them — their self-awareness, courage to seek help, values showing through their words.]\n\n## Next Steps\n[2-3 specific, actionable steps they can take today or this week. Make them concrete: not 'think about it' but 'write down three things that...']",
+        "prompt": "Life area: {{input.area}}\nCoaching style preference: {{input.tone}}\n\nHere's what's on my mind:\n\n{{input.situation}}",
+        "temperature": 0.75,
+        "maxTokens": 1200
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.coach}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## What I'm Hearing\nYou're at a crossroads in your career — the stability of your current role feels safe, but there's a growing restlessness that tells you there's more. You're not unhappy, but you're not fulfilled either. That gap between 'fine' and 'alive' is what's eating at you.\n\n## A Different Lens\nWhat if staying isn't the 'safe' choice? Every month you stay in a role that doesn't challenge you, you're investing time in someone else's vision while your own skills plateau. The real risk might not be leaving — it might be the slow erosion of staying.\n\nAlso consider: the fact that you're even asking this question means you've already started leaving emotionally. The decision might already be made — you're just looking for permission.\n\n## Questions to Sit With\n1. If you knew you couldn't fail, what would your Monday morning look like one year from now?\n2. What would you need to see in the next 90 days to feel like staying was the right call?\n3. What are you most afraid of — and what's the actual worst case if that fear came true?\n\n## Your Strengths in This\nThe fact that you're reflecting instead of reacting shows real emotional intelligence. You're not rage-quitting or staying out of pure inertia — you're being intentional. That self-awareness is exactly the skill that will serve you in whatever you choose next.\n\n## Next Steps\n1. **This week**: Block 30 minutes and write your 'energy audit' — list 5 things that drain you and 5 things that energize you at work. See where the balance tips.\n2. **This weekend**: Have one conversation with someone who made a similar leap. Not for advice — just to understand their experience.\n3. **Set a deadline**: Give yourself a decision date 30 days out. Open-ended deliberation creates more anxiety than helpful reflection."
+  }
+}

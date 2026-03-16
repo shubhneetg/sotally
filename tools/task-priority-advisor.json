@@ -1,0 +1,57 @@
+{
+  "slug": "task-priority-advisor",
+  "name": "Task Priority Advisor",
+  "description": "Paste your task list and get an AI-powered priority matrix. Know exactly what to tackle first.",
+  "longDescription": "Overwhelmed by your to-do list? Paste your tasks and get an instant Eisenhower Matrix analysis with recommended execution order. The AI considers deadlines, dependencies, energy levels, and impact to create a prioritized action plan. Stop spending 20 minutes deciding what to work on — get clarity in seconds. Uses the same prioritization logic that powers Thynko's task refinement engine.",
+  "category": "productivity",
+  "tags": ["ai", "productivity", "task-management", "prioritization", "planning"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 3 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "tasks": {
+        "type": "string",
+        "title": "Your tasks",
+        "description": "List your tasks — one per line, or paste a messy list. Include any deadlines or context you have.",
+        "minLength": 10,
+        "maxLength": 5000
+      },
+      "timeAvailable": {
+        "type": "string",
+        "title": "Time available",
+        "description": "How much time do you have? (e.g., '2 hours', 'full day', 'this week')",
+        "maxLength": 100
+      },
+      "energyLevel": {
+        "type": "string",
+        "title": "Current energy level",
+        "enum": ["high", "medium", "low"],
+        "default": "medium"
+      }
+    },
+    "required": ["tasks"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "prioritize",
+        "model": "gpt-4o-mini",
+        "systemPrompt": "You are a productivity strategist specializing in task prioritization. You use a combination of the Eisenhower Matrix, MIT (Most Important Tasks) methodology, and energy management principles.\n\nYour framework:\n\n1. **Eisenhower Classification**:\n   - Urgent + Important = DO NOW\n   - Not Urgent + Important = SCHEDULE\n   - Urgent + Not Important = DELEGATE/QUICK-DO\n   - Not Urgent + Not Important = ELIMINATE/DEFER\n\n2. **Energy Matching**: Match task difficulty to available energy. High-energy? Tackle complex tasks. Low-energy? Do admin and routine work.\n\n3. **Impact Assessment**: Which tasks create the most value or unblock other work?\n\n4. **2-Minute Rule**: If something takes <2 minutes, just do it now.\n\n5. **Dependency Detection**: Identify tasks that block other tasks and prioritize them.\n\nOutput format:\n\n## Priority Matrix\n\n### Do Now (Top 3)\n1. **[Task]** — [Why this is #1: impact, deadline, or blocking reason]\n2. **[Task]** — [Why]\n3. **[Task]** — [Why]\n\n### Schedule for Later\n- [Task] — [Suggested time/day and why]\n\n### Quick Wins (Under 5 min each)\n- [Task]\n\n### Can Wait / Delegate\n- [Task] — [Why it can wait]\n\n## Recommended Flow\n[A specific sequence for the next 2-4 hours based on their energy level and time available. Include estimated time per task.]\n\n## One Thing\nIf you only do ONE task today, do: **[task]** — because [compelling reason].\n\nBe decisive. Don't hedge. The whole point is to remove decision fatigue.",
+        "prompt": "Time available: {{input.timeAvailable}}\nEnergy level: {{input.energyLevel}}\n\nHere are my tasks:\n\n{{input.tasks}}",
+        "temperature": 0.4,
+        "maxTokens": 1200
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.prioritize}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Priority Matrix\n\n### Do Now (Top 3)\n1. **Reply to client proposal email** — This is blocking a $15K deal and the client is waiting. Time-sensitive, high impact. 20 min.\n2. **Fix the login bug reported by 3 users** — Active users are affected. Every hour this stays broken costs trust. 45 min.\n3. **Prepare slides for tomorrow's board meeting** — Hard deadline, high stakes, can't be delegated. 60 min.\n\n### Schedule for Later\n- **Research new CI/CD tools** — Important but not urgent. Block 1 hour on Thursday morning when energy is fresh.\n- **Write blog post draft** — Creative work, needs focus. Schedule for Friday morning.\n\n### Quick Wins (Under 5 min each)\n- Update Jira ticket status for sprint items\n- Reply to Alex's Slack message about lunch meeting\n\n### Can Wait / Delegate\n- **Organize Google Drive folders** — Zero urgency, zero impact. Do it on a low-energy Friday afternoon or never.\n- **Read that industry report** — Nice to have. Bookmark it.\n\n## Recommended Flow\nWith medium energy and 4 hours available:\n1. **Client email** (20 min) — Quick win, removes mental weight\n2. **Login bug** (45 min) — Technical work while focus is still fresh\n3. **Break** (10 min)\n4. **Board slides** (60 min) — Structured creative work\n5. **Quick wins** (10 min) — Close out small items\n\n## One Thing\nIf you only do ONE task today, do: **Reply to the client proposal** — because it's the highest ROI per minute of effort and it's time-sensitive. Everything else can survive another day."
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "slug": "task-extractor",
+  "name": "Task Extractor",
+  "description": "Extract actionable tasks from meeting notes, emails, or any text. Get structured to-do items with owners and deadlines.",
+  "longDescription": "Paste your meeting notes, email threads, Slack conversations, or any unstructured text and instantly get a clean list of actionable tasks. Each task comes with a suggested owner (based on context), priority level, estimated effort, and any mentioned deadlines. Export-ready format that works with any task manager. Stop losing action items in walls of text.",
+  "category": "productivity",
+  "tags": ["ai", "productivity", "task-management", "meetings", "extraction"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 4 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "type": "string",
+        "title": "Source text",
+        "description": "Paste meeting notes, emails, messages, or any text containing potential tasks",
+        "minLength": 20,
+        "maxLength": 10000
+      },
+      "context": {
+        "type": "string",
+        "title": "Additional context",
+        "description": "Any context to help identify tasks better (e.g., 'This is from our weekly product standup')",
+        "maxLength": 500
+      }
+    },
+    "required": ["text"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "extract",
+        "model": "gpt-4o-mini",
+        "systemPrompt": "You are a task extraction specialist. Your job is to find every actionable item hidden in unstructured text and present them as clear, well-defined tasks.\n\nExtraction rules:\n1. **Be thorough**: Catch implicit tasks too. 'We should look into X' = task. 'Can someone check Y?' = task. 'I'll follow up' = task.\n2. **Be specific**: Turn vague items into actionable tasks. 'Look into performance' → 'Investigate API response time degradation on /users endpoint'\n3. **Assign owners**: If someone is mentioned or implied as responsible, note them. If unclear, mark as 'Unassigned'.\n4. **Extract deadlines**: If any date, day, or timeframe is mentioned (even relative like 'by end of week'), capture it.\n5. **Estimate effort**: Quick (<30min), Medium (30min-2hr), Large (2hr+)\n6. **Set priority**: Based on urgency cues, dependencies, and business impact.\n7. **Don't invent tasks**: Only extract what's actually in the text. Don't add things that aren't there.\n8. **Group by theme**: If there are multiple topics, group related tasks.\n\nFormat each task as:\n\n- [ ] **[Task description]**\n  - Owner: [name or Unassigned]\n  - Priority: [High/Medium/Low]\n  - Effort: [Quick/Medium/Large]\n  - Deadline: [date if mentioned, or 'None mentioned']\n  - Source: [brief quote from the text that triggered this task]\n\nAt the end, add:\n\n**Summary**: [X] tasks extracted, [Y] high priority, [Z] with deadlines\n\nIf the text contains no actionable items, say so honestly.",
+        "prompt": "{{input.context}}\n\nExtract all tasks from the following text:\n\n---\n{{input.text}}\n---",
+        "temperature": 0.2,
+        "maxTokens": 1500
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.extract}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "### Product Standup — Extracted Tasks\n\n**Engineering**\n- [ ] **Fix the checkout flow timeout issue on mobile Safari**\n  - Owner: Jake\n  - Priority: High\n  - Effort: Medium\n  - Deadline: Wednesday\n  - Source: 'Jake, can you look at that Safari bug before Wednesday?'\n\n- [ ] **Set up staging environment for the new payment provider**\n  - Owner: Unassigned\n  - Priority: Medium\n  - Effort: Large\n  - Deadline: End of sprint\n  - Source: 'We need staging ready for Stripe migration by end of sprint'\n\n**Design**\n- [ ] **Create mockups for the onboarding redesign**\n  - Owner: Maria\n  - Priority: Medium\n  - Effort: Large\n  - Deadline: None mentioned\n  - Source: 'Maria said she'd start on onboarding mockups'\n\n**Summary**: 3 tasks extracted, 1 high priority, 2 with deadlines"
+  }
+}

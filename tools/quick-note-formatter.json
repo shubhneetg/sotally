@@ -1,0 +1,52 @@
+{
+  "slug": "quick-note-formatter",
+  "name": "Quick Note Formatter",
+  "description": "Turn messy, unstructured notes into clean, organized documents. Supports bullet points, headers, and summaries.",
+  "longDescription": "We've all been there — you jotted something down quickly during a meeting or a call and now it's an unreadable mess. Paste your raw notes and get back a beautifully structured document with proper headers, bullet points, highlighted key points, and an executive summary. Works with meeting notes, brainstorm sessions, lecture notes, and voice transcription dumps.",
+  "category": "productivity",
+  "tags": ["ai", "productivity", "notes", "formatting", "organization"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 2 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "notes": {
+        "type": "string",
+        "title": "Your raw notes",
+        "description": "Paste your messy, unstructured notes here",
+        "minLength": 20,
+        "maxLength": 10000
+      },
+      "format": {
+        "type": "string",
+        "title": "Output format",
+        "description": "How would you like your notes formatted?",
+        "enum": ["structured", "bullet-points", "executive-summary", "cornell-method"],
+        "default": "structured"
+      }
+    },
+    "required": ["notes"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "format",
+        "model": "gpt-4o-mini",
+        "systemPrompt": "You are a professional note organizer. Your job is to take raw, messy, unstructured notes and transform them into clean, well-organized documents while preserving ALL information.\n\nRules:\n1. **Never add information** that isn't in the original notes. You can rephrase for clarity, but don't invent.\n2. **Never remove information**. If something seems minor, keep it — the user captured it for a reason.\n3. **Fix typos and grammar** without changing meaning.\n4. **Group related items** under logical headers.\n5. **Highlight key decisions, action items, and important points** with bold text.\n6. **Add an executive summary** at the top (2-3 sentences capturing the core content).\n\nFormats:\n- **structured**: Clean headers, sub-headers, paragraphs. Professional document feel.\n- **bullet-points**: Everything as hierarchical bullet points. Scannable.\n- **executive-summary**: Brief summary + key points only. For sharing with others.\n- **cornell-method**: Main notes | Cue column | Summary at bottom. Great for study/review.\n\nAlways start with:\n## Summary\n[2-3 sentence executive summary]\n\nThen the formatted content based on the chosen format.",
+        "prompt": "Output format: {{input.format}}\n\nHere are my raw notes:\n\n---\n{{input.notes}}\n---",
+        "temperature": 0.3,
+        "maxTokens": 2000
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.format}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Summary\nProduct team discussed Q2 roadmap priorities, decided to delay the mobile app launch by 2 weeks to improve onboarding, and agreed on a new pricing experiment for the starter tier.\n\n## Q2 Roadmap Discussion\n\n### Mobile App Launch\n- **Decision: Delay launch by 2 weeks** (new target: April 15)\n- Reason: onboarding completion rate is only 34% — needs to be >50% before launch\n- Sarah to redesign the first 3 onboarding screens\n- Performance testing still pending — Jake to complete by April 5\n\n### Pricing Experiment\n- **Running A/B test on starter tier**: $9/mo vs $12/mo\n- Hypothesis: $12 won't significantly impact conversion\n- Test duration: 3 weeks starting April 1\n- Success metric: <10% drop in conversion rate\n\n### Team Updates\n- Backend migration to new hosting is 80% complete\n- Customer support tickets down 15% month-over-month\n- **New hire starting Monday**: Frontend engineer, reports to Jake"
+  }
+}

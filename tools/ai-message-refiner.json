@@ -1,0 +1,63 @@
+{
+  "slug": "ai-message-refiner",
+  "name": "AI Message Refiner",
+  "description": "Rewrite any message — emails, Slack, texts — to be clearer, more professional, or match any tone you need.",
+  "longDescription": "Before you hit send, run your message through the AI Message Refiner. Paste any draft message and choose your target tone — professional, friendly, assertive, empathetic, or concise — and get a polished version that says exactly what you mean. Perfect for important emails, difficult conversations, client communications, or when English isn't your first language. Think of it as a writing coach that catches awkward phrasing, removes filler, and makes you sound your best.",
+  "category": "communication",
+  "tags": ["ai", "communication", "writing", "email", "professional"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 3 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "message": {
+        "type": "string",
+        "title": "Your draft message",
+        "description": "Paste the message you want to refine",
+        "minLength": 5,
+        "maxLength": 5000
+      },
+      "targetTone": {
+        "type": "string",
+        "title": "Target tone",
+        "enum": ["professional", "friendly", "assertive", "empathetic", "concise", "formal", "casual"],
+        "default": "professional"
+      },
+      "context": {
+        "type": "string",
+        "title": "Context",
+        "description": "Who is this for and what's the situation? (e.g., 'Email to my manager about needing a deadline extension')",
+        "maxLength": 500
+      },
+      "platform": {
+        "type": "string",
+        "title": "Platform",
+        "enum": ["email", "slack", "text", "linkedin", "other"],
+        "default": "email"
+      }
+    },
+    "required": ["message"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "refine",
+        "model": "gpt-4o-mini",
+        "systemPrompt": "You are a communication specialist who makes messages clearer, more effective, and better-received. You refine drafts while preserving the sender's authentic voice and intent.\n\nPrinciples:\n1. **Preserve intent**: The refined message must communicate the same thing. Don't add false enthusiasm or change the meaning.\n2. **Match the platform**: Slack messages should be shorter than emails. Texts should be casual. LinkedIn should be professional but not stiff.\n3. **Remove filler**: Cut 'just wanted to', 'I think maybe', 'sorry to bother you' unless the apologetic tone is intentional.\n4. **Front-load the point**: Put the ask or key information first, context second. Busy people scan.\n5. **One CTA**: If the message asks for something, make it crystal clear what the recipient should do.\n6. **Tone matching**: Professional ≠ cold. Friendly ≠ unprofessional. Assertive ≠ aggressive. Empathetic ≠ weak.\n\nOutput format:\n\n## Refined Message\n[The polished message, ready to copy-paste]\n\n## What Changed\n- [Specific change and why it improves the message]\n- [Another change]\n- [Another change]\n\n## Tone Check\n**Original tone**: [describe how the original reads]\n**Refined tone**: [describe how the refined version reads]\n**Key shift**: [what's different and why it matters]\n\n## Quick Tips\n[1-2 actionable writing tips relevant to this specific message that the user can apply in the future]",
+        "prompt": "Platform: {{input.platform}}\nTarget tone: {{input.targetTone}}\nContext: {{input.context}}\n\nOriginal message:\n---\n{{input.message}}\n---",
+        "temperature": 0.5,
+        "maxTokens": 1000
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.refine}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Refined Message\nHi Maria,\n\nI need to push the Q2 report deadline to Friday. The sales data I'm waiting on from Jake's team came in late, and I want to make sure the numbers are accurate rather than rush something incomplete.\n\nI'll have the final version to you by EOD Friday. Let me know if that creates any issues on your end.\n\nThanks,\nAlex\n\n## What Changed\n- **Removed apologetic opener**: 'Sorry to bother you' was replaced with a direct greeting. You're not bothering anyone — you're communicating a legitimate need.\n- **Front-loaded the ask**: The deadline extension is in the first sentence, not buried after two paragraphs of context.\n- **Added the reason concisely**: One sentence explains why without over-explaining or sounding defensive.\n- **Clear commitment**: 'EOD Friday' is specific. The original said 'a few more days' which is vague.\n\n## Tone Check\n**Original tone**: Apologetic and uncertain. Reads like you feel guilty.\n**Refined tone**: Direct and professional. Reads like a reasonable request with a clear plan.\n**Key shift**: You went from asking permission to communicating a decision. This is appropriate — you're the one doing the work.\n\n## Quick Tips\n- When requesting deadline changes, always pair the 'what' (new date) with the 'why' (reason) and the 'how' (your plan). This builds trust.\n- 'Let me know if that creates any issues' is better than 'Is that okay?' — it shows confidence while still being collaborative."
+  }
+}

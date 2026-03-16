@@ -1,0 +1,51 @@
+{
+  "slug": "daily-gratitude-prompter",
+  "name": "Daily Gratitude Prompter",
+  "description": "Generate personalized gratitude prompts based on your day. Build a consistent gratitude practice.",
+  "longDescription": "Research shows that a consistent gratitude practice improves mental health, sleep quality, and life satisfaction. But writing 'I'm grateful for my health' every day gets stale. This tool generates fresh, personalized gratitude prompts based on what's happening in your life right now. Tell it about your day and get thought-provoking prompts that help you notice the good stuff you're overlooking. Built from the gratitude journaling framework used in Thynko.",
+  "category": "wellness",
+  "tags": ["ai", "wellness", "gratitude", "journaling", "mental-health"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 2 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "dayDescription": {
+        "type": "string",
+        "title": "How was your day?",
+        "description": "A brief description of your day — what happened, how you're feeling, any wins or challenges",
+        "minLength": 10,
+        "maxLength": 2000
+      },
+      "mood": {
+        "type": "string",
+        "title": "Current mood",
+        "enum": ["great", "good", "okay", "rough", "terrible"],
+        "default": "okay"
+      }
+    },
+    "required": ["dayDescription"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "prompts",
+        "model": "gpt-4o-mini",
+        "systemPrompt": "You are a gratitude practice facilitator grounded in positive psychology research. Your role is to generate personalized gratitude prompts that go beyond surface-level appreciation.\n\nPrinciples from the research:\n1. **Specificity matters**: 'I'm grateful for my friend Sarah who texted to check on me' > 'I'm grateful for friends'\n2. **Surprise and novelty**: Help people notice things they take for granted\n3. **Effort recognition**: Gratitude for things that required effort (yours or others') is more impactful\n4. **Contrast thinking**: 'What would life be without X?' deepens appreciation\n5. **Process over outcome**: Be grateful for the journey, not just results\n6. **On hard days**: Gratitude isn't about toxic positivity. It's about finding small anchors. Even 'I survived today' counts.\n\nBased on their day and mood, generate:\n\n## Today's Gratitude Prompts\n\n**Prompt 1**: [A specific prompt tied to something they mentioned]\n**Prompt 2**: [A 'hidden gratitude' prompt — something they probably overlooked]\n**Prompt 3**: [A people-focused prompt — someone who contributed to their day]\n**Prompt 4**: [A self-appreciation prompt — something about themselves to acknowledge]\n**Prompt 5**: [A sensory/moment prompt — a small moment worth savoring]\n\n## Quick Gratitude\nFinish this sentence: 'Today I almost didn't notice that...'\n\n## Reflection\n[One sentence connecting their current experience to a bigger picture — growth, resilience, or connection]\n\nIMPORTANT: Match the tone to their mood. If they're having a terrible day, don't be annoyingly positive. Meet them where they are. Acknowledge the difficulty first, then gently redirect.",
+        "prompt": "Mood: {{input.mood}}\n\nAbout my day:\n{{input.dayDescription}}",
+        "temperature": 0.8,
+        "maxTokens": 800
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.prompts}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Today's Gratitude Prompts\n\n**Prompt 1**: You mentioned your standup went well today. Think about one specific moment in that meeting where you felt heard or contributed something valuable. What did that feel like?\n\n**Prompt 2**: Your commute today happened without any major delays. Imagine if your commute doubled tomorrow — what would you miss about the routine you have now?\n\n**Prompt 3**: Who made your day 1% better today without even trying? Maybe someone held a door, sent a quick message, or just did their job well enough that your day ran smoother.\n\n**Prompt 4**: You showed up today even though you said you felt 'just okay.' That consistency — doing the work when motivation is low — is a strength. What's one thing you did today that required discipline?\n\n**Prompt 5**: Think about one sensory moment from today: the first sip of coffee, the feeling of fresh air, a song that came on. Replay it in your mind for 10 seconds.\n\n## Quick Gratitude\nFinish this sentence: 'Today I almost didn't notice that...'\n\n## Reflection\nA day where nothing extraordinary happens but everything works is actually extraordinary — you just don't see it until it stops."
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "slug": "smart-text-classifier",
+  "name": "Smart Text Classifier",
+  "description": "Analyze text and detect if it's a task, note, idea, or question. Get category suggestions.",
+  "longDescription": "Paste any text — meeting notes, quick thoughts, messages, voice transcriptions — and our AI will instantly classify it as a task, note, idea, question, or event. You'll get a confidence score, suggested categories (Work, Personal, Health, Finance, etc.), and priority level. Perfect for building a second brain or triaging your inbox. Built with the same classification engine that powers Thynko's Smart Capture.",
+  "category": "productivity",
+  "tags": ["ai", "productivity", "text-analysis", "classification", "organization"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 3 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "type": "string",
+        "title": "Your text",
+        "description": "Paste the text you want to classify (meeting notes, messages, thoughts, etc.)",
+        "minLength": 3,
+        "maxLength": 5000
+      }
+    },
+    "required": ["text"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "classify",
+        "model": "gpt-4o-mini",
+        "systemPrompt": "You are an expert text classification engine built for personal productivity. Your job is to analyze raw text input and determine its nature, category, and actionability.\n\nClassification types:\n- **Task**: Something that needs to be done. Has an implied action, deadline, or responsibility. Examples: 'Call dentist tomorrow', 'Review PR #42', 'Buy groceries'\n- **Note**: Information to remember. No immediate action needed. Examples: 'Meeting room changed to 3B', 'Sarah's birthday is March 15'\n- **Idea**: Creative thought, possibility, or something to explore later. Examples: 'What if we added dark mode?', 'Podcast about habit stacking'\n- **Question**: Something that needs an answer or research. Examples: 'What's the best CRM for startups?', 'How does React Server Components work?'\n- **Event**: Something happening at a specific time. Examples: 'Team standup at 9am', 'Dinner with Alex on Friday'\n\nCategories to consider: Work, Personal, Health, Finance, Learning, Relationships, Home, Creative, Shopping, Travel.\n\nPriority levels:\n- **High**: Time-sensitive, blocking other work, or has consequences if delayed\n- **Medium**: Important but not urgent, should be done within a few days\n- **Low**: Nice to have, can be deferred without consequences\n\nRespond in this exact markdown format:\n\n**Type**: [type]\n**Confidence**: [0-100]%\n**Category**: [primary category]\n**Sub-category**: [more specific label if applicable]\n**Priority**: [High/Medium/Low]\n**Summary**: [1-line clean summary of the input]\n**Suggested Tags**: [comma-separated relevant tags]\n**Action Required**: [Yes/No — and if yes, a clear next step]",
+        "prompt": "Classify the following text:\n\n---\n{{input.text}}\n---",
+        "temperature": 0.3,
+        "maxTokens": 500
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.classify}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "**Type**: Task\n**Confidence**: 92%\n**Category**: Work\n**Sub-category**: Development\n**Priority**: High\n**Summary**: Review and merge PR #42 before sprint demo\n**Suggested Tags**: code-review, sprint, deadline\n**Action Required**: Yes — Open PR #42, review changes, and merge before the demo at 3pm"
+  }
+}

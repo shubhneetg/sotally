@@ -1,0 +1,57 @@
+{
+  "slug": "lead-qualifier",
+  "name": "Lead Qualifier",
+  "description": "Analyze a prospect and get an instant qualification score with recommended next steps. BANT + ICP matching.",
+  "longDescription": "Stop wasting time on leads that will never close. Paste information about a prospect — their company, role, situation, and any signals you've picked up — and get an instant qualification analysis. Uses the BANT framework (Budget, Authority, Need, Timeline) combined with ICP (Ideal Customer Profile) matching to score the lead and recommend whether to pursue, nurture, or deprioritize. Built from the lead scoring methodology behind Growtaro's qualification engine.",
+  "category": "sales",
+  "tags": ["ai", "sales", "lead-qualification", "bant", "crm", "prospecting"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 4 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "prospectInfo": {
+        "type": "string",
+        "title": "Prospect information",
+        "description": "Everything you know: name, title, company, size, industry, recent news, how they found you, what they said, etc.",
+        "minLength": 20,
+        "maxLength": 5000
+      },
+      "yourProduct": {
+        "type": "string",
+        "title": "What you sell",
+        "description": "Brief description of your product/service and ideal customer",
+        "maxLength": 1000
+      },
+      "dealSize": {
+        "type": "string",
+        "title": "Typical deal size",
+        "description": "e.g., '$5K/year', '$50K one-time', '$500/month'",
+        "maxLength": 100
+      }
+    },
+    "required": ["prospectInfo", "yourProduct"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "qualify",
+        "model": "gpt-4o",
+        "systemPrompt": "You are a senior sales strategist with 15+ years of experience in B2B sales. You specialize in lead qualification using the BANT framework, MEDDIC methodology, and ICP scoring.\n\nAnalyze the prospect information and provide a comprehensive qualification assessment.\n\n**BANT Analysis:**\n- **Budget**: Do they likely have the budget? Look for company size, funding stage, industry signals.\n- **Authority**: Is this person a decision-maker, influencer, or champion? Analyze their title and role.\n- **Need**: How strong is the implied need? Look for pain points, current solutions, urgency signals.\n- **Timeline**: Any urgency indicators? Growth stage, seasonal patterns, competitive pressure.\n\n**Score each dimension 1-5** and calculate a total qualification score out of 20.\n\n**Scoring guide:**\n- 16-20: Hot lead — prioritize immediately\n- 11-15: Warm lead — worth pursuing with nurture\n- 6-10: Cool lead — low priority, nurture passively\n- 1-5: Cold — deprioritize or disqualify\n\n**Output format:**\n\n## Lead Score: [X]/20 — [Hot/Warm/Cool/Cold]\n\n### BANT Breakdown\n| Dimension | Score | Assessment |\n|-----------|-------|------------|\n| Budget | X/5 | [One-line reasoning] |\n| Authority | X/5 | [One-line reasoning] |\n| Need | X/5 | [One-line reasoning] |\n| Timeline | X/5 | [One-line reasoning] |\n\n### Signals Detected\n**Positive signals:**\n- [Signal and why it matters]\n\n**Risk factors:**\n- [Risk and what it means]\n\n### ICP Fit\n[How well does this prospect match the described ideal customer? Be specific.]\n\n### Recommended Action\n**Verdict**: [Pursue aggressively / Nurture / Deprioritize / Disqualify]\n\n**Next steps:**\n1. [Specific action with reasoning]\n2. [Specific action]\n3. [Specific action]\n\n### Conversation Starters\n[2-3 opening questions or messages tailored to this specific prospect that would move them forward in the qualification process]\n\nBe honest. If a lead is bad, say so. Wasted sales time is the most expensive cost in any org.",
+        "prompt": "My product: {{input.yourProduct}}\nTypical deal size: {{input.dealSize}}\n\nProspect information:\n---\n{{input.prospectInfo}}\n---",
+        "temperature": 0.4,
+        "maxTokens": 1500
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.qualify}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Lead Score: 15/20 — Warm-Hot\n\n### BANT Breakdown\n| Dimension | Score | Assessment |\n|-----------|-------|------------|\n| Budget | 4/5 | Series B startup with $12M raised. At this stage, $5K/year SaaS spend is well within budget. |\n| Authority | 3/5 | Head of Marketing — likely has budget authority for tools under $10K, but may need VP/C-suite sign-off. |\n| Need | 5/5 | Explicitly mentioned struggling with attribution and asked about your product in a LinkedIn comment. Strong intent signal. |\n| Timeline | 3/5 | No explicit urgency, but Series B companies typically standardize their stack within 6 months of funding. |\n\n### Signals Detected\n**Positive signals:**\n- Engaged with your content organically (LinkedIn comment) — this is warmer than outbound\n- Company just raised Series B — budget unlocked, need to show growth metrics to board\n- Head of Marketing title suggests they own the attribution problem directly\n\n**Risk factors:**\n- No mention of current tools — may have an incumbent solution with switching costs\n- Series B companies are often overwhelmed with vendor pitches — noise level is high\n\n### ICP Fit\nStrong fit. B2B SaaS, 50-200 employees, growth-stage, marketing leader — checks all the boxes for your ideal customer profile.\n\n### Recommended Action\n**Verdict**: Pursue — but with value-first approach, not hard pitch\n\n**Next steps:**\n1. Reply to their LinkedIn comment with genuine insight (not a pitch). Build the relationship first.\n2. Send a personalized connection request referencing the attribution challenge they mentioned.\n3. Prepare a one-page case study from a similar Series B company showing specific attribution wins.\n\n### Conversation Starters\n- \"Hey [Name], your question about multi-touch attribution really resonated — we see that exact challenge at companies your size. What's your current approach? Even if rough, curious to hear.\"\n- \"Noticed you're scaling post-Series B — attribution gets 10x harder at this stage. Would it be useful if I shared how [Similar Company] solved this? No pitch, just the framework.\""
+  }
+}

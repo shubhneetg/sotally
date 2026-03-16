@@ -1,0 +1,258 @@
+'use client';
+
+import { useState, useEffect, use } from 'react';
+import Link from 'next/link';
+import { DynamicForm } from '@/components/marketplace/dynamic-form';
+import { useToolExecution } from '@/hooks/use-tool-execution';
+import { useAuthStore } from '@/stores/auth.store';
+import { useCreditStore } from '@/stores/credit.store';
+import { Button } from '@/components/ui/button';
+
+interface ToolData {
+  name: string;
+  slug: string;
+  icon: string;
+  description: string;
+  creditCost: number;
+  inputSchema: {
+    type: 'object';
+    properties: Record<string, {
+      type: string;
+      title?: string;
+      description?: string;
+      enum?: string[];
+      maxLength?: number;
+      minimum?: number;
+      maximum?: number;
+      default?: unknown;
+    }>;
+    required?: string[];
+  };
+}
+
+// Placeholder tool data (will be replaced with API call)
+const placeholderTool: ToolData = {
+  name: 'Image Background Remover',
+  slug: 'image-bg-remover',
+  icon: '🖼️',
+  description: 'Remove backgrounds from any image in seconds with AI precision.',
+  creditCost: 2,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      imageUrl: {
+        type: 'string',
+        title: 'Image URL',
+        description: 'URL of the image to process',
+      },
+      outputFormat: {
+        type: 'string',
+        title: 'Output Format',
+        enum: ['png', 'webp', 'jpg'],
+      },
+    },
+    required: ['imageUrl'],
+  },
+};
+
+export default function ToolRunPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+  const { isAuthenticated, token } = useAuthStore();
+  const { balance } = useCreditStore();
+  const { execute, isExecuting, result, error, reset } = useToolExecution();
+
+  const [tool, setTool] = useState<ToolData | null>(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingInput, setPendingInput] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    // TODO: Replace with API call: api.tools.get(slug)
+    setTool({ ...placeholderTool, slug });
+  }, [slug]);
+
+  if (!isAuthenticated) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6 lg:px-8">
+        <h1 className="text-2xl font-bold text-primary">Sign in to run tools</h1>
+        <p className="mt-2 text-muted-foreground">
+          You need an account to run tools and manage credits.
+        </p>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 shadow-sm transition-colors"
+          >
+            Log in
+          </Link>
+          <Link
+            href="/register"
+            className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            Create Account
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!tool) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6 lg:px-8">
+        <div className="h-6 w-6 mx-auto animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        <p className="mt-4 text-sm text-muted-foreground">Loading tool...</p>
+      </div>
+    );
+  }
+
+  const handleFormSubmit = (data: Record<string, unknown>) => {
+    setPendingInput(data);
+    setShowConfirm(true);
+  };
+
+  const handleConfirmRun = () => {
+    if (pendingInput) {
+      setShowConfirm(false);
+      execute(tool.slug, pendingInput);
+    }
+  };
+
+  const handleRunAgain = () => {
+    reset();
+    setPendingInput(null);
+    setShowConfirm(false);
+  };
+
+  const handleCopyResult = () => {
+    if (result?.output) {
+      const text = typeof result.output === 'string'
+        ? result.output
+        : JSON.stringify(result.output, null, 2);
+      navigator.clipboard.writeText(text);
+    }
+  };
+
+  const insufficientCredits = balance < tool.creditCost;
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 lg:px-8">
+      {/* Tool Header */}
+      <div className="flex items-start gap-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-2xl">
+          {tool.icon}
+        </div>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-primary">{tool.name}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{tool.description}</p>
+        </div>
+        <span className="inline-flex items-center rounded-md bg-accent/10 px-2.5 py-1 text-sm font-semibold text-accent">
+          🪙 {tool.creditCost}
+        </span>
+      </div>
+
+      {/* Execution Result */}
+      {result && (
+        <div className="mt-8 rounded-xl border border-border bg-card p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-primary">Result</h2>
+            <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${
+              result.status === 'completed'
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-destructive/10 text-destructive'
+            }`}>
+              {result.status}
+            </span>
+          </div>
+          <div className="mt-4 rounded-lg bg-muted/50 p-4">
+            <pre className="whitespace-pre-wrap text-sm text-foreground font-mono">
+              {typeof result.output === 'string'
+                ? result.output
+                : JSON.stringify(result.output, null, 2)}
+            </pre>
+          </div>
+          <div className="mt-4 flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={handleCopyResult}>
+              Copy Result
+            </Button>
+            <Button variant="ghost" size="sm" onClick={handleRunAgain}>
+              Run Again
+            </Button>
+          </div>
+          {result.duration > 0 && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Completed in {(result.duration / 1000).toFixed(1)}s | {result.creditsCost} credits used
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Error */}
+      {error && !isExecuting && (
+        <div className="mt-8 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+          <p className="text-sm font-medium text-destructive">{error}</p>
+          <Button variant="ghost" size="sm" className="mt-2" onClick={reset}>
+            Try Again
+          </Button>
+        </div>
+      )}
+
+      {/* Loading State */}
+      {isExecuting && (
+        <div className="mt-8 rounded-xl border border-border bg-card p-8 text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-accent/30 border-t-accent" />
+          <p className="mt-4 text-sm font-medium text-foreground">Running tool...</p>
+          <p className="mt-1 text-xs text-muted-foreground">This may take a few seconds</p>
+          <div className="mt-4 mx-auto h-1.5 w-48 overflow-hidden rounded-full bg-muted">
+            <div className="h-full w-1/3 animate-pulse rounded-full bg-accent" />
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {showConfirm && (
+        <div className="mt-8 rounded-xl border border-accent/30 bg-accent/5 p-6">
+          <h3 className="text-sm font-semibold text-foreground">Confirm execution</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            This will deduct <span className="font-semibold text-accent">🪙 {tool.creditCost}</span> from
+            your balance (currently 🪙 {balance}).
+          </p>
+          <div className="mt-4 flex items-center gap-3">
+            <Button variant="accent" size="sm" onClick={handleConfirmRun} disabled={insufficientCredits}>
+              {insufficientCredits ? 'Insufficient Credits' : `Run — ${tool.creditCost} Credits`}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowConfirm(false)}>
+              Cancel
+            </Button>
+            {insufficientCredits && (
+              <Link href="/credits" className="text-sm text-accent hover:text-accent/80">
+                Buy Credits
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Input Form (show when no result and not executing) */}
+      {!result && !isExecuting && !showConfirm && (
+        <div className="mt-8 rounded-xl border border-border bg-card p-6">
+          <h2 className="text-lg font-semibold text-primary">Inputs</h2>
+          <div className="mt-4">
+            <DynamicForm
+              schema={tool.inputSchema}
+              onSubmit={handleFormSubmit}
+              submitLabel={`Run Tool — ${tool.creditCost} Credits`}
+              disabled={insufficientCredits}
+            />
+            {insufficientCredits && (
+              <p className="mt-3 text-center text-sm text-destructive">
+                Insufficient credits.{' '}
+                <Link href="/credits" className="font-medium text-accent hover:text-accent/80">
+                  Buy more credits
+                </Link>
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

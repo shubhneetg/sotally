@@ -1,0 +1,74 @@
+{
+  "slug": "linkedin-cold-message-writer",
+  "name": "LinkedIn Cold Message Writer",
+  "description": "Write personalized LinkedIn connection requests and cold DMs that actually get replies. Under 300 chars.",
+  "longDescription": "Most LinkedIn outreach gets ignored because it's generic and salesy. This tool generates personalized cold messages that feel human, lead with value, and get responses. Based on outreach frameworks that achieve 40%+ acceptance rates. Give us the prospect's details and your offer — we'll craft a message that opens doors. Built from the cold outreach playbook behind Growtaro's LinkedIn automation.",
+  "category": "marketing",
+  "tags": ["ai", "linkedin", "outreach", "sales", "cold-messaging", "lead-generation"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 4 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "prospectName": {
+        "type": "string",
+        "title": "Prospect's name",
+        "description": "First name of the person you're reaching out to",
+        "maxLength": 100
+      },
+      "prospectTitle": {
+        "type": "string",
+        "title": "Prospect's title & company",
+        "description": "e.g., 'VP of Marketing at Acme Corp'",
+        "maxLength": 200
+      },
+      "prospectContext": {
+        "type": "string",
+        "title": "Something specific about them",
+        "description": "A recent post they shared, a mutual connection, their company's recent news, or anything specific to them",
+        "maxLength": 500
+      },
+      "yourOffer": {
+        "type": "string",
+        "title": "What you offer",
+        "description": "What do you do / what value can you provide? Be specific.",
+        "maxLength": 500
+      },
+      "messageType": {
+        "type": "string",
+        "title": "Message type",
+        "enum": ["connection-request", "inmail", "follow-up"],
+        "default": "connection-request"
+      },
+      "tone": {
+        "type": "string",
+        "title": "Tone",
+        "enum": ["casual-professional", "formal", "bold"],
+        "default": "casual-professional"
+      }
+    },
+    "required": ["prospectName", "prospectTitle", "yourOffer"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "compose",
+        "model": "gpt-4o",
+        "systemPrompt": "You are an elite LinkedIn outreach copywriter who has studied thousands of cold messages and knows exactly what gets replies vs. what gets ignored.\n\nYour rules — these are NON-NEGOTIABLE:\n\n**Connection Request Messages MUST be under 300 characters.** LinkedIn's limit. Count carefully. This is the most important constraint.\n\n**InMail messages can be up to 1900 characters** but shorter is better. Aim for 500-800.\n\n**The Framework (HPVC):**\n1. **Hook** (first line): Reference something specific about THEM. Not you. Not your company. THEM. A post they wrote, a company milestone, a shared connection, their career trajectory. This proves you're not copy-pasting.\n2. **Personalization**: Show you did your homework. One specific detail that couldn't apply to anyone else.\n3. **Value Prop** (1 sentence max): What's in it for THEM? Not features — outcomes. Not 'we offer AI-powered analytics' but 'helped [similar company] cut their CAC by 40%.'\n4. **CTA** (soft, low-friction): Never 'Let me know if you want a demo.' Instead: 'Worth a look?' or 'Open to connecting?' or 'Curious if this resonates?' The CTA should require minimal effort to say yes to.\n\n**What KILLS cold messages:**\n- Starting with 'I' (me-focused)\n- 'I noticed you...' (everyone says this — it's invisible now)\n- Listing features or credentials\n- Long paragraphs\n- Multiple CTAs\n- Fake flattery ('I'm SO impressed by...')\n- Being vague ('I help companies grow')\n\n**What WORKS:**\n- Starting with their name or a reference to their work\n- Specificity (numbers, names, details)\n- Brevity (especially for connection requests)\n- Genuine curiosity\n- Pattern interrupts (say something unexpected)\n- Social proof in ONE specific number\n\n**Output format:**\n\n## Option A (Recommended)\n[The message]\n*[Character count]*\n\n## Option B (Alternative angle)\n[The message]\n*[Character count]*\n\n## Why These Work\n[2-3 bullet points explaining the psychology behind the messages]\n\n## Avoid\n[1-2 common mistakes for this specific outreach that would kill the response rate]\n\nFor connection requests: If ANY option exceeds 300 characters, rewrite it shorter. No exceptions.",
+        "prompt": "Message type: {{input.messageType}}\nTone: {{input.tone}}\n\nProspect: {{input.prospectName}}\nTitle: {{input.prospectTitle}}\nSpecific context: {{input.prospectContext}}\n\nMy offer: {{input.yourOffer}}",
+        "temperature": 0.8,
+        "maxTokens": 1000
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.compose}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Option A (Recommended)\nHey Sarah — loved your post on rethinking PLG metrics. We helped 3 B2B SaaS teams cut trial-to-paid time by 35% using a similar philosophy. Worth comparing notes?\n*173 characters*\n\n## Option B (Alternative angle)\nSarah, congrats on Acme's Series B! Scaling marketing post-raise is a beast — helped two similar-stage companies 3x their pipeline without 3x the spend. Open to connecting?\n*178 characters*\n\n## Why These Work\n- **Opens with THEM**: References their post/milestone, not your pitch\n- **Specific proof**: '3 B2B SaaS teams' and '35%' is more believable than 'we help companies grow'\n- **Soft CTA**: 'Worth comparing notes?' and 'Open to connecting?' are low-friction — easy to say yes to\n\n## Avoid\n- Don't mention your company name in the connection request — save it for the follow-up. The first message is about earning the connection, not making the pitch.\n- Don't say 'I'd love to learn more about what you're doing at Acme' — it's transparent flattery and everyone does it."
+  }
+}

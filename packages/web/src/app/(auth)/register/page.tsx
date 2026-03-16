@@ -2,20 +2,15 @@ import Link from 'next/link';
 
 export default function RegisterPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-8">
-        {/* Logo */}
-        <div className="text-center">
-          <Link href="/" className="text-2xl font-bold text-primary">
-            Sotally
-          </Link>
-          <h1 className="mt-6 text-3xl font-bold tracking-tight text-primary">
-            Create your account
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Get 50 free credits to start exploring tools
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold tracking-tight text-primary">
+          Create your account
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Get 50 free credits to start exploring tools
+        </p>
+      </div>
 
         {/* Google Sign Up */}
         <button
@@ -116,13 +111,12 @@ export default function RegisterPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <Link href="/login" className="font-medium text-accent hover:text-accent/80">
-            Log in
-          </Link>
-        </p>
-      </div>
+      <p className="text-center text-sm text-muted-foreground">
+        Already have an account?{' '}
+        <Link href="/login" className="font-medium text-accent hover:text-accent/80">
+          Log in
+        </Link>
+      </p>
     </div>
   );
 }

@@ -42,28 +42,7 @@ function StarRating({ rating }: { rating: number }) {
 
 export default function ToolDetailPage() {
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/" className="text-xl font-bold text-primary">
-            Sotally
-          </Link>
-          <nav className="flex items-center gap-4">
-            <Link href="/tools" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Browse Tools
-            </Link>
-            <Link
-              href="/register"
-              className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 transition-colors"
-            >
-              Get Started
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
           {/* Left Column — Tool Info */}
           <div className="lg:col-span-2 space-y-8">
@@ -142,12 +121,12 @@ export default function ToolDetailPage() {
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">credits per run</p>
               </div>
-              <button
-                type="button"
-                className="mt-6 w-full rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
+              <Link
+                href={`/tools/${tool.slug}/run`}
+                className="mt-6 block w-full rounded-lg bg-accent px-4 py-3 text-center text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
               >
                 Run Tool — {tool.creditCost} Credits
-              </button>
+              </Link>
               <p className="mt-3 text-center text-xs text-muted-foreground">
                 Don&apos;t have credits?{' '}
                 <Link href="/register" className="text-accent hover:text-accent/80">
@@ -177,7 +156,6 @@ export default function ToolDetailPage() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
   );
 }
