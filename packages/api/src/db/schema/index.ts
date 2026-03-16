@@ -1,5 +1,5 @@
 // Users
-export { userRoleEnum, users } from './users.js';
+export { userRoleEnum, users } from './users';
 
 // Credits
 export {
@@ -7,10 +7,10 @@ export {
   creditPurchaseStatusEnum,
   creditTransactions,
   creditPurchases,
-} from './credits.js';
+} from './credits';
 
 // Categories
-export { categories } from './categories.js';
+export { categories } from './categories';
 
 // Tools
 export {
@@ -19,17 +19,17 @@ export {
   toolTemplates,
   tools,
   toolVersions,
-} from './tools.js';
+} from './tools';
 
 // Executions
 export {
   executionStatusEnum,
   pricingModelEnum,
   executions,
-} from './executions.js';
+} from './executions';
 
 // Reviews
-export { reviews } from './reviews.js';
+export { reviews } from './reviews';
 
 // Creators
 export {
@@ -39,7 +39,7 @@ export {
   creatorProfiles,
   creatorTransactions,
   creatorPayouts,
-} from './creators.js';
+} from './creators';
 
 // Affiliates
 export {
@@ -48,13 +48,13 @@ export {
   affiliates,
   affiliateReferrals,
   affiliateTransactions,
-} from './affiliates.js';
+} from './affiliates';
 
 // API Keys & Tokens
-export { apiKeys, apiTokens } from './api-keys.js';
+export { apiKeys, apiTokens } from './api-keys';
 
 // Notifications
-export { notifications } from './notifications.js';
+export { notifications } from './notifications';
 
 // Tool User Data
-export { toolUserData } from './tool-data.js';
+export { toolUserData } from './tool-data';

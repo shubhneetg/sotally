@@ -8,7 +8,7 @@ import {
   text,
   timestamp,
 } from 'drizzle-orm/pg-core';
-import { users } from './users.js';
+import { users } from './users';
 
 export const affiliateTierEnum = pgEnum('affiliate_tier', [
   'starter',

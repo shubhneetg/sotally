@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { eq, desc, and, sql, inArray } from 'drizzle-orm';
-import { db } from '../db/client.js';
+import { db } from '../db/client';
 import {
   tools,
   users,
@@ -8,8 +8,8 @@ import {
   executions,
   creatorProfiles,
   creatorTransactions,
-} from '../db/schema/index.js';
-import { authMiddleware, type AuthUser } from '../middleware/auth.js';
+} from '../db/schema/index';
+import { authMiddleware, type AuthUser } from '../middleware/auth';
 import { createToolSchema } from '@sotally/shared';
 
 const creatorRoutes = new Hono();

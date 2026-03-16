@@ -1,6 +1,6 @@
 import { eq, desc, sql, and } from 'drizzle-orm';
-import { db } from '../db/client.js';
-import { users, creditTransactions } from '../db/schema/index.js';
+import { db } from '../db/client';
+import { users, creditTransactions } from '../db/schema/index';
 
 export async function holdCredits(
   userId: string,

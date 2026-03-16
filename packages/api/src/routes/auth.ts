@@ -4,11 +4,11 @@ import { SignJWT } from 'jose';
 import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { registerSchema, loginSchema, SIGNUP_BONUS } from '@sotally/shared';
-import { db } from '../db/client.js';
-import { users } from '../db/schema/index.js';
-import { env } from '../lib/env.js';
-import { authMiddleware, type AuthUser } from '../middleware/auth.js';
-import { grantCredits } from '../services/credit.service.js';
+import { db } from '../db/client';
+import { users } from '../db/schema/index';
+import { env } from '../lib/env';
+import { authMiddleware, type AuthUser } from '../middleware/auth';
+import { grantCredits } from '../services/credit.service';
 
 const scryptAsync = promisify(scrypt);
 const secret = new TextEncoder().encode(env.NEXTAUTH_SECRET);

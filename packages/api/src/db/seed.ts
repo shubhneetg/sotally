@@ -1,11 +1,11 @@
 import 'dotenv/config';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createHash, randomBytes } from 'node:crypto';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { eq } from 'drizzle-orm';
-import * as schema from './schema/index.js';
+import * as schema from './schema/index';
 
 // ─── Database Connection ────────────────────────────────────────────────────
 
@@ -227,7 +227,9 @@ async function seedTools(
   adminUserId: string,
   categoryMap: Map<string, string>,
 ): Promise<number> {
-  const toolsDir = join(process.cwd(), '..', '..', 'tools');
+  // Support running from both project root and packages/api/
+  const rootToolsDir = join(process.cwd(), 'tools');
+  const toolsDir = existsSync(rootToolsDir) ? rootToolsDir : join(process.cwd(), '..', '..', 'tools');
   const toolFiles = readdirSync(toolsDir).filter((f) => f.endsWith('.json'));
   let created = 0;
 

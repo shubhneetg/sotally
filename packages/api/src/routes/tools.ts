@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import { eq, desc, asc, sql, and, ilike } from 'drizzle-orm';
-import { db } from '../db/client.js';
-import { tools, users, categories, reviews, executions } from '../db/schema/index.js';
-import { authMiddleware, type AuthUser } from '../middleware/auth.js';
-import { holdCredits } from '../services/credit.service.js';
-import { executionQueue } from '../lib/queue.js';
+import { db } from '../db/client';
+import { tools, users, categories, reviews, executions } from '../db/schema/index';
+import { authMiddleware, type AuthUser } from '../middleware/auth';
+import { holdCredits } from '../services/credit.service';
+import { executionQueue } from '../lib/queue';
 
 const toolRoutes = new Hono();
 

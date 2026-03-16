@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { eq, desc, and, sql } from 'drizzle-orm';
-import { db } from '../db/client.js';
-import { executions, tools } from '../db/schema/index.js';
-import { authMiddleware, type AuthUser } from '../middleware/auth.js';
+import { db } from '../db/client';
+import { executions, tools } from '../db/schema/index';
+import { authMiddleware, type AuthUser } from '../middleware/auth';
 
 const executionRoutes = new Hono();
 

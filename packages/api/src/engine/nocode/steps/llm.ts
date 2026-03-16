@@ -1,5 +1,5 @@
-import { chatCompletion, OpenAIError } from '../../../lib/openai.js';
-import type { ChatMessage } from '../../../lib/openai.js';
+import { chatCompletion, OpenAIError } from '../../../lib/openai';
+import type { ChatMessage } from '../../../lib/openai';
 
 export interface LlmStepConfig {
   model: string;

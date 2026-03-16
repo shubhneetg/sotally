@@ -1,6 +1,6 @@
 import type { Context, Next } from 'hono';
 import { jwtVerify } from 'jose';
-import { env } from '../lib/env.js';
+import { env } from '../lib/env';
 
 export interface AuthUser {
   id: string;

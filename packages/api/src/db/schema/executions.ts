@@ -9,9 +9,9 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { users } from './users.js';
-import { tools } from './tools.js';
-import { toolVersions } from './tools.js';
+import { users } from './users';
+import { tools } from './tools';
+import { toolVersions } from './tools';
 
 export const executionStatusEnum = pgEnum('execution_status', [
   'queued',

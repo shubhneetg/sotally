@@ -4,7 +4,7 @@ import { createInterface } from 'node:readline';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import { eq } from 'drizzle-orm';
-import * as schema from '../db/schema/index.js';
+import * as schema from '../db/schema/index';
 
 // ─── Database Connection ────────────────────────────────────────────────────
 

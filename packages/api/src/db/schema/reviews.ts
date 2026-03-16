@@ -9,8 +9,8 @@ import {
   check,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
-import { users } from './users.js';
-import { tools } from './tools.js';
+import { users } from './users';
+import { tools } from './tools';
 
 export const reviews = pgTable(
   'reviews',

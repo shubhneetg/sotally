@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { purchaseCreditsSchema, CREDIT_PACKAGES } from '@sotally/shared';
-import { authMiddleware, type AuthUser } from '../middleware/auth.js';
-import { getBalance, getTransactions } from '../services/credit.service.js';
-import { createCheckoutSession } from '../services/stripe.service.js';
+import { authMiddleware, type AuthUser } from '../middleware/auth';
+import { getBalance, getTransactions } from '../services/credit.service';
+import { createCheckoutSession } from '../services/stripe.service';
 
 const credits = new Hono();
 

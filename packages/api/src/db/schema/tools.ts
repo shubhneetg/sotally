@@ -12,8 +12,8 @@ import {
   index,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { users } from './users.js';
-import { categories } from './categories.js';
+import { users } from './users';
+import { categories } from './categories';
 
 export const executionTypeEnum = pgEnum('execution_type', [
   'prompt',

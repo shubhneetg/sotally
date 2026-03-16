@@ -9,7 +9,7 @@ import {
   timestamp,
   index,
 } from 'drizzle-orm/pg-core';
-import { users } from './users.js';
+import { users } from './users';
 
 export const creditTransactionTypeEnum = pgEnum('credit_transaction_type', [
   'purchase',

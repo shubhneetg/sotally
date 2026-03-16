@@ -1,16 +1,16 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { env } from './lib/env.js';
-import auth from './routes/auth.js';
-import credits from './routes/credits.js';
-import toolRoutes from './routes/tools.js';
-import executionRoutes from './routes/executions.js';
-import creatorRoutes from './routes/creator.js';
-import reviewRoutes from './routes/reviews.js';
-import adminRoutes from './routes/admin.js';
-import settingsRoutes from './routes/settings.js';
-import { handleWebhook } from './services/stripe.service.js';
-import { rateLimit } from './middleware/rate-limit.js';
+import { env } from './lib/env';
+import auth from './routes/auth';
+import credits from './routes/credits';
+import toolRoutes from './routes/tools';
+import executionRoutes from './routes/executions';
+import creatorRoutes from './routes/creator';
+import reviewRoutes from './routes/reviews';
+import adminRoutes from './routes/admin';
+import settingsRoutes from './routes/settings';
+import { handleWebhook } from './services/stripe.service';
+import { rateLimit } from './middleware/rate-limit';
 
 const app = new Hono();
 
@@ -78,6 +78,10 @@ app.notFound((c) => {
   );
 });
 
-console.log(`[Sotally API] Starting on port 4000 (${env.NODE_ENV})`);
+import { serve } from '@hono/node-server';
 
-export default { port: 4000, fetch: app.fetch };
+const port = 4000;
+console.log(`[Sotally API] Starting on port ${port} (${env.NODE_ENV})`);
+serve({ fetch: app.fetch, port }, () => {
+  console.log(`[Sotally API] Running at http://localhost:${port}`);
+});

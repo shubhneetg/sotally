@@ -1,4 +1,4 @@
-import type { AuthUser } from './middleware/auth.js';
+import type { AuthUser } from './middleware/auth';
 
 declare module 'hono' {
   interface ContextVariableMap {

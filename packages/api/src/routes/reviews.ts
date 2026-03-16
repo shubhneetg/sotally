@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
 import { eq, and, sql, avg } from 'drizzle-orm';
-import { db } from '../db/client.js';
-import { reviews, tools, executions } from '../db/schema/index.js';
-import { authMiddleware, type AuthUser } from '../middleware/auth.js';
+import { db } from '../db/client';
+import { reviews, tools, executions } from '../db/schema/index';
+import { authMiddleware, type AuthUser } from '../middleware/auth';
 
 const reviewRoutes = new Hono();
 

@@ -6,8 +6,8 @@ import {
   timestamp,
   unique,
 } from 'drizzle-orm/pg-core';
-import { users } from './users.js';
-import { tools } from './tools.js';
+import { users } from './users';
+import { tools } from './tools';
 
 export const toolUserData = pgTable(
   'tool_user_data',

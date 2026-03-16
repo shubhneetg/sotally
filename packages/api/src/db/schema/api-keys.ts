@@ -7,7 +7,7 @@ import {
   timestamp,
   customType,
 } from 'drizzle-orm/pg-core';
-import { users } from './users.js';
+import { users } from './users';
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({
   dataType() {

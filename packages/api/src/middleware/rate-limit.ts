@@ -1,5 +1,5 @@
 import type { Context, Next } from 'hono';
-import { redis } from '../lib/redis.js';
+import { redis } from '../lib/redis';
 
 export interface RateLimitConfig {
   windowMs: number;

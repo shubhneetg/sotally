@@ -1,5 +1,5 @@
 import { Queue } from 'bullmq';
-import { redis } from './redis.js';
+import { redis } from './redis';
 
 export const executionQueue = new Queue('tool-executions', {
   connection: redis as any,

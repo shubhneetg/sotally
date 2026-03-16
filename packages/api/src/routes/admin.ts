@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { eq, desc, sql, and, ilike, or } from 'drizzle-orm';
-import { db } from '../db/client.js';
+import { db } from '../db/client';
 import {
   users,
   tools,
@@ -8,9 +8,9 @@ import {
   reviews,
   creditTransactions,
   creditPurchases,
-} from '../db/schema/index.js';
-import { authMiddleware, type AuthUser } from '../middleware/auth.js';
-import { grantCredits } from '../services/credit.service.js';
+} from '../db/schema/index';
+import { authMiddleware, type AuthUser } from '../middleware/auth';
+import { grantCredits } from '../services/credit.service';
 
 const adminRoutes = new Hono();
 

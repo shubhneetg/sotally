@@ -2,11 +2,11 @@ import { Hono } from 'hono';
 import { eq, and } from 'drizzle-orm';
 import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
-import { db } from '../db/client.js';
-import { users, apiKeys } from '../db/schema/index.js';
-import { authMiddleware, type AuthUser } from '../middleware/auth.js';
-import { encrypt, decrypt, maskKey } from '../lib/encryption.js';
-import { env } from '../lib/env.js';
+import { db } from '../db/client';
+import { users, apiKeys } from '../db/schema/index';
+import { authMiddleware, type AuthUser } from '../middleware/auth';
+import { encrypt, decrypt, maskKey } from '../lib/encryption';
+import { env } from '../lib/env';
 
 const scryptAsync = promisify(scrypt);
 

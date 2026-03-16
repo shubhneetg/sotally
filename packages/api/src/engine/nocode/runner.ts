@@ -1,7 +1,7 @@
-import { resolveTemplate, resolveValue, type TemplateContext } from './template.js';
-import { executeLlmStep } from './steps/llm.js';
-import { executeHttpStep } from './steps/http.js';
-import { executeTransformStep } from './steps/transform.js';
+import { resolveTemplate, resolveValue, type TemplateContext } from './template';
+import { executeLlmStep } from './steps/llm';
+import { executeHttpStep } from './steps/http';
+import { executeTransformStep } from './steps/transform';
 
 const MAX_EXECUTION_TIMEOUT_MS = 60_000;
 

@@ -1,6 +1,6 @@
 import { Worker, type Job } from 'bullmq';
-import { redis } from '../lib/redis.js';
-import { execute } from '../engine/executor.js';
+import { redis } from '../lib/redis';
+import { execute } from '../engine/executor';
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_TIMEOUT_MS = 60_000;

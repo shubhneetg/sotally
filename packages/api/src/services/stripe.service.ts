@@ -1,10 +1,10 @@
 import Stripe from 'stripe';
 import { eq } from 'drizzle-orm';
-import { env } from '../lib/env.js';
-import { db } from '../db/client.js';
-import { creditPurchases } from '../db/schema/index.js';
+import { env } from '../lib/env';
+import { db } from '../db/client';
+import { creditPurchases } from '../db/schema/index';
 import { CREDIT_PACKAGES } from '@sotally/shared';
-import { grantCredits } from './credit.service.js';
+import { grantCredits } from './credit.service';
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-02-24.acacia' as any,

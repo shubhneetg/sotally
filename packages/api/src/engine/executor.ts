@@ -1,9 +1,9 @@
 import { eq, sql } from 'drizzle-orm';
-import { db } from '../db/client.js';
-import { executions, tools, users, creditTransactions } from '../db/schema/index.js';
-import { redis } from '../lib/redis.js';
-import { runPipeline } from './nocode/runner.js';
-import { resolveCredits, validateBalance, type ToolPricing, type UserContext } from './pricing.js';
+import { db } from '../db/client';
+import { executions, tools, users, creditTransactions } from '../db/schema/index';
+import { redis } from '../lib/redis';
+import { runPipeline } from './nocode/runner';
+import { resolveCredits, validateBalance, type ToolPricing, type UserContext } from './pricing';
 
 export interface ExecutionResult {
   status: 'completed' | 'failed' | 'timeout';
