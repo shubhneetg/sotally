@@ -1,0 +1,15 @@
+{
+  "name": "sotally",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w @sotally/api\" \"npm run dev -w @sotally/web\"",
+    "build": "npm run build -w @sotally/shared && npm run build -w @sotally/api && npm run build -w @sotally/web",
+    "lint": "eslint packages/*/src --ext .ts,.tsx",
+    "typecheck": "tsc -b"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.7.0"
+  }
+}
