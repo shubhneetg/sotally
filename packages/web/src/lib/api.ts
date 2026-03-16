@@ -9,10 +9,12 @@ async function fetchAPI<T>(path: string, options?: RequestInit & { token?: strin
   };
   const res = await fetch(`${API_URL}${path}`, { ...fetchOptions, headers });
   if (!res.ok) {
-    const error = await res.json().catch(() => ({ error: { message: res.statusText } }));
-    throw new Error(error.error?.message || 'API request failed');
+    const errBody = await res.json().catch(() => ({ error: { message: res.statusText } })) as {
+      error?: { message?: string };
+    };
+    throw new Error(errBody.error?.message || 'API request failed');
   }
-  return res.json();
+  return res.json() as Promise<T>;
 }
 
 export const api = {
@@ -27,8 +29,12 @@ export const api = {
     balance: (token: string) => fetchAPI('/credits/balance', { token }),
     transactions: (token: string, page = 1) =>
       fetchAPI(`/credits/transactions?page=${page}`, { token }),
-    purchase: (token: string, data: { package: string; successUrl: string; cancelUrl: string }) =>
-      fetchAPI('/credits/purchase', { method: 'POST', body: JSON.stringify(data), token }),
+    purchase: (token: string, data: { packageId: string; successUrl: string; cancelUrl: string }) =>
+      fetchAPI(`/credits/purchase?success_url=${encodeURIComponent(data.successUrl)}&cancel_url=${encodeURIComponent(data.cancelUrl)}`, {
+        method: 'POST',
+        body: JSON.stringify({ packageId: data.packageId }),
+        token,
+      }),
     packages: () => fetchAPI('/credits/packages'),
   },
   tools: {

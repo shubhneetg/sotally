@@ -16,7 +16,7 @@ export async function createCheckoutSession(
   successUrl: string,
   cancelUrl: string,
 ): Promise<{ url: string; purchaseId: string }> {
-  const pkg = CREDIT_PACKAGES.find((p) => p.id === packageId);
+  const pkg = CREDIT_PACKAGES.find((p: { id: string }) => p.id === packageId);
   if (!pkg) {
     throw new Error('Invalid package ID');
   }

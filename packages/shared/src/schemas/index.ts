@@ -34,14 +34,16 @@ const freePricingSchema = z.object({
   model: z.literal("free"),
 });
 
-const perExecutionPricingSchema = z.object({
-  model: z.literal("per_execution"),
+const perRunPricingSchema = z.object({
+  model: z.literal("per_run"),
   creditsPerRun: z.number().int().min(1, "Must charge at least 1 credit"),
 });
 
 const pricingTierSchema = z.object({
-  upTo: z.number().int().positive().nullable(),
-  creditsPerRun: z.number().int().min(1),
+  id: z.string().min(1),
+  name: z.string().min(1),
+  credits: z.number().int().min(1),
+  description: z.string().optional(),
 });
 
 const tieredPricingSchema = z.object({
@@ -58,25 +60,11 @@ const subscriptionPricingSchema = z.object({
   overageCreditsPerRun: z.number().int().min(1),
 });
 
-const freemiumPricingSchema = z.object({
-  model: z.literal("freemium"),
-  freeExecutionsPerMonth: z.number().int().min(1),
-  creditsPerRunAfterFree: z.number().int().min(1),
-});
-
-const bundlePricingSchema = z.object({
-  model: z.literal("bundle"),
-  bundleSize: z.number().int().min(2, "Bundle must include at least 2 executions"),
-  creditsPerBundle: z.number().int().min(1),
-});
-
 const toolPricingSchema = z.discriminatedUnion("model", [
   freePricingSchema,
-  perExecutionPricingSchema,
+  perRunPricingSchema,
   tieredPricingSchema,
   subscriptionPricingSchema,
-  freemiumPricingSchema,
-  bundlePricingSchema,
 ]);
 
 // ─── Tool Schemas ────────────────────────────────────────────────────────────
@@ -99,25 +87,17 @@ export const createToolSchema = z.object({
     .trim(),
   longDescription: z
     .string()
-    .min(50, "Long description must be at least 50 characters")
     .max(5000, "Long description must be at most 5000 characters")
-    .trim(),
-  categoryId: z.string().uuid("Invalid category ID"),
+    .trim()
+    .optional(),
+  categoryId: z.string().uuid("Invalid category ID").optional(),
+  executionType: z.enum(["prompt", "pipeline", "docker", "external_api"]),
   pricing: toolPricingSchema,
-  inputSchema: z.record(z.unknown()).default({}),
-  outputSchema: z.record(z.unknown()).default({}),
-  executionEndpoint: z.string().url("Must be a valid URL"),
-  executionTimeout: z
-    .number()
-    .int()
-    .min(1000, "Timeout must be at least 1 second")
-    .max(300000, "Timeout must be at most 5 minutes")
-    .default(30000),
+  inputSchema: z.record(z.unknown()).optional(),
+  outputSchema: z.record(z.unknown()).optional(),
+  config: z.record(z.unknown()).optional(),
   iconUrl: z.string().url().nullable().optional(),
-  screenshotUrls: z.array(z.string().url()).max(5, "Maximum 5 screenshots").default([]),
-  websiteUrl: z.string().url().nullable().optional(),
-  sourceUrl: z.string().url().nullable().optional(),
-  tags: z.array(z.string().max(30)).max(10, "Maximum 10 tags").default([]),
+  tags: z.array(z.string().max(30)).max(10, "Maximum 10 tags").optional(),
 });
 
 export type CreateToolInput = z.infer<typeof createToolSchema>;
@@ -148,16 +128,11 @@ export const createReviewSchema = z.object({
     .int()
     .min(1, "Rating must be at least 1")
     .max(5, "Rating must be at most 5"),
-  title: z
+  comment: z
     .string()
-    .min(3, "Title must be at least 3 characters")
-    .max(100, "Title must be at most 100 characters")
-    .trim(),
-  body: z
-    .string()
-    .min(10, "Review must be at least 10 characters")
-    .max(2000, "Review must be at most 2000 characters")
-    .trim(),
+    .max(2000, "Comment must be at most 2000 characters")
+    .trim()
+    .optional(),
 });
 
 export type CreateReviewInput = z.infer<typeof createReviewSchema>;

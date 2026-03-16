@@ -11,68 +11,66 @@ export interface User extends Timestamps {
   id: string;
   email: string;
   name: string;
-  image: string | null;
-  emailVerified: Date | null;
-  creditBalance: number;
+  passwordHash: string | null;
+  avatarUrl: string | null;
   role: UserRole;
-  isCreator: boolean;
-  creatorProfile: CreatorProfile | null;
+  creditBalance: number;
+  earningsBalance: number;
   stripeCustomerId: string | null;
-  provider: AuthProvider | null;
-  providerId: string | null;
+  referralCode: string;
+  referredBy: string | null;
+  freeCreditsUsed: number;
 }
 
-export type UserRole = "user" | "creator" | "admin";
+export type UserRole = "buyer" | "creator" | "affiliate" | "admin";
 export type AuthProvider = "google" | "github" | "credentials";
 
 // ─── Tool ────────────────────────────────────────────────────────────────────
+
+export type ExecutionType = "prompt" | "pipeline" | "docker" | "external_api";
 
 export interface Tool extends Timestamps {
   id: string;
   slug: string;
   name: string;
   description: string;
-  longDescription: string;
-  categoryId: string;
-  category: Category;
+  longDescription: string | null;
+  categoryId: string | null;
+  category?: Category;
   creatorId: string;
-  creator: CreatorProfile;
+  creator?: CreatorProfile;
   status: ToolStatus;
-  version: string;
   iconUrl: string | null;
-  screenshotUrls: string[];
-  websiteUrl: string | null;
-  sourceUrl: string | null;
+  tags: string[] | null;
+  executionType: ExecutionType;
   pricing: ToolPricing;
-  inputSchema: Record<string, unknown>;
-  outputSchema: Record<string, unknown>;
-  executionEndpoint: string;
-  executionTimeout: number;
-  totalExecutions: number;
-  avgRating: number;
-  reviewCount: number;
-  featured: boolean;
-  tags: string[];
+  inputSchema: Record<string, unknown> | null;
+  outputSchema: Record<string, unknown> | null;
+  config: Record<string, unknown> | null;
+  demoOutput: Record<string, unknown> | null;
+  seoTitle: string | null;
+  seoDescription: string | null;
+  isFeatured: boolean;
+  totalRuns: number;
+  avgRating: string | null;
 }
 
-export type ToolStatus = "draft" | "pending_review" | "approved" | "rejected" | "suspended";
+export type ToolStatus = "draft" | "pending_review" | "published" | "suspended" | "archived";
 
 // ─── Tool Pricing (Discriminated Union — 6 Models) ──────────────────────────
 
 export type ToolPricing =
   | FreeToolPricing
-  | PerExecutionPricing
+  | PerRunPricing
   | TieredPricing
-  | SubscriptionPricing
-  | FreemiumPricing
-  | BundlePricing;
+  | SubscriptionPricing;
 
 export interface FreeToolPricing {
   model: "free";
 }
 
-export interface PerExecutionPricing {
-  model: "per_execution";
+export interface PerRunPricing {
+  model: "per_run";
   creditsPerRun: number;
 }
 
@@ -82,8 +80,10 @@ export interface TieredPricing {
 }
 
 export interface PricingTier {
-  upTo: number | null; // null = unlimited
-  creditsPerRun: number;
+  id: string;
+  name: string;
+  credits: number;
+  description?: string;
 }
 
 export interface SubscriptionPricing {
@@ -93,125 +93,109 @@ export interface SubscriptionPricing {
   overageCreditsPerRun: number;
 }
 
-export interface FreemiumPricing {
-  model: "freemium";
-  freeExecutionsPerMonth: number;
-  creditsPerRunAfterFree: number;
-}
-
-export interface BundlePricing {
-  model: "bundle";
-  bundleSize: number;
-  creditsPerBundle: number;
-}
-
 // ─── Execution ───────────────────────────────────────────────────────────────
 
-export interface Execution extends Timestamps {
+export interface Execution {
   id: string;
   toolId: string;
-  tool: Tool;
+  tool?: Tool;
   userId: string;
-  user: User;
+  user?: User;
+  toolVersionId: string | null;
   status: ExecutionStatus;
-  input: Record<string, unknown>;
+  input: Record<string, unknown> | null;
   output: Record<string, unknown> | null;
   error: string | null;
   creditsCharged: number;
+  creditsRefunded: number;
   durationMs: number | null;
-  startedAt: Date;
+  pricingModel: string | null;
+  pricingTier: string | null;
+  startedAt: Date | null;
   completedAt: Date | null;
+  createdAt: Date;
 }
 
-export type ExecutionStatus = "pending" | "running" | "completed" | "failed" | "timed_out" | "cancelled";
+export type ExecutionStatus = "queued" | "running" | "completed" | "failed" | "timeout" | "cancelled";
 
 // ─── Credits ─────────────────────────────────────────────────────────────────
 
-export interface CreditTransaction extends Timestamps {
+export interface CreditTransaction {
   id: string;
   userId: string;
-  amount: number; // positive = credit, negative = debit
-  balance: number; // balance after transaction
   type: CreditTransactionType;
-  description: string;
-  referenceId: string | null; // executionId, purchaseId, etc.
-  referenceType: CreditReferenceType | null;
+  amount: number; // positive = credit, negative = debit
+  balanceAfter: number;
+  referenceId: string | null;
+  referenceType: string | null;
+  description: string | null;
+  createdAt: Date;
 }
 
 export type CreditTransactionType =
   | "purchase"
   | "signup_bonus"
-  | "execution_charge"
-  | "execution_refund"
-  | "creator_payout"
   | "referral_bonus"
-  | "affiliate_commission"
-  | "admin_adjustment";
+  | "refund"
+  | "debit_execution"
+  | "debit_subscription"
+  | "admin_grant"
+  | "admin_deduct";
 
-export type CreditReferenceType = "execution" | "purchase" | "payout" | "referral" | "affiliate";
-
-export interface CreditPurchase extends Timestamps {
+export interface CreditPurchase {
   id: string;
   userId: string;
-  user: User;
-  packageId: string;
-  credits: number;
-  amountCents: number;
-  currency: string;
-  stripePaymentIntentId: string;
-  stripeInvoiceId: string | null;
+  user?: User;
+  package: string;
+  amountUsd: string;
+  creditsGranted: number;
+  paymentProvider: string;
+  paymentId: string | null;
   status: PurchaseStatus;
+  createdAt: Date;
 }
 
 export type PurchaseStatus = "pending" | "completed" | "failed" | "refunded";
 
 // ─── Category ────────────────────────────────────────────────────────────────
 
-export interface Category extends Timestamps {
+export interface Category {
   id: string;
   name: string;
   slug: string;
-  description: string;
-  iconName: string;
-  displayOrder: number;
-  toolCount: number;
+  icon: string | null;
+  parentId: string | null;
+  sortOrder: number;
 }
 
 // ─── Review ──────────────────────────────────────────────────────────────────
 
-export interface Review extends Timestamps {
+export interface Review {
   id: string;
   toolId: string;
-  tool: Tool;
+  tool?: Tool;
   userId: string;
-  user: User;
+  user?: User;
   rating: number; // 1-5
-  title: string;
-  body: string;
-  helpful: number;
-  verified: boolean; // user has actually executed the tool
+  comment: string | null;
+  createdAt: Date;
 }
 
 // ─── Creator Profile ─────────────────────────────────────────────────────────
 
-export interface CreatorProfile extends Timestamps {
+export interface CreatorProfile {
   id: string;
   userId: string;
-  user: User;
-  displayName: string;
-  bio: string;
-  avatarUrl: string | null;
-  websiteUrl: string | null;
-  githubUrl: string | null;
-  twitterUrl: string | null;
+  user?: User;
+  bio: string | null;
+  specialization: string | null;
+  website: string | null;
+  socialLinks: Record<string, unknown> | null;
   level: CreatorLevel;
-  revenueSharePercent: number;
   totalEarnings: number;
-  totalTools: number;
-  totalExecutions: number;
   verified: boolean;
-  stripeConnectId: string | null;
-  payoutEnabled: boolean;
+  verifiedAt: Date | null;
+  createdAt: Date;
 }
 
 export type CreatorLevel = "bronze" | "silver" | "gold" | "platinum";
@@ -221,32 +205,30 @@ export type CreatorLevel = "bronze" | "silver" | "gold" | "platinum";
 export interface ToolTemplate extends Timestamps {
   id: string;
   name: string;
-  description: string;
-  categoryId: string;
-  category: Category;
-  inputSchema: Record<string, unknown>;
-  outputSchema: Record<string, unknown>;
-  sampleCode: string;
-  language: string;
-  popularity: number;
+  description: string | null;
+  executionType: ExecutionType;
+  defaultConfig: Record<string, unknown> | null;
+  inputSchema: Record<string, unknown> | null;
+  outputSchema: Record<string, unknown> | null;
 }
 
 // ─── Affiliate ───────────────────────────────────────────────────────────────
 
-export interface Affiliate extends Timestamps {
+export type AffiliateTier = "starter" | "partner" | "elite";
+
+export interface Affiliate {
   id: string;
   userId: string;
-  user: User;
-  code: string;
-  commissionPercent: number;
+  user?: User;
+  affiliateCode: string;
+  commissionRate: string;
+  tier: AffiliateTier;
+  cookieDurationDays: number;
   totalReferrals: number;
-  totalEarnings: number;
-  status: AffiliateStatus;
-  payoutMinimumCents: number;
-  lastPayoutAt: Date | null;
+  totalEarnings: string;
+  status: string;
+  createdAt: Date;
 }
-
-export type AffiliateStatus = "active" | "suspended" | "pending_approval";
 
 // ─── API Response Types ──────────────────────────────────────────────────────
 

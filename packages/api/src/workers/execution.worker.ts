@@ -45,7 +45,7 @@ const executionWorker = new Worker<ExecutionJobData>(
     return result;
   },
   {
-    connection: redis,
+    connection: redis as any,
     concurrency: 10,
     limiter: {
       max: 50,

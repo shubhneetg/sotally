@@ -129,13 +129,13 @@ export default function HistoryPage() {
                   </button>
 
                   {/* Expanded Output */}
-                  {expandedId === exec.id && exec.output && (
+                  {expandedId === exec.id && !!exec.output && (
                     <div className="border-t border-border bg-muted/30 px-4 py-4 sm:px-6">
                       <p className="mb-2 text-xs font-medium text-muted-foreground">Output</p>
                       <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-muted p-4 text-xs text-foreground font-mono">
                         {typeof exec.output === 'string'
                           ? exec.output
-                          : JSON.stringify(exec.output, null, 2)}
+                          : JSON.stringify(exec.output, null, 2) as string}
                       </pre>
                     </div>
                   )}

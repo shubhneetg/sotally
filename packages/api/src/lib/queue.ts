@@ -2,7 +2,7 @@ import { Queue } from 'bullmq';
 import { redis } from './redis.js';
 
 export const executionQueue = new Queue('tool-executions', {
-  connection: redis,
+  connection: redis as any,
   defaultJobOptions: {
     attempts: 3,
     backoff: {

@@ -103,7 +103,7 @@ toolRoutes.get('/', async (c) => {
 
 // GET /tools/:slug — get tool detail
 toolRoutes.get('/:slug', async (c) => {
-  const slug = c.req.param('slug');
+  const slug = c.req.param('slug')!;
 
   const [tool] = await db
     .select({
@@ -170,7 +170,7 @@ toolRoutes.get('/:slug', async (c) => {
 // POST /tools/:slug/execute — execute a tool
 toolRoutes.post('/:slug/execute', authMiddleware, async (c) => {
   const user = c.get('user') as AuthUser;
-  const slug = c.req.param('slug');
+  const slug = c.req.param('slug')!;
   const body = await c.req.json();
 
   // Fetch the tool
@@ -278,7 +278,7 @@ toolRoutes.post('/:slug/execute', authMiddleware, async (c) => {
 
 // GET /tools/:slug/reviews — paginated reviews
 toolRoutes.get('/:slug/reviews', async (c) => {
-  const slug = c.req.param('slug');
+  const slug = c.req.param('slug')!;
   const page = Math.max(1, parseInt(c.req.query('page') || '1', 10));
   const perPage = Math.min(100, Math.max(1, parseInt(c.req.query('per_page') || '20', 10)));
   const offset = (page - 1) * perPage;

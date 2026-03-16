@@ -9,7 +9,7 @@ const executionRoutes = new Hono();
 // GET /executions/:id — get execution status + result (own only)
 executionRoutes.get('/:id', authMiddleware, async (c) => {
   const user = c.get('user') as AuthUser;
-  const id = c.req.param('id');
+  const id = c.req.param('id')!;
 
   const [execution] = await db
     .select({

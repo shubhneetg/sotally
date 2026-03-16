@@ -36,13 +36,13 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await api.auth.login({ email, password }) as {
-            token: string;
-            user: User;
+          const res = await api.auth.login({ email, password }) as {
+            success: boolean;
+            data: { token: string; user: User };
           };
           set({
-            token: response.token,
-            user: response.user,
+            token: res.data.token,
+            user: res.data.user,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -58,15 +58,15 @@ export const useAuthStore = create<AuthState>()(
       register: async (name: string, email: string, password: string, referralCode?: string) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await api.auth.register({
+          const res = await api.auth.register({
             name,
             email,
             password,
             referralCode,
-          }) as { token: string; user: User };
+          }) as { success: boolean; data: { token: string; user: User } };
           set({
-            token: response.token,
-            user: response.user,
+            token: res.data.token,
+            user: res.data.user,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -93,8 +93,11 @@ export const useAuthStore = create<AuthState>()(
         if (!token) return;
         set({ isLoading: true });
         try {
-          const user = (await api.auth.me(token)) as User;
-          set({ user, isAuthenticated: true, isLoading: false });
+          const res = (await api.auth.me(token)) as {
+            success: boolean;
+            data: { user: User };
+          };
+          set({ user: res.data.user, isAuthenticated: true, isLoading: false });
         } catch {
           set({
             user: null,

@@ -76,27 +76,26 @@ export const REVENUE_SHARE: readonly RevenueShareTier[] = [
 export const ToolStatusEnum = {
   DRAFT: "draft",
   PENDING_REVIEW: "pending_review",
-  APPROVED: "approved",
-  REJECTED: "rejected",
+  PUBLISHED: "published",
   SUSPENDED: "suspended",
+  ARCHIVED: "archived",
 } as const;
 
 export const ExecutionStatusEnum = {
-  PENDING: "pending",
+  QUEUED: "queued",
   RUNNING: "running",
   COMPLETED: "completed",
   FAILED: "failed",
-  TIMED_OUT: "timed_out",
+  TIMEOUT: "timeout",
   CANCELLED: "cancelled",
 } as const;
 
 export const PricingModelEnum = {
   FREE: "free",
-  PER_EXECUTION: "per_execution",
+  PER_RUN: "per_run",
+  PER_MINUTE: "per_minute",
   TIERED: "tiered",
   SUBSCRIPTION: "subscription",
-  FREEMIUM: "freemium",
-  BUNDLE: "bundle",
 } as const;
 
 export const CreatorLevelEnum = {
@@ -107,20 +106,21 @@ export const CreatorLevelEnum = {
 } as const;
 
 export const UserRoleEnum = {
-  USER: "user",
+  BUYER: "buyer",
   CREATOR: "creator",
+  AFFILIATE: "affiliate",
   ADMIN: "admin",
 } as const;
 
 export const CreditTransactionTypeEnum = {
   PURCHASE: "purchase",
   SIGNUP_BONUS: "signup_bonus",
-  EXECUTION_CHARGE: "execution_charge",
-  EXECUTION_REFUND: "execution_refund",
-  CREATOR_PAYOUT: "creator_payout",
   REFERRAL_BONUS: "referral_bonus",
-  AFFILIATE_COMMISSION: "affiliate_commission",
-  ADMIN_ADJUSTMENT: "admin_adjustment",
+  REFUND: "refund",
+  DEBIT_EXECUTION: "debit_execution",
+  DEBIT_SUBSCRIPTION: "debit_subscription",
+  ADMIN_GRANT: "admin_grant",
+  ADMIN_DEDUCT: "admin_deduct",
 } as const;
 
 export const PurchaseStatusEnum = {
@@ -134,6 +134,12 @@ export const AffiliateStatusEnum = {
   ACTIVE: "active",
   SUSPENDED: "suspended",
   PENDING_APPROVAL: "pending_approval",
+} as const;
+
+export const AffiliateTierEnum = {
+  STARTER: "starter",
+  PARTNER: "partner",
+  ELITE: "elite",
 } as const;
 
 // ─── Limits ──────────────────────────────────────────────────────────────────

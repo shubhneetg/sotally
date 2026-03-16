@@ -35,8 +35,11 @@ export const useCreditStore = create<CreditState>()((set) => ({
   fetchBalance: async (token: string) => {
     set({ loading: true, error: null });
     try {
-      const data = (await api.credits.balance(token)) as { balance: number };
-      set({ balance: data.balance, loading: false });
+      const res = (await api.credits.balance(token)) as {
+        success: boolean;
+        data: { creditBalance: number; earningsBalance: number };
+      };
+      set({ balance: res.data.creditBalance, loading: false });
     } catch (err) {
       set({
         loading: false,
@@ -48,15 +51,20 @@ export const useCreditStore = create<CreditState>()((set) => ({
   fetchTransactions: async (token: string, page = 1) => {
     set({ loading: true, error: null });
     try {
-      const data = (await api.credits.transactions(token, page)) as {
-        transactions: Transaction[];
-        totalPages: number;
-        page: number;
+      const res = (await api.credits.transactions(token, page)) as {
+        success: boolean;
+        data: {
+          items: Transaction[];
+          totalPages: number;
+          page: number;
+          total: number;
+          pageSize: number;
+        };
       };
       set({
-        transactions: data.transactions,
-        totalPages: data.totalPages,
-        currentPage: data.page,
+        transactions: res.data.items,
+        totalPages: res.data.totalPages,
+        currentPage: res.data.page,
         loading: false,
       });
     } catch (err) {
