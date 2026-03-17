@@ -24,7 +24,7 @@ function RegisterForm() {
       await register(name, email, password, referral || undefined);
       setSuccess(true);
       setTimeout(() => {
-        router.push('/tools');
+        router.push('/welcome');
       }, 1500);
     } catch {
       // Error is set in the store
