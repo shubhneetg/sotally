@@ -67,3 +67,9 @@ export { toolSubscriptions, toolLicenses } from './subscriptions';
 
 // Social (follows, collections)
 export { follows, toolCollections, collectionTools } from './social';
+
+// Bounties
+export { bounties, bountySubmissions } from './bounties';
+
+// Custom Domains
+export { customDomains } from './domains';

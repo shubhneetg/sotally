@@ -1,8 +1,27 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, useRef, use } from 'react';
 import { DynamicForm } from '@/components/marketplace/dynamic-form';
 import { api } from '@/lib/api';
+
+// Send height to parent window for auto-resize
+function useResizeNotifier(slug: string) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height = Math.ceil(entry.contentRect.height);
+        window.parent.postMessage(
+          JSON.stringify({ type: 'sotally-resize', slug, height }),
+          '*'
+        );
+      }
+    });
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [slug]);
+  return ref;
+}
 
 interface ToolData {
   name: string;

@@ -14,9 +14,21 @@ export function middleware(request: NextRequest) {
   }
 
   // Check for custom domains (not sotally.com or sotools.com)
-  if (!hostname.includes('sotally.com') && !hostname.includes('sotools.com') && !hostname.includes('localhost')) {
-    // Could be a custom domain — look up in DB (for now, pass through)
-    // Future: fetch storefront by domain from API
+  if (!hostname.includes('sotally.com') && !hostname.includes('sotools.com') && !hostname.includes('localhost') && !hostname.includes('127.0.0.1')) {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://sotally.com/api';
+      const res = await fetch(`${apiUrl}/creator/domains/lookup?domain=${encodeURIComponent(hostname)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data?.userName) {
+          const url = request.nextUrl.clone();
+          url.pathname = `/creators/${encodeURIComponent(data.data.userName)}${request.nextUrl.pathname}`;
+          return NextResponse.rewrite(url);
+        }
+      }
+    } catch {
+      // Domain lookup failed — pass through
+    }
   }
 
   return NextResponse.next();

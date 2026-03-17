@@ -13,8 +13,16 @@ export interface PipelineStep {
   [key: string]: any;
 }
 
+export interface PipelineAction {
+  id: string;
+  name: string;
+  inputSchema?: Record<string, any>;
+  steps: PipelineStep[];
+}
+
 export interface PipelineConfig {
   steps: PipelineStep[];
+  actions?: PipelineAction[];
   timeout?: number;
 }
 
@@ -44,6 +52,18 @@ export async function runPipeline(
   const startTime = Date.now();
   const timeout = Math.min(config.timeout ?? MAX_EXECUTION_TIMEOUT_MS, MAX_EXECUTION_TIMEOUT_MS);
 
+  // Multi-action support: if config has actions and input specifies an actionId, use that action's steps
+  let steps = config.steps;
+  if (config.actions && config.actions.length > 0) {
+    const actionId = input._actionId || input.actionId;
+    const action = actionId
+      ? config.actions.find((a) => a.id === actionId)
+      : config.actions[0]; // default to first action
+    if (action) {
+      steps = action.steps;
+    }
+  }
+
   const context: TemplateContext = {
     input,
     steps: {},
@@ -52,7 +72,7 @@ export async function runPipeline(
 
   let finalOutput: any = null;
 
-  for (const step of config.steps) {
+  for (const step of steps) {
     // Check timeout before each step
     const elapsed = Date.now() - startTime;
     if (elapsed >= timeout) {

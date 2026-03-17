@@ -9,7 +9,9 @@ import {
   creatorProfiles,
   creatorTransactions,
   toolTemplates,
+  toolVersions,
   follows,
+  customDomains,
 } from '../db/schema/index';
 import { authMiddleware, optionalAuthMiddleware, type AuthUser } from '../middleware/auth';
 import { createToolSchema } from '@sotally/shared';
@@ -531,6 +533,102 @@ creatorRoutes.post('/tools/:id/publish', async (c) => {
     .where(eq(tools.id, toolId))
     .returning();
 
+  // Create version snapshot
+  try {
+    const [latestVersion] = await db
+      .select({ version: toolVersions.version })
+      .from(toolVersions)
+      .where(eq(toolVersions.toolId, toolId))
+      .orderBy(desc(toolVersions.version))
+      .limit(1);
+
+    const nextVersion = (latestVersion?.version ?? 0) + 1;
+
+    await db.insert(toolVersions).values({
+      toolId,
+      version: nextVersion,
+      config: fullTool.config,
+      inputSchema: fullTool.inputSchema,
+      outputSchema: fullTool.outputSchema,
+      changelog: `Version ${nextVersion} published`,
+      publishedAt: new Date(),
+    });
+  } catch {
+    // Non-critical — don't fail publish over versioning
+  }
+
+  return c.json({ success: true, data: updated, error: null });
+});
+
+// ─── GET /creator/tools/:id/versions — List tool versions ────────────────────
+
+creatorRoutes.get('/tools/:id/versions', async (c) => {
+  const user = c.get('user') as AuthUser;
+  const toolId = c.req.param('id')!;
+
+  const [tool] = await db
+    .select({ id: tools.id, creatorId: tools.creatorId })
+    .from(tools)
+    .where(eq(tools.id, toolId))
+    .limit(1);
+
+  if (!tool || (tool.creatorId !== user.id && user.role !== 'admin')) {
+    return c.json({ success: false, data: null, error: { code: 'NOT_FOUND', message: 'Tool not found' } }, 404);
+  }
+
+  const versions = await db
+    .select({
+      id: toolVersions.id,
+      version: toolVersions.version,
+      changelog: toolVersions.changelog,
+      publishedAt: toolVersions.publishedAt,
+      createdAt: toolVersions.createdAt,
+    })
+    .from(toolVersions)
+    .where(eq(toolVersions.toolId, toolId))
+    .orderBy(desc(toolVersions.version));
+
+  return c.json({ success: true, data: versions, error: null });
+});
+
+// ─── POST /creator/tools/:id/rollback — Rollback to a previous version ──────
+
+creatorRoutes.post('/tools/:id/rollback', async (c) => {
+  const user = c.get('user') as AuthUser;
+  const toolId = c.req.param('id')!;
+  const { versionId } = await c.req.json();
+
+  const [tool] = await db
+    .select({ id: tools.id, creatorId: tools.creatorId })
+    .from(tools)
+    .where(eq(tools.id, toolId))
+    .limit(1);
+
+  if (!tool || (tool.creatorId !== user.id && user.role !== 'admin')) {
+    return c.json({ success: false, data: null, error: { code: 'NOT_FOUND', message: 'Tool not found' } }, 404);
+  }
+
+  const [version] = await db
+    .select()
+    .from(toolVersions)
+    .where(and(eq(toolVersions.id, versionId), eq(toolVersions.toolId, toolId)))
+    .limit(1);
+
+  if (!version) {
+    return c.json({ success: false, data: null, error: { code: 'NOT_FOUND', message: 'Version not found' } }, 404);
+  }
+
+  const [updated] = await db
+    .update(tools)
+    .set({
+      config: version.config,
+      inputSchema: version.inputSchema,
+      outputSchema: version.outputSchema,
+      updatedAt: new Date(),
+    })
+    .where(eq(tools.id, toolId))
+    .returning();
+
   return c.json({ success: true, data: updated, error: null });
 });
 
@@ -935,6 +1033,86 @@ Return ONLY valid JSON, no explanation.`;
       500,
     );
   }
+});
+
+// ─── Custom Domains ──────────────────────────────────────────────────────────
+
+// GET /creator/domains — list custom domains
+creatorRoutes.get('/domains', async (c) => {
+  const user = c.get('user') as AuthUser;
+  const domains = await db
+    .select()
+    .from(customDomains)
+    .where(eq(customDomains.creatorId, user.id));
+  return c.json({ success: true, data: domains, error: null });
+});
+
+// POST /creator/domains — register custom domain
+creatorRoutes.post('/domains', async (c) => {
+  const user = c.get('user') as AuthUser;
+  const { domain } = await c.req.json();
+
+  if (!domain || typeof domain !== 'string') {
+    return c.json({ success: false, data: null, error: { code: 'VALIDATION_ERROR', message: 'Domain is required' } }, 400);
+  }
+
+  const cleanDomain = domain.toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '').trim();
+
+  // Check uniqueness
+  const [existing] = await db
+    .select({ id: customDomains.id })
+    .from(customDomains)
+    .where(eq(customDomains.domain, cleanDomain))
+    .limit(1);
+
+  if (existing) {
+    return c.json({ success: false, data: null, error: { code: 'CONFLICT', message: 'Domain already registered' } }, 409);
+  }
+
+  const [created] = await db
+    .insert(customDomains)
+    .values({ creatorId: user.id, domain: cleanDomain })
+    .returning();
+
+  return c.json({ success: true, data: created, error: null }, 201);
+});
+
+// DELETE /creator/domains/:id — remove custom domain
+creatorRoutes.delete('/domains/:id', async (c) => {
+  const user = c.get('user') as AuthUser;
+  const domainId = c.req.param('id')!;
+
+  await db
+    .delete(customDomains)
+    .where(and(eq(customDomains.id, domainId), eq(customDomains.creatorId, user.id)));
+
+  return c.json({ success: true, data: null, error: null });
+});
+
+// GET /creator/domains/lookup — public: look up domain → creator (for middleware)
+creatorRoutes.get('/domains/lookup', async (c) => {
+  const domain = c.req.query('domain');
+  if (!domain) {
+    return c.json({ success: false, data: null, error: { code: 'BAD_REQUEST', message: 'domain query required' } }, 400);
+  }
+
+  const [result] = await db
+    .select({
+      creatorId: customDomains.creatorId,
+      domain: customDomains.domain,
+      verified: customDomains.verified,
+      userName: users.name,
+    })
+    .from(customDomains)
+    .leftJoin(users, eq(customDomains.creatorId, users.id))
+    .where(eq(customDomains.domain, domain.toLowerCase()))
+    .limit(1);
+
+  if (!result) {
+    return c.json({ success: false, data: null, error: { code: 'NOT_FOUND', message: 'Domain not found' } }, 404);
+  }
+
+  return c.json({ success: true, data: result, error: null });
 });
 
 export default creatorRoutes;
