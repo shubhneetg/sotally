@@ -11,8 +11,9 @@ export default defineConfig({
   timeout: 60_000,
   /* Maximum time for the entire test run */
   globalTimeout: 600_000,
-  /* Run tests in files in parallel */
-  fullyParallel: true,
+  /* Run tests serially to avoid rate limit issues against live site */
+  fullyParallel: false,
+  workers: 1,
   /* Fail the build on CI if you accidentally left test.only in the source */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */

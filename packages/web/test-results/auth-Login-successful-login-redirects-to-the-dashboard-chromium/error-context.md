@@ -19,7 +19,7 @@
           - generic [ref=e25]: Email
           - textbox "Email" [ref=e26]:
             - /placeholder: you@example.com
-            - text: test-1773730179242-exweq@sotally-test.invalid
+            - text: test-1773731418481-3egcx@sotally-test.invalid
         - generic [ref=e27]:
           - generic [ref=e28]: Password
           - textbox "Password" [ref=e29]:

@@ -19,12 +19,12 @@
           - generic [ref=e25]: Full Name
           - textbox "Full Name" [ref=e26]:
             - /placeholder: John Doe
-            - text: Carol Smith
+            - text: Grace Smith
         - generic [ref=e27]:
           - generic [ref=e28]: Email
           - textbox "Email" [ref=e29]:
             - /placeholder: you@example.com
-            - text: test-1773730178790-bsf3e@sotally-test.invalid
+            - text: test-1773731418098-1w83w@sotally-test.invalid
         - generic [ref=e30]:
           - generic [ref=e31]: Password
           - textbox "Password" [ref=e32]:

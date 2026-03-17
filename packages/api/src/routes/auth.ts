@@ -44,7 +44,7 @@ async function createJwt(user: { id: string; email: string; role: string }): Pro
 const auth = new Hono();
 
 // POST /auth/register
-auth.post('/register', rateLimit({ windowMs: 60_000, maxRequests: 5, keyPrefix: 'rl:register' }), async (c) => {
+auth.post('/register', rateLimit({ windowMs: 60_000, maxRequests: 30, keyPrefix: 'rl:register' }), async (c) => {
   const body = await c.req.json();
   const parsed = registerSchema.safeParse(body);
 
