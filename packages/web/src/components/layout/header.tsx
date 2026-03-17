@@ -10,6 +10,8 @@ import { CreditBadge } from '@/components/credits/credit-badge';
 
 const navLinks = [
   { href: '/tools', label: 'Tools' },
+  { href: '/integrations', label: 'Integrations' },
+  { href: '/guides', label: 'Guides' },
   { href: '/pricing', label: 'Pricing' },
   { href: '/creator', label: 'For Creators' },
 ];

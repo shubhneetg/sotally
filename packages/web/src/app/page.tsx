@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ToolCard } from '@/components/marketplace/tool-card';
 import { api } from '@/lib/api';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
 
 interface Tool {
   name: string;
@@ -76,25 +78,8 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/" className="text-xl font-bold text-primary">
-            Sotally
-          </Link>
-          <nav className="hidden items-center gap-6 md:flex">
-            <Link href="/tools" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Tools</Link>
-            <Link href="/integrations" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Integrations</Link>
-            <Link href="/guides" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Guides</Link>
-            <Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
-            <Link href="/login" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Log in</Link>
-            <Link href="/register" className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 transition-colors">
-              Get Started Free
-            </Link>
-          </nav>
-        </div>
-      </header>
+    <div className="min-h-screen flex flex-col">
+      <Header />
 
       {/* Hero */}
       <section className="relative overflow-hidden">
@@ -314,51 +299,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-muted/30">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
-            <div>
-              <h3 className="text-sm font-semibold text-primary">Product</h3>
-              <ul className="mt-4 space-y-2">
-                <li><Link href="/tools" className="text-sm text-muted-foreground hover:text-foreground">Browse Tools</Link></li>
-                <li><Link href="/integrations" className="text-sm text-muted-foreground hover:text-foreground">Integrations</Link></li>
-                <li><Link href="/guides" className="text-sm text-muted-foreground hover:text-foreground">Guides</Link></li>
-                <li><Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground">Pricing</Link></li>
-                <li><Link href="/bounties" className="text-sm text-muted-foreground hover:text-foreground">Bounties</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-primary">Creators</h3>
-              <ul className="mt-4 space-y-2">
-                <li><Link href="/creator" className="text-sm text-muted-foreground hover:text-foreground">Create Tools</Link></li>
-                <li><Link href="/creator/canvas" className="text-sm text-muted-foreground hover:text-foreground">AI Canvas</Link></li>
-                <li><Link href="/creator/templates" className="text-sm text-muted-foreground hover:text-foreground">Templates</Link></li>
-                <li><Link href="/guides/creators" className="text-sm text-muted-foreground hover:text-foreground">Creator Guide</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-primary">Company</h3>
-              <ul className="mt-4 space-y-2">
-                <li><Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">About</Link></li>
-                <li><Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground">Privacy</Link></li>
-                <li><Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground">Terms</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-primary">Connect</h3>
-              <ul className="mt-4 space-y-2">
-                <li><a href="https://twitter.com/sotally" className="text-sm text-muted-foreground hover:text-foreground">Twitter</a></li>
-                <li><a href="https://github.com/sotally" className="text-sm text-muted-foreground hover:text-foreground">GitHub</a></li>
-                <li><a href="https://discord.gg/sotally" className="text-sm text-muted-foreground hover:text-foreground">Discord</a></li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 border-t border-border pt-8 text-center text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Sotally. All rights reserved.
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
