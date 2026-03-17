@@ -25,7 +25,7 @@ function mapToolFromApi(apiTool: any): Tool {
     rating: apiTool.avgRating ?? apiTool.rating ?? 0,
     runCount: apiTool.totalRuns ?? apiTool.runCount ?? 0,
     creditCost: apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0,
-    creatorName: apiTool.creator?.name || apiTool.creatorName || 'Sotally',
+    creatorName: apiTool.creatorName || apiTool.creator?.name || 'Sotally',
   };
 }
 

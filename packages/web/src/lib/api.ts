@@ -40,12 +40,13 @@ export const api = {
       fetchAPI('/credits/claim-daily', { method: 'POST', token }),
   },
   tools: {
-    list: (params?: { q?: string; category?: string; sort?: string; page?: number }) => {
+    list: (params?: { q?: string; category?: string; sort?: string; page?: number; per_page?: number }) => {
       const searchParams = new URLSearchParams();
       if (params?.q) searchParams.set('q', params.q);
       if (params?.category) searchParams.set('category', params.category);
       if (params?.sort) searchParams.set('sort', params.sort || 'popular');
       if (params?.page) searchParams.set('page', String(params.page));
+      if (params?.per_page) searchParams.set('per_page', String(params.per_page));
       return fetchAPI(`/tools?${searchParams}`);
     },
     get: (slug: string) => fetchAPI(`/tools/${slug}`),

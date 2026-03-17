@@ -42,11 +42,22 @@ function mapToolFromApi(apiTool: ApiTool): Tool {
     rating: apiTool.avgRating ?? apiTool.rating ?? 0,
     runCount: apiTool.totalRuns ?? apiTool.runCount ?? 0,
     creditCost: apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0,
-    creatorName: apiTool.creator?.name || apiTool.creatorName || 'Sotally',
+    creatorName: apiTool.creatorName || apiTool.creator?.name || 'Sotally',
   };
 }
 
-const categories = ['All', 'Design', 'Development', 'Marketing', 'Data', 'Writing', 'Productivity', 'Business'];
+// Map display names to API category slugs
+const categories: { label: string; slug: string }[] = [
+  { label: 'All', slug: '' },
+  { label: 'AI Writing', slug: 'ai-writing' },
+  { label: 'Development', slug: 'development' },
+  { label: 'Marketing', slug: 'marketing' },
+  { label: 'Data Tools', slug: 'data-tools' },
+  { label: 'Productivity', slug: 'productivity' },
+  { label: 'Business', slug: 'business' },
+];
+
+const PER_PAGE = 24;
 
 export default function ToolsPage() {
   const [tools, setTools] = useState<Tool[]>([]);
@@ -54,22 +65,29 @@ export default function ToolsPage() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeCategory, setActiveCategory] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchTools = useCallback(async (q?: string, category?: string) => {
+  const fetchTools = useCallback(async (q?: string, categorySlug?: string, currentPage = 1) => {
     setLoading(true);
     setError(null);
     try {
-      const params: { q?: string; category?: string; page?: number } = { page: 1 };
+      const params: { q?: string; category?: string; page?: number; per_page?: number } = {
+        page: currentPage,
+        per_page: PER_PAGE,
+      };
       if (q) params.q = q;
-      if (category && category !== 'All') params.category = category;
+      if (categorySlug) params.category = categorySlug;
       const res = (await api.tools.list(params)) as {
         success: boolean;
-        data: { items: ApiTool[] } | ApiTool[];
+        data: { items: ApiTool[]; totalPages?: number } | ApiTool[];
       };
-      const rawItems = Array.isArray(res.data) ? res.data : (res.data as { items: ApiTool[] }).items || [];
+      const data = Array.isArray(res.data) ? { items: res.data } : res.data;
+      const rawItems = data.items || [];
       setTools(rawItems.map(mapToolFromApi));
+      setTotalPages((data as { totalPages?: number }).totalPages ?? 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tools');
     } finally {
@@ -78,8 +96,8 @@ export default function ToolsPage() {
   }, []);
 
   useEffect(() => {
-    fetchTools(debouncedSearch || undefined, activeCategory);
-  }, [activeCategory, fetchTools, debouncedSearch]);
+    fetchTools(debouncedSearch || undefined, activeCategory || undefined, page);
+  }, [activeCategory, fetchTools, debouncedSearch, page]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -87,6 +105,7 @@ export default function ToolsPage() {
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     debounceTimerRef.current = setTimeout(() => {
       setDebouncedSearch(value);
+      setPage(1);
     }, 300);
   };
 
@@ -97,8 +116,9 @@ export default function ToolsPage() {
     };
   }, []);
 
-  const handleCategoryClick = (category: string) => {
-    setActiveCategory(category);
+  const handleCategoryClick = (slug: string) => {
+    setActiveCategory(slug);
+    setPage(1);
   };
 
   return (
@@ -123,17 +143,17 @@ export default function ToolsPage() {
 
         {/* Category Filters */}
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          {categories.map((category) => (
+          {categories.map((cat) => (
             <button
-              key={category}
-              onClick={() => handleCategoryClick(category)}
+              key={cat.slug}
+              onClick={() => handleCategoryClick(cat.slug)}
               className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                category === activeCategory
+                cat.slug === activeCategory
                   ? 'bg-primary text-primary-foreground'
                   : 'border border-border text-muted-foreground hover:bg-muted'
               }`}
             >
-              {category}
+              {cat.label}
             </button>
           ))}
         </div>
@@ -172,39 +192,65 @@ export default function ToolsPage() {
 
         {/* Tool Grid */}
         {!loading && !error && (
-          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {tools.length > 0 ? (
-              tools.map((tool) => (
-                <ToolCard key={tool.slug} {...tool} />
-              ))
-            ) : (
-              <div className="col-span-full py-16 text-center">
-                <svg className="mx-auto h-12 w-12 text-muted-foreground/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                </svg>
-                <h3 className="mt-4 text-base font-semibold text-primary">
-                  {search
-                    ? `No tools found for "${search}"`
-                    : 'No tools found'}
-                </h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Try a different search or browse all tools.
-                </p>
-                {(search || activeCategory !== 'All') && (
-                  <button
-                    onClick={() => {
-                      setSearch('');
-                      setDebouncedSearch('');
-                      setActiveCategory('All');
-                    }}
-                    className="mt-4 inline-flex items-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                  >
-                    Clear filters
-                  </button>
-                )}
+          <>
+            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {tools.length > 0 ? (
+                tools.map((tool) => (
+                  <ToolCard key={tool.slug} {...tool} />
+                ))
+              ) : (
+                <div className="col-span-full py-16 text-center">
+                  <svg className="mx-auto h-12 w-12 text-muted-foreground/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                  </svg>
+                  <h3 className="mt-4 text-base font-semibold text-primary">
+                    {search
+                      ? `No tools found for "${search}"`
+                      : 'No tools found'}
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Try a different search or browse all tools.
+                  </p>
+                  {(search || activeCategory) && (
+                    <button
+                      onClick={() => {
+                        setSearch('');
+                        setDebouncedSearch('');
+                        setActiveCategory('');
+                        setPage(1);
+                      }}
+                      className="mt-4 inline-flex items-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-10 flex items-center justify-center gap-3">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-muted-foreground">
+                  Page {page} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  Next
+                </button>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
   );

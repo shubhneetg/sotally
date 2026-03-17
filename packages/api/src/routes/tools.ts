@@ -86,13 +86,21 @@ toolRoutes.get('/', async (c) => {
     );
   }
 
-  // Category filter by slug
+  // Category filter by slug (also accepts name as fallback)
   if (category) {
-    const [cat] = await db
+    let [cat] = await db
       .select({ id: categories.id })
       .from(categories)
       .where(eq(categories.slug, category))
       .limit(1);
+
+    if (!cat) {
+      [cat] = await db
+        .select({ id: categories.id })
+        .from(categories)
+        .where(ilike(categories.name, category))
+        .limit(1);
+    }
 
     if (cat) {
       conditions.push(eq(tools.categoryId, cat.id));
@@ -101,18 +109,18 @@ toolRoutes.get('/', async (c) => {
 
   const where = conditions.length === 1 ? conditions[0] : and(...conditions);
 
-  // Sort
-  let orderBy;
+  // Sort — always include secondary sort by createdAt for deterministic ordering
+  let primaryOrder;
   switch (sort) {
     case 'newest':
-      orderBy = desc(tools.createdAt);
+      primaryOrder = desc(tools.createdAt);
       break;
     case 'rating':
-      orderBy = desc(tools.avgRating);
+      primaryOrder = desc(tools.avgRating);
       break;
     case 'popular':
     default:
-      orderBy = desc(tools.totalRuns);
+      primaryOrder = desc(tools.totalRuns);
       break;
   }
 
@@ -131,10 +139,12 @@ toolRoutes.get('/', async (c) => {
         categoryId: tools.categoryId,
         creatorId: tools.creatorId,
         createdAt: tools.createdAt,
+        creatorName: users.name,
       })
       .from(tools)
+      .leftJoin(users, eq(tools.creatorId, users.id))
       .where(where)
-      .orderBy(orderBy)
+      .orderBy(primaryOrder, desc(tools.createdAt))
       .limit(perPage)
       .offset(offset),
     db
