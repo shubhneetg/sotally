@@ -19,6 +19,7 @@ interface CreditState {
   currentPage: number;
   loading: boolean;
   error: string | null;
+  setBalance: (balance: number) => void;
   fetchBalance: (token: string) => Promise<void>;
   fetchTransactions: (token: string, page?: number) => Promise<void>;
   deductCredits: (amount: number) => void;
@@ -31,6 +32,8 @@ export const useCreditStore = create<CreditState>()((set) => ({
   currentPage: 1,
   loading: false,
   error: null,
+
+  setBalance: (balance: number) => set({ balance }),
 
   fetchBalance: async (token: string) => {
     set({ loading: true, error: null });

@@ -36,6 +36,17 @@ interface ToolData {
   };
 }
 
+function mapToolDataFromApi(apiTool: any): ToolData {
+  return {
+    name: apiTool.name,
+    slug: apiTool.slug,
+    icon: apiTool.iconUrl || apiTool.icon || '🛠️',
+    description: apiTool.description,
+    creditCost: apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0,
+    inputSchema: apiTool.inputSchema,
+  };
+}
+
 export default function ToolRunPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const { isAuthenticated, token } = useAuthStore();
@@ -57,9 +68,9 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
       try {
         const res = (await api.tools.get(slug)) as {
           success: boolean;
-          data: ToolData;
+          data: any;
         };
-        setTool(res.data);
+        setTool(mapToolDataFromApi(res.data));
       } catch (err) {
         setToolError(err instanceof Error ? err.message : 'Failed to load tool');
       } finally {

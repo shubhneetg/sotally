@@ -4,6 +4,24 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { ToolCard } from '@/components/marketplace/tool-card';
 import { api } from '@/lib/api';
 
+interface ApiTool {
+  name: string;
+  slug: string;
+  description: string;
+  iconUrl?: string;
+  icon?: string;
+  avgRating?: number | null;
+  rating?: number;
+  totalRuns?: number;
+  runCount?: number;
+  pricing?: { creditsPerRun?: number; credits?: number };
+  creditCost?: number;
+  creatorName?: string;
+  creatorId?: string;
+  creator?: { name?: string };
+  category?: { name?: string } | string;
+}
+
 interface Tool {
   name: string;
   slug: string;
@@ -15,7 +33,20 @@ interface Tool {
   creatorName: string;
 }
 
-const categories = ['All', 'Design', 'Development', 'Marketing', 'Data', 'Writing'];
+function mapToolFromApi(apiTool: ApiTool): Tool {
+  return {
+    name: apiTool.name,
+    slug: apiTool.slug,
+    description: apiTool.description,
+    icon: apiTool.iconUrl || apiTool.icon || '🛠️',
+    rating: apiTool.avgRating ?? apiTool.rating ?? 0,
+    runCount: apiTool.totalRuns ?? apiTool.runCount ?? 0,
+    creditCost: apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0,
+    creatorName: apiTool.creator?.name || apiTool.creatorName || 'Sotally',
+  };
+}
+
+const categories = ['All', 'Design', 'Development', 'Marketing', 'Data', 'Writing', 'Productivity', 'Business'];
 
 export default function ToolsPage() {
   const [tools, setTools] = useState<Tool[]>([]);
@@ -35,10 +66,10 @@ export default function ToolsPage() {
       if (category && category !== 'All') params.category = category;
       const res = (await api.tools.list(params)) as {
         success: boolean;
-        data: { items: Tool[] } | Tool[];
+        data: { items: ApiTool[] } | ApiTool[];
       };
-      const items = Array.isArray(res.data) ? res.data : (res.data as { items: Tool[] }).items || [];
-      setTools(items);
+      const rawItems = Array.isArray(res.data) ? res.data : (res.data as { items: ApiTool[] }).items || [];
+      setTools(rawItems.map(mapToolFromApi));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tools');
     } finally {

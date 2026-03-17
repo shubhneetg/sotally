@@ -13,7 +13,7 @@ const howItWorks = [
   {
     title: 'Use Tools',
     description:
-      'Browse 1000+ software tools and run them instantly. Pay only for what you use with credits. No subscriptions, no sign-up fatigue.',
+      'Browse software tools and run them instantly. Pay only for what you use with credits. No subscriptions, no sign-up fatigue.',
     icon: (
       <svg className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 01-3-3m3 3a3 3 0 100 6h13.5a3 3 0 100-6m-16.5-3a3 3 0 013-3h13.5a3 3 0 013 3m-19.5 0a4.5 4.5 0 01.9-2.7L5.737 5.1a3.375 3.375 0 012.7-1.35h7.126c1.062 0 2.062.5 2.7 1.35l2.587 3.45a4.5 4.5 0 01.9 2.7m0 0a3 3 0 01-3 3m0 3h.008v.008h-.008V17.25zm0-6h.008v.008h-.008v-.008z" />
@@ -44,9 +44,9 @@ const howItWorks = [
 ];
 
 const stats = [
-  { label: 'Tools Available', value: '1,200+' },
-  { label: 'Active Creators', value: '350+' },
-  { label: 'Tool Runs', value: '2.4M+' },
+  { label: 'Tools Available', value: 'Growing' },
+  { label: 'Active Creators', value: 'Growing' },
+  { label: 'Tool Runs', value: 'Growing' },
   { label: 'Credits Never Expire', value: 'Forever' },
 ];
 

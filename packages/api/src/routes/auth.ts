@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq } from 'drizzle-orm';
 import { SignJWT } from 'jose';
-import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
+import { randomBytes, scrypt, timingSafeEqual, createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { registerSchema, loginSchema, SIGNUP_BONUS } from '@sotally/shared';
 import { db } from '../db/client';
@@ -23,6 +23,17 @@ async function hashPassword(password: string): Promise<string> {
 
 async function verifyPassword(password: string, hash: string): Promise<boolean> {
   const [salt, key] = hash.split(':');
+  // scrypt hashes produce 128-char hex (64 bytes), sha256 produces 64-char hex (32 bytes)
+  if (key.length === 64) {
+    // Legacy sha256 hash (from seed.ts)
+    const sha256Hash = createHash('sha256')
+      .update(salt + password)
+      .digest('hex');
+    const hashBuffer = Buffer.from(key, 'hex');
+    const sha256Buffer = Buffer.from(sha256Hash, 'hex');
+    return timingSafeEqual(sha256Buffer, hashBuffer);
+  }
+  // Standard scrypt hash
   const derived = (await scryptAsync(password, salt, 64)) as Buffer;
   const keyBuffer = Buffer.from(key, 'hex');
   return timingSafeEqual(derived, keyBuffer);

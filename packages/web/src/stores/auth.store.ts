@@ -3,12 +3,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api } from '@/lib/api';
+import { useCreditStore } from '@/stores/credit.store';
 
 interface User {
   id: string;
   name: string;
   email: string;
   role: string;
+  creditBalance?: number;
 }
 
 interface AuthState {
@@ -38,7 +40,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const res = await api.auth.login({ email, password }) as {
             success: boolean;
-            data: { token: string; user: User };
+            data: { token: string; user: User & { creditBalance?: number } };
           };
           set({
             token: res.data.token,
@@ -46,6 +48,10 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false,
           });
+          // Set credit balance from login response
+          if (res.data.user.creditBalance !== undefined) {
+            useCreditStore.getState().setBalance(res.data.user.creditBalance);
+          }
         } catch (err) {
           set({
             isLoading: false,
@@ -63,13 +69,17 @@ export const useAuthStore = create<AuthState>()(
             email,
             password,
             referralCode,
-          }) as { success: boolean; data: { token: string; user: User } };
+          }) as { success: boolean; data: { token: string; user: User & { creditBalance?: number } } };
           set({
             token: res.data.token,
             user: res.data.user,
             isAuthenticated: true,
             isLoading: false,
           });
+          // Set credit balance from register response (signup bonus)
+          if (res.data.user.creditBalance !== undefined) {
+            useCreditStore.getState().setBalance(res.data.user.creditBalance);
+          }
         } catch (err) {
           set({
             isLoading: false,

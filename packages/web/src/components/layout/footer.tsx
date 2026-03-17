@@ -6,23 +6,20 @@ const columns = [
     links: [
       { href: '/tools', label: 'Tools' },
       { href: '/pricing', label: 'Pricing' },
-      { href: '/api', label: 'API' },
     ],
   },
   {
     title: 'Creators',
     links: [
-      { href: '/creators', label: 'Create Tools' },
-      { href: '/creators/templates', label: 'Templates' },
-      { href: '/creators/earn', label: 'Earn Money' },
+      { href: '/creator', label: 'Create Tools' },
+      { href: '/creator/templates', label: 'Templates' },
+      { href: '/creator/earn', label: 'Earn Money' },
     ],
   },
   {
     title: 'Company',
     links: [
       { href: '/about', label: 'About' },
-      { href: '/blog', label: 'Blog' },
-      { href: '/contact', label: 'Contact' },
     ],
   },
   {

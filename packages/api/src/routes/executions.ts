@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { eq, desc, and, sql, inArray } from 'drizzle-orm';
 import { db } from '../db/client';
 import { executions, tools } from '../db/schema/index';
 import { authMiddleware, type AuthUser } from '../middleware/auth';
@@ -90,7 +90,7 @@ executionRoutes.get('/', authMiddleware, async (c) => {
       ? await db
           .select({ id: tools.id, slug: tools.slug, name: tools.name, iconUrl: tools.iconUrl })
           .from(tools)
-          .where(sql`${tools.id} = ANY(${toolIds})`)
+          .where(inArray(tools.id, toolIds))
       : [];
 
   const toolMap = new Map(toolsData.map((t) => [t.id, t]));

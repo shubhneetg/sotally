@@ -25,6 +25,21 @@ interface Tool {
   creatorAvatar: string | null;
 }
 
+function mapToolFromApi(apiTool: any): Tool {
+  return {
+    name: apiTool.name,
+    slug: apiTool.slug,
+    icon: apiTool.iconUrl || apiTool.icon || '🛠️',
+    description: apiTool.description,
+    category: typeof apiTool.category === 'object' ? apiTool.category?.name || '' : apiTool.category || '',
+    rating: apiTool.avgRating ?? apiTool.rating ?? 0,
+    runCount: apiTool.totalRuns ?? apiTool.runCount ?? 0,
+    creditCost: apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0,
+    creatorName: apiTool.creator?.name || apiTool.creatorName || 'Sotally',
+    creatorAvatar: apiTool.creator?.avatarUrl || apiTool.creatorAvatar || null,
+  };
+}
+
 interface Review {
   id: string;
   user: string;
@@ -82,9 +97,9 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
       try {
         const res = (await api.tools.get(slug)) as {
           success: boolean;
-          data: Tool;
+          data: any;
         };
-        setTool(res.data);
+        setTool(mapToolFromApi(res.data));
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load tool');
       } finally {
@@ -109,9 +124,9 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
       try {
         const res = (await api.tools.similar(slug)) as {
           success: boolean;
-          data: Tool[];
+          data: any[];
         };
-        setSimilarTools(Array.isArray(res.data) ? res.data : []);
+        setSimilarTools(Array.isArray(res.data) ? res.data.map(mapToolFromApi) : []);
       } catch {
         // Non-critical
       }

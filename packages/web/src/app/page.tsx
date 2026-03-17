@@ -16,11 +16,24 @@ interface Tool {
   creatorName: string;
 }
 
+function mapToolFromApi(apiTool: any): Tool {
+  return {
+    name: apiTool.name,
+    slug: apiTool.slug,
+    description: apiTool.description,
+    icon: apiTool.iconUrl || apiTool.icon || '🛠️',
+    rating: apiTool.avgRating ?? apiTool.rating ?? 0,
+    runCount: apiTool.totalRuns ?? apiTool.runCount ?? 0,
+    creditCost: apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0,
+    creatorName: apiTool.creator?.name || apiTool.creatorName || 'Sotally',
+  };
+}
+
 const steps = [
   {
     number: '1',
     title: 'Browse',
-    description: 'Explore 1000+ tools across categories like design, dev, marketing, and more.',
+    description: 'Explore tools across categories like design, dev, marketing, and more.',
   },
   {
     number: '2',
@@ -45,10 +58,10 @@ export default function HomePage() {
       try {
         const res = (await api.tools.list({ sort: 'popular', page: 1 })) as {
           success: boolean;
-          data: { items: Tool[] } | Tool[];
+          data: { items: any[] } | any[];
         };
-        const items = Array.isArray(res.data) ? res.data : (res.data as { items: Tool[] }).items || [];
-        setFeaturedTools(items.slice(0, 6));
+        const rawItems = Array.isArray(res.data) ? res.data : (res.data as { items: any[] }).items || [];
+        setFeaturedTools(rawItems.slice(0, 6).map(mapToolFromApi));
       } catch {
         // Non-critical; landing page will just show no featured tools
       } finally {
@@ -61,9 +74,9 @@ export default function HomePage() {
       try {
         const res = (await api.tools.trending()) as {
           success: boolean;
-          data: Tool[];
+          data: any[];
         };
-        setTrendingTools(Array.isArray(res.data) ? res.data.slice(0, 6) : []);
+        setTrendingTools(Array.isArray(res.data) ? res.data.slice(0, 6).map(mapToolFromApi) : []);
       } catch {
         // Non-critical
       } finally {
@@ -104,7 +117,7 @@ export default function HomePage() {
           Software without subscriptions.
         </h1>
         <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-          1000+ tools. Pay only for what you use.
+          Pay only for what you use. No subscriptions.
         </p>
         <div className="mt-10">
           <Link
@@ -235,15 +248,13 @@ export default function HomePage() {
               <ul className="mt-4 space-y-2">
                 <li><Link href="/tools" className="text-sm text-muted-foreground hover:text-foreground">Browse Tools</Link></li>
                 <li><Link href="/pricing" className="text-sm text-muted-foreground hover:text-foreground">Pricing</Link></li>
-                <li><Link href="/creators" className="text-sm text-muted-foreground hover:text-foreground">For Creators</Link></li>
+                <li><Link href="/creator" className="text-sm text-muted-foreground hover:text-foreground">For Creators</Link></li>
               </ul>
             </div>
             <div>
               <h3 className="text-sm font-semibold text-primary">Company</h3>
               <ul className="mt-4 space-y-2">
                 <li><Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">About</Link></li>
-                <li><Link href="/blog" className="text-sm text-muted-foreground hover:text-foreground">Blog</Link></li>
-                <li><Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground">Contact</Link></li>
               </ul>
             </div>
             <div>

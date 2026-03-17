@@ -65,13 +65,11 @@ test.describe('Tool Run Page - Authenticated', () => {
   test('form submission triggers credit confirmation dialog', async ({ page }) => {
     await navigateToRunPage(page);
 
-    // Fill in the first visible input field -- smart-text-classifier expects a text input
-    const inputs = page.locator('input[type="text"], input[type="url"], textarea');
-    const inputCount = await inputs.count();
-
-    if (inputCount > 0) {
-      await inputs.first().fill('This is a test message to classify. Can you help me organize my tasks?');
-    }
+    // Fill in the text field - smart-text-classifier has a textarea for "Your text"
+    const textarea = page.locator('textarea').first();
+    await expect(textarea).toBeVisible({ timeout: 10_000 });
+    await textarea.click();
+    await textarea.fill('This is a test message to classify. Can you help me organize my tasks?');
 
     // Submit the form
     const submitBtn = page.getByRole('button', { name: /run tool/i });
@@ -92,10 +90,10 @@ test.describe('Tool Run Page - Authenticated', () => {
   test('cancelling confirmation dialog returns to input form', async ({ page }) => {
     await navigateToRunPage(page);
 
-    const inputs = page.locator('input[type="text"], input[type="url"], textarea');
-    if (await inputs.count() > 0) {
-      await inputs.first().fill('This is a test message to classify.');
-    }
+    const textarea = page.locator('textarea').first();
+    await expect(textarea).toBeVisible({ timeout: 10_000 });
+    await textarea.click();
+    await textarea.fill('This is a test message to classify.');
 
     await page.getByRole('button', { name: /run tool/i }).click();
     await expect(page.getByText(/confirm execution/i)).toBeVisible({ timeout: 8_000 });
