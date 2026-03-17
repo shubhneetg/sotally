@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { INTEGRATIONS } from '@/data/integrations';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://sotally.com';
@@ -13,7 +14,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticPages = [
     '', '/tools', '/pricing', '/about', '/terms', '/privacy',
-    '/login', '/register',
+    '/login', '/register', '/integrations', '/bounties',
   ];
 
   return [
@@ -28,6 +29,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'daily' as const,
       priority: 0.9,
+    })),
+    ...INTEGRATIONS.map(integration => ({
+      url: `${baseUrl}/integrations/${integration.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
     })),
   ];
 }

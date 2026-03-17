@@ -1,0 +1,46 @@
+{
+  "service": "github",
+  "name": "GitHub",
+  "authType": "bearer_token",
+  "authHeader": "Authorization",
+  "authPrefix": "Bearer ",
+  "defaultHeaders": {
+    "Accept": "application/vnd.github.v3+json",
+    "X-GitHub-Api-Version": "2022-11-28"
+  },
+  "actions": [
+    {
+      "id": "create_issue",
+      "name": "Create Issue",
+      "method": "POST",
+      "url": "https://api.github.com/repos/{{owner}}/{{repo}}/issues",
+      "bodyTemplate": { "title": "{{title}}", "body": "{{body}}", "labels": "{{labels}}" }
+    },
+    {
+      "id": "create_comment",
+      "name": "Comment on Issue",
+      "method": "POST",
+      "url": "https://api.github.com/repos/{{owner}}/{{repo}}/issues/{{issue_number}}/comments",
+      "bodyTemplate": { "body": "{{body}}" }
+    },
+    {
+      "id": "list_repos",
+      "name": "List Repositories",
+      "method": "GET",
+      "url": "https://api.github.com/user/repos?per_page=30&sort=updated"
+    },
+    {
+      "id": "get_file",
+      "name": "Get File Contents",
+      "method": "GET",
+      "url": "https://api.github.com/repos/{{owner}}/{{repo}}/contents/{{path}}"
+    },
+    {
+      "id": "create_pr_review",
+      "name": "Create PR Review",
+      "method": "POST",
+      "url": "https://api.github.com/repos/{{owner}}/{{repo}}/pulls/{{pull_number}}/reviews",
+      "bodyTemplate": { "body": "{{body}}", "event": "{{event}}" }
+    }
+  ]
+}

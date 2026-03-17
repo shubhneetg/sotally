@@ -1,0 +1,1 @@
+{"service":"webhook","name":"Webhooks","authType":"bearer_token","authHeader":"Authorization","authPrefix":"Bearer ","defaultHeaders":{"Content-Type":"application/json"},"actions":[{"id":"send_post","name":"Send POST Request","method":"POST","url":"{{url}}","bodyTemplate":{"data":"{{data}}"}},{"id":"send_get","name":"Send GET Request","method":"GET","url":"{{url}}"}]}
