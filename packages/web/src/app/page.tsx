@@ -1,38 +1,20 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ToolCard } from '@/components/marketplace/tool-card';
+import { api } from '@/lib/api';
 
-const featuredTools = [
-  {
-    name: 'Image Background Remover',
-    slug: 'image-bg-remover',
-    description: 'Remove backgrounds from any image in seconds with AI precision.',
-    icon: '🖼️',
-    rating: 4.8,
-    runCount: 12400,
-    creditCost: 2,
-    creatorName: 'PixelLab',
-  },
-  {
-    name: 'PDF Invoice Generator',
-    slug: 'pdf-invoice-generator',
-    description: 'Generate professional invoices from structured data instantly.',
-    icon: '📄',
-    rating: 4.6,
-    runCount: 8300,
-    creditCost: 1,
-    creatorName: 'DocForge',
-  },
-  {
-    name: 'SEO Meta Analyzer',
-    slug: 'seo-meta-analyzer',
-    description: 'Analyze any URL for SEO issues and get actionable recommendations.',
-    icon: '🔍',
-    rating: 4.9,
-    runCount: 21000,
-    creditCost: 3,
-    creatorName: 'RankWise',
-  },
-];
+interface Tool {
+  name: string;
+  slug: string;
+  description: string;
+  icon: string;
+  rating: number;
+  runCount: number;
+  creditCost: number;
+  creatorName: string;
+}
 
 const steps = [
   {
@@ -43,7 +25,7 @@ const steps = [
   {
     number: '2',
     title: 'Run',
-    description: 'Use any tool instantly — no installs, no subscriptions, no commitments.',
+    description: 'Use any tool instantly -- no installs, no subscriptions, no commitments.',
   },
   {
     number: '3',
@@ -53,6 +35,27 @@ const steps = [
 ];
 
 export default function HomePage() {
+  const [featuredTools, setFeaturedTools] = useState<Tool[]>([]);
+  const [toolsLoading, setToolsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchFeatured() {
+      try {
+        const res = (await api.tools.list({ sort: 'popular', page: 1 })) as {
+          success: boolean;
+          data: { items: Tool[] } | Tool[];
+        };
+        const items = Array.isArray(res.data) ? res.data : (res.data as { items: Tool[] }).items || [];
+        setFeaturedTools(items.slice(0, 6));
+      } catch {
+        // Non-critical; landing page will just show no featured tools
+      } finally {
+        setToolsLoading(false);
+      }
+    }
+    fetchFeatured();
+  }, []);
+
   return (
     <div className="min-h-screen">
       {/* Header */}
@@ -100,11 +103,31 @@ export default function HomePage() {
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <h2 className="text-2xl font-bold text-primary sm:text-3xl">Featured Tools</h2>
         <p className="mt-2 text-muted-foreground">Popular tools our community loves.</p>
-        <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {featuredTools.map((tool) => (
-            <ToolCard key={tool.slug} {...tool} />
-          ))}
-        </div>
+        {toolsLoading ? (
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card p-5 shadow-sm animate-pulse">
+                <div className="flex items-start gap-3">
+                  <div className="h-12 w-12 rounded-lg bg-muted" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/4 rounded bg-muted" />
+                    <div className="h-3 w-1/2 rounded bg-muted" />
+                  </div>
+                </div>
+                <div className="mt-3 space-y-2">
+                  <div className="h-3 w-full rounded bg-muted" />
+                  <div className="h-3 w-2/3 rounded bg-muted" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : featuredTools.length > 0 ? (
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredTools.map((tool) => (
+              <ToolCard key={tool.slug} {...tool} />
+            ))}
+          </div>
+        ) : null}
         <div className="mt-10 text-center">
           <Link
             href="/tools"

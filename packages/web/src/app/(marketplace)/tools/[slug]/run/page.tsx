@@ -7,6 +7,7 @@ import { useToolExecution } from '@/hooks/use-tool-execution';
 import { useAuthStore } from '@/stores/auth.store';
 import { useCreditStore } from '@/stores/credit.store';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
 
 interface ToolData {
   name: string;
@@ -30,45 +31,44 @@ interface ToolData {
   };
 }
 
-// Placeholder tool data (will be replaced with API call)
-const placeholderTool: ToolData = {
-  name: 'Image Background Remover',
-  slug: 'image-bg-remover',
-  icon: '🖼️',
-  description: 'Remove backgrounds from any image in seconds with AI precision.',
-  creditCost: 2,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      imageUrl: {
-        type: 'string',
-        title: 'Image URL',
-        description: 'URL of the image to process',
-      },
-      outputFormat: {
-        type: 'string',
-        title: 'Output Format',
-        enum: ['png', 'webp', 'jpg'],
-      },
-    },
-    required: ['imageUrl'],
-  },
-};
-
 export default function ToolRunPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const { isAuthenticated, token } = useAuthStore();
-  const { balance } = useCreditStore();
+  const { balance, fetchBalance } = useCreditStore();
   const { execute, isExecuting, result, error, reset } = useToolExecution();
 
   const [tool, setTool] = useState<ToolData | null>(null);
+  const [toolLoading, setToolLoading] = useState(true);
+  const [toolError, setToolError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingInput, setPendingInput] = useState<Record<string, unknown> | null>(null);
 
+  // Fetch tool data from API
   useEffect(() => {
-    // TODO: Replace with API call: api.tools.get(slug)
-    setTool({ ...placeholderTool, slug });
+    async function fetchTool() {
+      setToolLoading(true);
+      setToolError(null);
+      try {
+        const res = (await api.tools.get(slug)) as {
+          success: boolean;
+          data: ToolData;
+        };
+        setTool(res.data);
+      } catch (err) {
+        setToolError(err instanceof Error ? err.message : 'Failed to load tool');
+      } finally {
+        setToolLoading(false);
+      }
+    }
+    fetchTool();
   }, [slug]);
+
+  // Fetch credit balance when authenticated
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      fetchBalance(token);
+    }
+  }, [isAuthenticated, token, fetchBalance]);
 
   if (!isAuthenticated) {
     return (
@@ -79,7 +79,7 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
           <Link
-            href="/login"
+            href={`/login?redirect=/tools/${slug}/run`}
             className="inline-flex items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 shadow-sm transition-colors"
           >
             Log in
@@ -95,11 +95,23 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
     );
   }
 
-  if (!tool) {
+  if (toolLoading) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6 lg:px-8">
         <div className="h-6 w-6 mx-auto animate-spin rounded-full border-2 border-accent border-t-transparent" />
         <p className="mt-4 text-sm text-muted-foreground">Loading tool...</p>
+      </div>
+    );
+  }
+
+  if (toolError || !tool) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6 lg:px-8">
+        <h1 className="text-2xl font-bold text-primary">Tool not found</h1>
+        <p className="mt-2 text-muted-foreground">{toolError || 'This tool could not be loaded.'}</p>
+        <Link href="/tools" className="mt-4 inline-block text-sm font-medium text-accent hover:text-accent/80">
+          Back to marketplace
+        </Link>
       </div>
     );
   }
@@ -177,9 +189,15 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
               Run Again
             </Button>
           </div>
-          {result.duration > 0 && (
+          {result.status === 'completed' && result.creditsCost > 0 && (
             <p className="mt-3 text-xs text-muted-foreground">
-              Completed in {(result.duration / 1000).toFixed(1)}s | {result.creditsCost} credits used
+              {result.duration > 0 && `Completed in ${(result.duration / 1000).toFixed(1)}s | `}
+              {result.creditsCost} credits used
+            </p>
+          )}
+          {result.status === 'failed' && (
+            <p className="mt-3 text-xs text-destructive">
+              Execution failed. Credits have been refunded.
             </p>
           )}
         </div>
@@ -189,6 +207,7 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
       {error && !isExecuting && (
         <div className="mt-8 rounded-xl border border-destructive/30 bg-destructive/5 p-4">
           <p className="text-sm font-medium text-destructive">{error}</p>
+          <p className="mt-1 text-xs text-muted-foreground">If credits were deducted, they will be refunded.</p>
           <Button variant="ghost" size="sm" className="mt-2" onClick={reset}>
             Try Again
           </Button>
@@ -223,7 +242,7 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
               Cancel
             </Button>
             {insufficientCredits && (
-              <Link href="/credits" className="text-sm text-accent hover:text-accent/80">
+              <Link href="/dashboard/credits" className="text-sm text-accent hover:text-accent/80">
                 Buy Credits
               </Link>
             )}
@@ -245,7 +264,7 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
             {insufficientCredits && (
               <p className="mt-3 text-center text-sm text-destructive">
                 Insufficient credits.{' '}
-                <Link href="/credits" className="font-medium text-accent hover:text-accent/80">
+                <Link href="/dashboard/credits" className="font-medium text-accent hover:text-accent/80">
                   Buy more credits
                 </Link>
               </p>

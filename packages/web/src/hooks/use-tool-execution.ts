@@ -21,8 +21,8 @@ interface UseToolExecutionReturn {
   reset: () => void;
 }
 
-const POLL_INTERVAL = 1500;
-const MAX_POLLS = 40;
+const POLL_INTERVAL = 2000;
+const MAX_POLLS = 60;
 
 export function useToolExecution(): UseToolExecutionReturn {
   const [isExecuting, setIsExecuting] = useState(false);
@@ -36,7 +36,11 @@ export function useToolExecution(): UseToolExecutionReturn {
   const pollExecution = useCallback(
     async (executionId: string, authToken: string): Promise<ExecutionResult> => {
       for (let i = 0; i < MAX_POLLS; i++) {
-        const execution = (await api.executions.get(authToken, executionId)) as ExecutionResult;
+        const res = (await api.executions.get(authToken, executionId)) as {
+          success: boolean;
+          data: ExecutionResult;
+        };
+        const execution = res.data || res as unknown as ExecutionResult;
         if (execution.status === 'completed' || execution.status === 'failed') {
           return execution;
         }
@@ -59,12 +63,15 @@ export function useToolExecution(): UseToolExecutionReturn {
       setResult(null);
 
       try {
-        const response = (await api.tools.execute(token, slug, input)) as {
-          executionId: string;
-          creditsCost: number;
+        const res = (await api.tools.execute(token, slug, input)) as {
+          success: boolean;
+          data: { executionId: string; creditsCost: number };
         };
+        const response = res.data || res as unknown as { executionId: string; creditsCost: number };
 
-        deductCredits(response.creditsCost);
+        if (response.creditsCost) {
+          deductCredits(response.creditsCost);
+        }
 
         const executionResult = await pollExecution(response.executionId, token);
         setResult(executionResult);
@@ -73,6 +80,8 @@ export function useToolExecution(): UseToolExecutionReturn {
         fetchBalance(token);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Execution failed');
+        // Refresh balance in case of failure (credits may be refunded)
+        fetchBalance(token);
       } finally {
         setIsExecuting(false);
       }

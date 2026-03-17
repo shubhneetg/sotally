@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
 import { useCreditStore } from '@/stores/credit.store';
@@ -16,11 +16,20 @@ const navLinks = [
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const { isAuthenticated, user, logout, token } = useAuthStore();
+  const { isAuthenticated, user, logout, token, loadUser } = useAuthStore();
   const { balance, fetchBalance } = useCreditStore();
+
+  // Load user on mount if token exists
+  useEffect(() => {
+    if (token && !user) {
+      loadUser();
+    }
+  }, [token, user, loadUser]);
 
   useEffect(() => {
     if (isAuthenticated && token) {
@@ -37,7 +46,14 @@ export function Header() {
   // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false);
+    setShowUserMenu(false);
   }, [pathname]);
+
+  const handleLogout = () => {
+    logout();
+    setShowUserMenu(false);
+    router.push('/');
+  };
 
   return (
     <header
@@ -75,13 +91,41 @@ export function Header() {
           {isAuthenticated ? (
             <>
               <CreditBadge balance={balance} />
-              <Link
-                href="/dashboard"
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-sm font-medium text-accent"
-                title={user?.name || 'Account'}
-              >
-                {user?.name?.charAt(0).toUpperCase() || 'U'}
-              </Link>
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-sm font-medium text-accent hover:bg-accent/30 transition-colors"
+                  title={user?.name || 'Account'}
+                >
+                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+                </button>
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 rounded-lg border border-border bg-card py-1 shadow-lg">
+                    <div className="px-3 py-2 border-b border-border">
+                      <p className="text-sm font-medium text-foreground truncate">{user?.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                    </div>
+                    <Link
+                      href="/dashboard"
+                      className="block px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      href="/dashboard/credits"
+                      className="block px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                    >
+                      Credits
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="block w-full px-3 py-2 text-left text-sm text-destructive hover:bg-muted transition-colors"
+                    >
+                      Log out
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <>
@@ -152,7 +196,7 @@ export function Header() {
                   Dashboard
                 </Link>
                 <button
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="rounded-lg px-3 py-2 text-left text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
                   Log out

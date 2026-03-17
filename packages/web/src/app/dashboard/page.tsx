@@ -1,30 +1,90 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/stores/auth.store';
+import { useCreditStore } from '@/stores/credit.store';
+import { api } from '@/lib/api';
 
-const recentExecutions = [
-  { id: 1, toolName: 'Image Background Remover', creditCost: 2, date: '2 hours ago', status: 'completed' },
-  { id: 2, toolName: 'SEO Meta Analyzer', creditCost: 3, date: '5 hours ago', status: 'completed' },
-  { id: 3, toolName: 'PDF Invoice Generator', creditCost: 1, date: 'Yesterday', status: 'completed' },
-  { id: 4, toolName: 'Color Palette Generator', creditCost: 1, date: 'Yesterday', status: 'completed' },
-];
-
-const favoriteTools = [
-  { slug: 'image-bg-remover', name: 'Image Background Remover', icon: '🖼️', creditCost: 2 },
-  { slug: 'seo-meta-analyzer', name: 'SEO Meta Analyzer', icon: '🔍', creditCost: 3 },
-  { slug: 'json-formatter', name: 'JSON Formatter', icon: '{ }', creditCost: 1 },
-];
+interface Execution {
+  id: string;
+  toolName: string;
+  toolSlug: string;
+  creditsCost: number;
+  status: string;
+  createdAt: string;
+}
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const { isAuthenticated, token, user } = useAuthStore();
+  const { balance, fetchBalance } = useCreditStore();
+  const [executions, setExecutions] = useState<Execution[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      router.push('/login?redirect=/dashboard');
+      return;
+    }
+
+    fetchBalance(token);
+
+    async function fetchExecutions() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = (await api.executions.list(token!)) as {
+          success: boolean;
+          data: { items: Execution[] } | Execution[];
+        };
+        const items = Array.isArray(res.data) ? res.data : (res.data as { items: Execution[] }).items || [];
+        setExecutions(items);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load executions');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchExecutions();
+  }, [isAuthenticated, token, router, fetchBalance]);
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  const formatDate = (dateStr: string) => {
+    try {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      if (diffHours < 1) return 'Just now';
+      if (diffHours < 24) return `${diffHours}h ago`;
+      const diffDays = Math.floor(diffHours / 24);
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return date.toLocaleDateString();
+    } catch {
+      return dateStr;
+    }
+  };
+
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
+      <h1 className="text-2xl font-bold text-primary">
+        {user?.name ? `Welcome back, ${user.name.split(' ')[0]}` : 'Dashboard'}
+      </h1>
 
       {/* Credit Balance Card */}
       <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
           <div>
             <p className="text-sm text-muted-foreground">Your Credit Balance</p>
-            <p className="mt-1 text-4xl font-bold text-primary">🪙 247</p>
-            <p className="mt-1 text-xs text-muted-foreground">~82 tool runs remaining</p>
+            <p className="mt-1 text-4xl font-bold text-primary">🪙 {balance}</p>
           </div>
           <Link
             href="/dashboard/credits"
@@ -38,53 +98,70 @@ export default function DashboardPage() {
       {/* Recent Executions */}
       <div>
         <h2 className="text-lg font-semibold text-primary">Recent Executions</h2>
+        {error && (
+          <div className="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
         <div className="mt-4 rounded-xl border border-border bg-card shadow-sm">
-          <div className="divide-y divide-border">
-            {recentExecutions.map((execution) => (
-              <div key={execution.id} className="flex items-center justify-between px-4 py-3 sm:px-6">
-                <div className="flex items-center gap-3">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{execution.toolName}</p>
-                    <p className="text-xs text-muted-foreground">{execution.date}</p>
+          {loading ? (
+            <div className="divide-y divide-border">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between px-4 py-3 sm:px-6 animate-pulse">
+                  <div className="flex items-center gap-3">
+                    <div className="h-2 w-2 rounded-full bg-muted" />
+                    <div className="space-y-1">
+                      <div className="h-4 w-40 rounded bg-muted" />
+                      <div className="h-3 w-20 rounded bg-muted" />
+                    </div>
                   </div>
+                  <div className="h-4 w-12 rounded bg-muted" />
                 </div>
-                <span className="text-sm text-muted-foreground">
-                  🪙 {execution.creditCost}
-                </span>
-              </div>
-            ))}
-          </div>
-          <div className="border-t border-border px-4 py-3 text-center sm:px-6">
-            <Link
-              href="/dashboard/tools"
-              className="text-sm font-medium text-accent hover:text-accent/80"
-            >
-              View all executions
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Favorite Tools */}
-      <div>
-        <h2 className="text-lg font-semibold text-primary">Favorite Tools</h2>
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {favoriteTools.map((tool) => (
-            <Link
-              key={tool.slug}
-              href={`/tools/${tool.slug}`}
-              className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm hover:border-accent/50 transition-colors"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted text-xl">
-                {tool.icon}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">{tool.name}</p>
-                <p className="text-xs text-muted-foreground">🪙 {tool.creditCost} per run</p>
-              </div>
-            </Link>
-          ))}
+              ))}
+            </div>
+          ) : executions.length > 0 ? (
+            <div className="divide-y divide-border">
+              {executions.slice(0, 10).map((execution) => (
+                <div key={execution.id} className="flex items-center justify-between px-4 py-3 sm:px-6">
+                  <div className="flex items-center gap-3">
+                    <div className={`h-2 w-2 rounded-full ${
+                      execution.status === 'completed' ? 'bg-emerald-500' :
+                      execution.status === 'failed' ? 'bg-destructive' :
+                      'bg-yellow-500'
+                    }`} />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {execution.toolName || execution.toolSlug}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDate(execution.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    🪙 {execution.creditsCost}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="px-4 py-8 text-center sm:px-6">
+              <p className="text-sm text-muted-foreground">No executions yet.</p>
+              <Link href="/tools" className="mt-2 inline-block text-sm font-medium text-accent hover:text-accent/80">
+                Browse tools to get started
+              </Link>
+            </div>
+          )}
+          {executions.length > 0 && (
+            <div className="border-t border-border px-4 py-3 text-center sm:px-6">
+              <Link
+                href="/dashboard/tools"
+                className="text-sm font-medium text-accent hover:text-accent/80"
+              >
+                View all executions
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </div>

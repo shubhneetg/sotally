@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sotally.com/api';
 
 async function fetchAPI<T>(path: string, options?: RequestInit & { token?: string }): Promise<T> {
   const { token, ...fetchOptions } = options || {};

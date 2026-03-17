@@ -1,6 +1,34 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAuthStore } from '@/stores/auth.store';
 
 export default function RegisterPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { register, isLoading, error, clearError } = useAuthStore();
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [referral, setReferral] = useState(searchParams.get('ref') || '');
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    clearError();
+    try {
+      await register(name, email, password, referral || undefined);
+      setSuccess(true);
+      setTimeout(() => {
+        router.push('/tools');
+      }, 1500);
+    } catch {
+      // Error is set in the store
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -11,6 +39,13 @@ export default function RegisterPage() {
           Get 50 free credits to start exploring tools
         </p>
       </div>
+
+        {/* Success Message */}
+        {success && (
+          <div className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+            Account created! You have 50 free credits. Redirecting to marketplace...
+          </div>
+        )}
 
         {/* Google Sign Up */}
         <button
@@ -47,8 +82,15 @@ export default function RegisterPage() {
           </div>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
         {/* Registration Form */}
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-foreground">
               Full Name
@@ -59,6 +101,8 @@ export default function RegisterPage() {
               type="text"
               autoComplete="name"
               required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               className="mt-1 block w-full rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring/20"
               placeholder="John Doe"
             />
@@ -73,6 +117,8 @@ export default function RegisterPage() {
               type="email"
               autoComplete="email"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="mt-1 block w-full rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring/20"
               placeholder="you@example.com"
             />
@@ -87,6 +133,8 @@ export default function RegisterPage() {
               type="password"
               autoComplete="new-password"
               required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="mt-1 block w-full rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring/20"
               placeholder="Min. 8 characters"
             />
@@ -99,15 +147,25 @@ export default function RegisterPage() {
               id="referral"
               name="referral"
               type="text"
+              value={referral}
+              onChange={(e) => setReferral(e.target.value)}
               className="mt-1 block w-full rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring/20"
               placeholder="Enter referral code"
             />
           </div>
           <button
             type="submit"
-            className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
+            disabled={isLoading || success}
+            className="w-full rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create Account
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-foreground/30 border-t-accent-foreground" />
+                Creating account...
+              </span>
+            ) : (
+              'Create Account'
+            )}
           </button>
         </form>
 

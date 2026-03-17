@@ -1,26 +1,31 @@
+'use client';
+
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { api } from '@/lib/api';
+import { useAuthStore } from '@/stores/auth.store';
 
-// Placeholder tool data (would come from API in production)
-const tool = {
-  name: 'Image Background Remover',
-  slug: 'image-bg-remover',
-  icon: '🖼️',
-  description:
-    'Remove backgrounds from any image in seconds using AI-powered edge detection. Supports PNG, JPG, and WebP formats. Perfect for e-commerce product photos, profile pictures, and design assets.',
-  category: 'Design',
-  rating: 4.8,
-  runCount: 12400,
-  creditCost: 2,
-  creatorName: 'PixelLab',
-  creatorAvatar: null,
-};
+interface Tool {
+  name: string;
+  slug: string;
+  icon: string;
+  description: string;
+  category: string;
+  rating: number;
+  runCount: number;
+  creditCost: number;
+  creatorName: string;
+  creatorAvatar: string | null;
+}
 
-const sampleReviews = [
-  { id: 1, user: 'Sarah M.', rating: 5, comment: 'Incredible quality — better than most paid alternatives.', date: '2 days ago' },
-  { id: 2, user: 'James K.', rating: 4, comment: 'Works great for product photos. Edges are very clean.', date: '1 week ago' },
-  { id: 3, user: 'Priya R.', rating: 5, comment: 'Fast and accurate. Using it daily for my Shopify store.', date: '2 weeks ago' },
-];
+interface Review {
+  id: string;
+  user: string;
+  rating: number;
+  comment: string;
+  date: string;
+}
 
 function StarRating({ rating }: { rating: number }) {
   return (
@@ -40,11 +45,93 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-export default function ToolDetailPage() {
+export default function ToolDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = use(params);
+  const { isAuthenticated } = useAuthStore();
+  const [tool, setTool] = useState<Tool | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchTool() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = (await api.tools.get(slug)) as {
+          success: boolean;
+          data: Tool;
+        };
+        setTool(res.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load tool');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function fetchReviews() {
+      try {
+        const res = (await api.tools.reviews(slug)) as {
+          success: boolean;
+          data: { items: Review[] } | Review[];
+        };
+        const items = Array.isArray(res.data) ? res.data : (res.data as { items: Review[] }).items || [];
+        setReviews(items);
+      } catch {
+        // Reviews are non-critical; silently ignore
+      }
+    }
+
+    fetchTool();
+    fetchReviews();
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-3 animate-pulse">
+          <div className="lg:col-span-2 space-y-8">
+            <div className="flex items-start gap-4">
+              <div className="h-16 w-16 rounded-xl bg-muted" />
+              <div className="flex-1 space-y-2">
+                <div className="h-6 w-2/3 rounded bg-muted" />
+                <div className="h-4 w-1/3 rounded bg-muted" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-4 w-1/4 rounded bg-muted" />
+              <div className="h-4 w-full rounded bg-muted" />
+              <div className="h-4 w-3/4 rounded bg-muted" />
+            </div>
+          </div>
+          <div>
+            <div className="rounded-xl border border-border bg-card p-6">
+              <div className="h-10 w-20 mx-auto rounded bg-muted" />
+              <div className="mt-6 h-12 w-full rounded-lg bg-muted" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !tool) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6 lg:px-8">
+        <h1 className="text-2xl font-bold text-primary">Tool not found</h1>
+        <p className="mt-2 text-muted-foreground">{error || 'This tool could not be loaded.'}</p>
+        <Link href="/tools" className="mt-4 inline-block text-sm font-medium text-accent hover:text-accent/80">
+          Back to marketplace
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
-          {/* Left Column — Tool Info */}
+          {/* Left Column -- Tool Info */}
           <div className="lg:col-span-2 space-y-8">
             {/* Tool Header */}
             <div className="flex items-start gap-4">
@@ -54,10 +141,10 @@ export default function ToolDetailPage() {
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-primary sm:text-3xl">{tool.name}</h1>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
-                  <Badge variant="outline">{tool.category}</Badge>
+                  {tool.category && <Badge variant="outline">{tool.category}</Badge>}
                   <StarRating rating={tool.rating} />
                   <span className="text-sm text-muted-foreground">
-                    {tool.runCount.toLocaleString()} runs
+                    {(tool.runCount || 0).toLocaleString()} runs
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -72,47 +159,29 @@ export default function ToolDetailPage() {
               <p className="mt-2 text-muted-foreground leading-relaxed">{tool.description}</p>
             </div>
 
-            {/* Input Form Placeholder */}
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="text-lg font-semibold text-primary">Inputs</h2>
-              <div className="mt-4 rounded-lg border border-dashed border-border bg-muted/50 p-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Tool inputs will render here based on the tool&apos;s schema.
-                </p>
-              </div>
-            </div>
-
-            {/* Sample Output */}
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="text-lg font-semibold text-primary">Sample Output</h2>
-              <div className="mt-4 rounded-lg bg-muted/50 p-6">
-                <p className="text-sm text-muted-foreground font-mono">
-                  &#123; &quot;status&quot;: &quot;success&quot;, &quot;output_url&quot;: &quot;https://cdn.sotally.com/results/...&quot; &#125;
-                </p>
-              </div>
-            </div>
-
             {/* Reviews */}
-            <div>
-              <h2 className="text-lg font-semibold text-primary">Reviews</h2>
-              <div className="mt-4 space-y-4">
-                {sampleReviews.map((review) => (
-                  <div key={review.id} className="rounded-xl border border-border bg-card p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-foreground">{review.user}</span>
-                        <StarRating rating={review.rating} />
+            {reviews.length > 0 && (
+              <div>
+                <h2 className="text-lg font-semibold text-primary">Reviews</h2>
+                <div className="mt-4 space-y-4">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="rounded-xl border border-border bg-card p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-foreground">{review.user}</span>
+                          <StarRating rating={review.rating} />
+                        </div>
+                        <span className="text-xs text-muted-foreground">{review.date}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground">{review.date}</span>
+                      <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>
                     </div>
-                    <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Right Column — Pricing & Action */}
+          {/* Right Column -- Pricing & Action */}
           <div>
             <div className="sticky top-6 rounded-xl border border-border bg-card p-6 shadow-sm">
               <div className="text-center">
@@ -121,27 +190,40 @@ export default function ToolDetailPage() {
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">credits per run</p>
               </div>
-              <Link
-                href={`/tools/${tool.slug}/run`}
-                className="mt-6 block w-full rounded-lg bg-accent px-4 py-3 text-center text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
-              >
-                Run Tool — {tool.creditCost} Credits
-              </Link>
-              <p className="mt-3 text-center text-xs text-muted-foreground">
-                Don&apos;t have credits?{' '}
-                <Link href="/register" className="text-accent hover:text-accent/80">
-                  Sign up for 50 free
+              {isAuthenticated ? (
+                <Link
+                  href={`/tools/${tool.slug}/run`}
+                  className="mt-6 block w-full rounded-lg bg-accent px-4 py-3 text-center text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
+                >
+                  Run Tool — {tool.creditCost} Credits
                 </Link>
-              </p>
+              ) : (
+                <div className="mt-6 space-y-3">
+                  <Link
+                    href={`/login?redirect=/tools/${tool.slug}/run`}
+                    className="block w-full rounded-lg bg-accent px-4 py-3 text-center text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
+                  >
+                    Log in to Run
+                  </Link>
+                  <p className="text-center text-xs text-muted-foreground">
+                    Don&apos;t have an account?{' '}
+                    <Link href="/register" className="text-accent hover:text-accent/80">
+                      Sign up for 50 free
+                    </Link>
+                  </p>
+                </div>
+              )}
               <div className="mt-6 border-t border-border pt-4">
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Category</span>
-                    <span className="font-medium text-foreground">{tool.category}</span>
-                  </div>
+                  {tool.category && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Category</span>
+                      <span className="font-medium text-foreground">{tool.category}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Total runs</span>
-                    <span className="font-medium text-foreground">{tool.runCount.toLocaleString()}</span>
+                    <span className="font-medium text-foreground">{(tool.runCount || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Rating</span>
