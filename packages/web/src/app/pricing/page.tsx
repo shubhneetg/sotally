@@ -88,20 +88,41 @@ const faqs = [
   },
 ];
 
+const competitors = [
+  { name: 'Sotally', price: 'From $5 (100 credits)', model: 'Pay per use', tools: '56+ tools', lock: 'No lock-in', highlight: true },
+  { name: 'ChatGPT Plus', price: '$20/month', model: 'Monthly subscription', tools: '1 chatbot', lock: 'Locked in', highlight: false },
+  { name: 'Jasper', price: '$49/month', model: 'Monthly subscription', tools: 'Writing only', lock: 'Annual contract', highlight: false },
+  { name: 'Copy.ai', price: '$49/month', model: 'Monthly subscription', tools: 'Marketing only', lock: 'Locked in', highlight: false },
+];
+
 export default function PricingPage() {
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map(f => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer },
+    })),
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <main className="flex-1">
         {/* Hero */}
         <section className="bg-background px-4 py-16 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              Simple, transparent pricing
+              Pay for what you use. Nothing more.
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Buy credits once. Use them across any tool. No subscriptions, no surprises.
+              No subscriptions. No monthly fees. Buy credits once, use them across 56+ AI tools. Credits never expire.
             </p>
+            <div className="mt-6 inline-flex items-center rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-medium text-emerald-700">
+              50 free credits on signup — no credit card needed
+            </div>
           </div>
         </section>
 
@@ -183,6 +204,71 @@ export default function PricingPage() {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Competitor Comparison */}
+        <section className="bg-muted/30 px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-4xl">
+            <h2 className="text-center text-2xl font-bold text-foreground">
+              How Sotally compares
+            </h2>
+            <p className="mt-2 text-center text-muted-foreground">
+              Stop paying monthly for tools you use occasionally.
+            </p>
+            <div className="mt-8 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="pb-3 text-left font-semibold text-foreground">Platform</th>
+                    <th className="pb-3 text-left font-semibold text-foreground">Price</th>
+                    <th className="pb-3 text-left font-semibold text-foreground">Model</th>
+                    <th className="pb-3 text-left font-semibold text-foreground">Tools</th>
+                    <th className="pb-3 text-left font-semibold text-foreground">Lock-in</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {competitors.map((c) => (
+                    <tr key={c.name} className={`border-b border-border ${c.highlight ? 'bg-accent/5' : ''}`}>
+                      <td className={`py-3 font-medium ${c.highlight ? 'text-accent' : 'text-foreground'}`}>
+                        {c.name} {c.highlight && <span className="ml-1 text-[10px] rounded-full bg-accent/10 px-1.5 py-0.5">You are here</span>}
+                      </td>
+                      <td className="py-3 text-muted-foreground">{c.price}</td>
+                      <td className="py-3 text-muted-foreground">{c.model}</td>
+                      <td className="py-3 text-muted-foreground">{c.tools}</td>
+                      <td className={`py-3 ${c.highlight ? 'text-emerald-600 font-medium' : 'text-muted-foreground'}`}>{c.lock}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              A user running 10 tools/day at 5 credits each spends ~$4.50/month on Sotally vs $20-49/month on subscription platforms.
+            </p>
+          </div>
+        </section>
+
+        {/* How Credits Work */}
+        <section className="bg-background px-4 py-16 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-2xl font-bold text-foreground">How credits work</h2>
+            <div className="mt-8 grid gap-6 sm:grid-cols-3">
+              <div className="rounded-xl border border-border bg-card p-5">
+                <div className="text-2xl font-bold text-accent">1 credit</div>
+                <div className="mt-1 text-sm text-muted-foreground">≈ $0.03-$0.05</div>
+                <p className="mt-2 text-xs text-muted-foreground">Depending on package</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-5">
+                <div className="text-2xl font-bold text-accent">3-10 credits</div>
+                <div className="mt-1 text-sm text-muted-foreground">= typical tool run</div>
+                <p className="mt-2 text-xs text-muted-foreground">Most tools cost 3-10 credits</p>
+              </div>
+              <div className="rounded-xl border border-border bg-card p-5">
+                <div className="text-2xl font-bold text-accent">50 free</div>
+                <div className="mt-1 text-sm text-muted-foreground">on signup</div>
+                <p className="mt-2 text-xs text-muted-foreground">Try 5-15 tools free</p>
+              </div>
             </div>
           </div>
         </section>
