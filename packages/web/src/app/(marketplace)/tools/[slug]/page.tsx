@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
 import { useToast } from '@/components/ui/toast';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 function creditsToDollars(credits: number): string {
   return `$${(credits * 0.03).toFixed(2)}`;
@@ -18,6 +20,7 @@ interface Tool {
   slug: string;
   icon: string;
   description: string;
+  longDescription: string | null;
   category: string;
   rating: number;
   runCount: number;
@@ -26,6 +29,7 @@ interface Tool {
   creatorName: string;
   creatorId: string;
   creatorAvatar: string | null;
+  demoOutput: any;
 }
 
 function mapToolFromApi(apiTool: any): Tool {
@@ -40,9 +44,11 @@ function mapToolFromApi(apiTool: any): Tool {
     runCount: apiTool.totalRuns ?? apiTool.runCount ?? 0,
     creditCost: apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0,
     pricingModel: apiTool.pricing?.model || 'per_run',
+    longDescription: apiTool.longDescription || null,
     creatorName: apiTool.creator?.name || apiTool.creatorName || 'Sotally',
     creatorId: apiTool.creatorId || apiTool.creator?.id || '',
     creatorAvatar: apiTool.creator?.avatarUrl || apiTool.creatorAvatar || null,
+    demoOutput: apiTool.demoOutput || null,
   };
 }
 
@@ -314,7 +320,41 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
             <div>
               <h2 className="text-lg font-semibold text-primary">About this tool</h2>
               <p className="mt-2 text-muted-foreground leading-relaxed">{tool.description}</p>
+              {tool.longDescription && (
+                <p className="mt-2 text-muted-foreground leading-relaxed">{tool.longDescription}</p>
+              )}
             </div>
+
+            {/* Demo Output Preview */}
+            {tool.demoOutput && (
+              <div>
+                <h2 className="text-lg font-semibold text-primary">Example Output</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Here&apos;s a real example of what this tool produces:</p>
+                <div className="mt-3 rounded-xl border border-border bg-muted/30 p-5">
+                  <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none [&_pre]:bg-background/50 [&_pre]:rounded-md [&_pre]:p-3 [&_code]:text-xs [&_p]:my-1.5 [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm">
+                    {typeof tool.demoOutput === 'string' ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {tool.demoOutput}
+                      </ReactMarkdown>
+                    ) : tool.demoOutput?.output ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {typeof tool.demoOutput.output === 'string' ? tool.demoOutput.output : JSON.stringify(tool.demoOutput.output, null, 2)}
+                      </ReactMarkdown>
+                    ) : (
+                      <pre className="whitespace-pre-wrap text-sm text-foreground">
+                        {JSON.stringify(tool.demoOutput, null, 2)}
+                      </pre>
+                    )}
+                  </div>
+                  <div className="mt-3 flex items-center gap-2 pt-3 border-t border-border">
+                    <span className="inline-flex items-center rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">
+                      Sample output
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">Results may vary based on your inputs</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Reviews */}
             <div>
