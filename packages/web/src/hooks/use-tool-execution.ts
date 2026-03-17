@@ -247,17 +247,34 @@ export function useToolExecution(): UseToolExecutionReturn {
 
         cleanupRef.current = sse.cleanup;
 
+        // Always poll in parallel — SSE may miss events due to race conditions
+        // (execution can complete before SSE subscription is active)
+        const pollPromise = pollExecution(response.executionId, token);
+
         const sseConnected = await sse.connected;
 
         if (!sseConnected) {
-          // Fall back to polling
-          setProgress({ status: 'running', message: 'Connecting...' });
-          const executionResult = await pollExecution(response.executionId, token);
+          // SSE failed to connect — rely entirely on polling
+          setProgress({ status: 'running', message: 'Processing...' });
+          const executionResult = await pollPromise;
           setResult(executionResult);
           setIsExecuting(false);
           fetchBalance(token);
+        } else {
+          // SSE connected — but also race with polling as a safety net
+          // If SSE delivers the result first, the callbacks handle it
+          // If polling finishes first (SSE missed the event), use polling result
+          pollPromise.then((executionResult) => {
+            if (executionResult.status === 'completed' || executionResult.status === 'failed') {
+              setResult(executionResult);
+              setIsExecuting(false);
+              fetchBalance(token);
+              if (cleanupRef.current) cleanupRef.current();
+            }
+          }).catch(() => {
+            // Polling failed — SSE might still deliver
+          });
         }
-        // If SSE connected, the callbacks handle setting result/error/isExecuting
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Execution failed');
         setIsExecuting(false);
