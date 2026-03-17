@@ -106,6 +106,25 @@ export default function WelcomePage() {
         </div>
       </div>
 
+      {/* Referral */}
+      {user?.referralCode && (
+        <div className="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900 p-5 text-center">
+          <p className="text-sm font-semibold text-foreground">Know someone who'd love this?</p>
+          <p className="mt-1 text-xs text-muted-foreground">Share your link — you both get 50 credits.</p>
+          <div className="mt-3 flex items-center justify-center gap-2">
+            <code className="rounded-md bg-background border border-border px-3 py-1.5 text-xs font-mono">
+              sotally.com/?ref={user.referralCode}
+            </code>
+            <button
+              onClick={() => navigator.clipboard.writeText(`https://sotally.com/?ref=${user.referralCode}`)}
+              className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 transition-colors"
+            >
+              Copy
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Skip */}
       <div className="mt-8 text-center">
         <Link href="/dashboard" className="text-sm text-muted-foreground hover:text-foreground transition-colors">

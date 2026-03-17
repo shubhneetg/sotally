@@ -129,6 +129,51 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      {/* Referral Card */}
+      {user?.referralCode && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-900 p-5">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">🎁</span>
+            <div className="flex-1">
+              <h3 className="text-sm font-semibold text-foreground">Invite friends, earn credits</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Share your link — you both get 50 credits when they sign up.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <code className="rounded-md bg-background border border-border px-3 py-1.5 text-xs text-foreground font-mono">
+                  sotally.com/?ref={user.referralCode}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://sotally.com/?ref=${user.referralCode}`);
+                    addToast('Referral link copied!', 'success');
+                  }}
+                  className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 transition-colors"
+                >
+                  Copy
+                </button>
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I've been using Sotally — AI tools without subscriptions. Try it free with my link:`)}&url=${encodeURIComponent(`https://sotally.com/?ref=${user.referralCode}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  Tweet
+                </a>
+                <a
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(`https://sotally.com/?ref=${user.referralCode}`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  LinkedIn
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Quick Actions — Recently Used Tools */}
       {!loading && executions.length > 0 && (
         <div>
