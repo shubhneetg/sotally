@@ -24,13 +24,19 @@ interface OpenAIResponse {
   };
 }
 
-const OPENAI_BASE_URL = 'https://api.openai.com/v1';
+// DeepSeek uses OpenAI-compatible API
+const LLM_BASE_URL = process.env.LLM_BASE_URL || 'https://api.deepseek.com';
 
-const SUPPORTED_MODELS = ['gpt-4o-mini', 'gpt-4o'] as const;
-type SupportedModel = (typeof SUPPORTED_MODELS)[number];
+// Model mapping: translate tool configs to actual model names
+const MODEL_MAP: Record<string, string> = {
+  'gpt-4o-mini': 'deepseek-chat',
+  'gpt-4o': 'deepseek-chat',
+  'deepseek-chat': 'deepseek-chat',
+  'deepseek-reasoner': 'deepseek-reasoner',
+};
 
-function isSupportedModel(model: string): model is SupportedModel {
-  return SUPPORTED_MODELS.includes(model as SupportedModel);
+function resolveModel(model: string): string {
+  return MODEL_MAP[model] || 'deepseek-chat';
 }
 
 export async function chatCompletion(
@@ -38,18 +44,16 @@ export async function chatCompletion(
   messages: ChatMessage[],
   options: ChatCompletionOptions = {}
 ): Promise<string> {
-  if (!isSupportedModel(model)) {
-    throw new Error(`Unsupported model: ${model}. Supported: ${SUPPORTED_MODELS.join(', ')}`);
-  }
+  const resolvedModel = resolveModel(model);
 
-  const response = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+  const response = await fetch(`${LLM_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${env.OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model,
+      model: resolvedModel,
       messages,
       temperature: options.temperature ?? 0.7,
       max_tokens: options.maxTokens ?? 1024,
@@ -59,7 +63,7 @@ export async function chatCompletion(
   if (!response.ok) {
     const errorBody = await response.text().catch(() => 'unknown error');
     throw new OpenAIError(
-      `OpenAI API error: ${response.status} ${response.statusText}`,
+      `LLM API error: ${response.status} ${response.statusText}`,
       response.status,
       errorBody
     );
