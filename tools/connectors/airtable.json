@@ -1,0 +1,39 @@
+{
+  "service": "airtable",
+  "name": "Airtable",
+  "authType": "bearer_token",
+  "authHeader": "Authorization",
+  "authPrefix": "Bearer ",
+  "actions": [
+    {
+      "id": "list_records",
+      "name": "List Records",
+      "method": "GET",
+      "url": "https://api.airtable.com/v0/{{baseId}}/{{tableId}}"
+    },
+    {
+      "id": "create_record",
+      "name": "Create Record",
+      "method": "POST",
+      "url": "https://api.airtable.com/v0/{{baseId}}/{{tableId}}",
+      "bodyTemplate": {
+        "fields": "{{fields}}"
+      }
+    },
+    {
+      "id": "get_record",
+      "name": "Get Record",
+      "method": "GET",
+      "url": "https://api.airtable.com/v0/{{baseId}}/{{tableId}}/{{recordId}}"
+    },
+    {
+      "id": "update_record",
+      "name": "Update Record",
+      "method": "PATCH",
+      "url": "https://api.airtable.com/v0/{{baseId}}/{{tableId}}/{{recordId}}",
+      "bodyTemplate": {
+        "fields": "{{fields}}"
+      }
+    }
+  ]
+}

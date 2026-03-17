@@ -1,0 +1,57 @@
+{
+  "service": "notion",
+  "name": "Notion",
+  "authType": "bearer_token",
+  "authHeader": "Authorization",
+  "authPrefix": "Bearer ",
+  "defaultHeaders": {
+    "Notion-Version": "2022-06-28"
+  },
+  "actions": [
+    {
+      "id": "create_page",
+      "name": "Create Page",
+      "method": "POST",
+      "url": "https://api.notion.com/v1/pages",
+      "bodyTemplate": {
+        "parent": { "database_id": "{{databaseId}}" },
+        "properties": {
+          "Name": {
+            "title": [{ "text": { "content": "{{title}}" } }]
+          }
+        },
+        "children": [
+          {
+            "object": "block",
+            "type": "paragraph",
+            "paragraph": {
+              "rich_text": [{ "type": "text", "text": { "content": "{{content}}" } }]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "query_database",
+      "name": "Query Database",
+      "method": "POST",
+      "url": "https://api.notion.com/v1/databases/{{databaseId}}/query",
+      "bodyTemplate": {}
+    },
+    {
+      "id": "get_page",
+      "name": "Get Page",
+      "method": "GET",
+      "url": "https://api.notion.com/v1/pages/{{pageId}}"
+    },
+    {
+      "id": "search",
+      "name": "Search",
+      "method": "POST",
+      "url": "https://api.notion.com/v1/search",
+      "bodyTemplate": {
+        "query": "{{query}}"
+      }
+    }
+  ]
+}

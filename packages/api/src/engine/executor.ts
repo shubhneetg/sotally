@@ -49,11 +49,17 @@ export async function execute(executionId: string): Promise<ExecutionResult> {
   }
 
   // 4. Resolve pricing
+  const useOwnKey = (execution.metadata as any)?.useOwnKey ?? false;
   const pricing = resolveCredits(
     tool.pricing as ToolPricing,
     user as UserContext,
     (execution.input as Record<string, any>) ?? {}
   );
+
+  // BYOM discount: 50% off when user provides their own API key
+  if (useOwnKey) {
+    pricing.credits = Math.ceil(pricing.credits * 0.5);
+  }
 
   // 5. Validate balance
   validateBalance(user as UserContext, pricing.credits);
@@ -155,6 +161,7 @@ async function dispatch(tool: any, execution: any): Promise<any> {
   const executionType = tool.executionType;
   const config = tool.config as any;
   const input = (execution.input as Record<string, any>) ?? {};
+  const useOwnKey = (execution.metadata as any)?.useOwnKey ?? false;
 
   switch (executionType) {
     case 'prompt':
@@ -165,7 +172,8 @@ async function dispatch(tool: any, execution: any): Promise<any> {
       const result = await runPipeline(
         { steps: config.steps, timeout: config.timeout },
         input,
-        buildSafeEnv()
+        buildSafeEnv(),
+        { userId: execution.userId, useOwnKey }
       );
       return result.output;
     }

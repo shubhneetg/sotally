@@ -1,0 +1,42 @@
+{
+  "service": "mailchimp",
+  "name": "Mailchimp",
+  "authType": "api_key",
+  "authHeader": "Authorization",
+  "authPrefix": "Bearer ",
+  "baseUrlTemplate": "https://{{dc}}.api.mailchimp.com/3.0",
+  "actions": [
+    {
+      "id": "list_audiences",
+      "name": "List Audiences",
+      "method": "GET",
+      "url": "https://{{dc}}.api.mailchimp.com/3.0/lists"
+    },
+    {
+      "id": "add_subscriber",
+      "name": "Add Subscriber",
+      "method": "POST",
+      "url": "https://{{dc}}.api.mailchimp.com/3.0/lists/{{listId}}/members",
+      "bodyTemplate": {
+        "email_address": "{{email}}",
+        "status": "{{status}}",
+        "merge_fields": {
+          "FNAME": "{{firstName}}",
+          "LNAME": "{{lastName}}"
+        }
+      }
+    },
+    {
+      "id": "get_subscriber",
+      "name": "Get Subscriber",
+      "method": "GET",
+      "url": "https://{{dc}}.api.mailchimp.com/3.0/lists/{{listId}}/members/{{subscriberHash}}"
+    },
+    {
+      "id": "send_campaign",
+      "name": "Send Campaign",
+      "method": "POST",
+      "url": "https://{{dc}}.api.mailchimp.com/3.0/campaigns/{{campaignId}}/actions/send"
+    }
+  ]
+}

@@ -31,6 +31,13 @@ interface PricingTier {
   description: string;
 }
 
+interface ConnectorStep {
+  id: string;
+  service: string;
+  action: string;
+  params: Record<string, string>;
+}
+
 interface FormData {
   // Step 1: Basics
   name: string;
@@ -49,6 +56,7 @@ interface FormData {
   model: 'gpt-4o-mini' | 'gpt-4o';
   temperature: number;
   maxTokens: number;
+  connectorSteps: ConnectorStep[];
   // Step 5: Pricing
   pricingModel: 'per_run' | 'tiered' | 'free';
   creditsPerRun: number;
@@ -527,6 +535,60 @@ function StepInputFields({
   );
 }
 
+// ─── Connector Definitions (static, mirrors tools/connectors/*.json) ──────
+
+const AVAILABLE_CONNECTORS = [
+  {
+    service: 'slack',
+    name: 'Slack',
+    actions: [
+      { id: 'send_message', name: 'Send Message', params: ['channel', 'message'] },
+      { id: 'list_channels', name: 'List Channels', params: [] },
+      { id: 'set_topic', name: 'Set Channel Topic', params: ['channel', 'topic'] },
+    ],
+  },
+  {
+    service: 'hubspot',
+    name: 'HubSpot',
+    actions: [
+      { id: 'create_contact', name: 'Create Contact', params: ['email', 'firstName', 'lastName', 'company'] },
+      { id: 'get_contact', name: 'Get Contact', params: ['contactId'] },
+      { id: 'list_contacts', name: 'List Contacts', params: [] },
+      { id: 'create_deal', name: 'Create Deal', params: ['dealName', 'amount', 'pipeline', 'stage'] },
+    ],
+  },
+  {
+    service: 'notion',
+    name: 'Notion',
+    actions: [
+      { id: 'create_page', name: 'Create Page', params: ['databaseId', 'title', 'content'] },
+      { id: 'query_database', name: 'Query Database', params: ['databaseId'] },
+      { id: 'get_page', name: 'Get Page', params: ['pageId'] },
+      { id: 'search', name: 'Search', params: ['query'] },
+    ],
+  },
+  {
+    service: 'airtable',
+    name: 'Airtable',
+    actions: [
+      { id: 'list_records', name: 'List Records', params: ['baseId', 'tableId'] },
+      { id: 'create_record', name: 'Create Record', params: ['baseId', 'tableId', 'fields'] },
+      { id: 'get_record', name: 'Get Record', params: ['baseId', 'tableId', 'recordId'] },
+      { id: 'update_record', name: 'Update Record', params: ['baseId', 'tableId', 'recordId', 'fields'] },
+    ],
+  },
+  {
+    service: 'mailchimp',
+    name: 'Mailchimp',
+    actions: [
+      { id: 'list_audiences', name: 'List Audiences', params: ['dc'] },
+      { id: 'add_subscriber', name: 'Add Subscriber', params: ['dc', 'listId', 'email', 'status', 'firstName', 'lastName'] },
+      { id: 'get_subscriber', name: 'Get Subscriber', params: ['dc', 'listId', 'subscriberHash'] },
+      { id: 'send_campaign', name: 'Send Campaign', params: ['dc', 'campaignId'] },
+    ],
+  },
+];
+
 function StepAILogic({
   form,
   onChange,
@@ -537,6 +599,45 @@ function StepAILogic({
   const availableVars = form.inputFields
     .filter((f) => f.key)
     .map((f) => `{{input.${f.key}}}`);
+
+  const addConnectorStep = () => {
+    onChange({
+      connectorSteps: [
+        ...form.connectorSteps,
+        { id: generateId(), service: '', action: '', params: {} },
+      ],
+    });
+  };
+
+  const updateConnectorStep = (index: number, updates: Partial<ConnectorStep>) => {
+    const updated = form.connectorSteps.map((s, i) => {
+      if (i !== index) return s;
+      const merged = { ...s, ...updates };
+      // Reset action and params when service changes
+      if (updates.service && updates.service !== s.service) {
+        merged.action = '';
+        merged.params = {};
+      }
+      // Reset params when action changes
+      if (updates.action && updates.action !== s.action) {
+        merged.params = {};
+      }
+      return merged;
+    });
+    onChange({ connectorSteps: updated });
+  };
+
+  const removeConnectorStep = (index: number) => {
+    onChange({ connectorSteps: form.connectorSteps.filter((_, i) => i !== index) });
+  };
+
+  const updateConnectorParam = (stepIndex: number, paramKey: string, value: string) => {
+    const updated = form.connectorSteps.map((s, i) => {
+      if (i !== stepIndex) return s;
+      return { ...s, params: { ...s.params, [paramKey]: value } };
+    });
+    onChange({ connectorSteps: updated });
+  };
 
   return (
     <div className="space-y-6">
@@ -642,6 +743,118 @@ function StepAILogic({
             max={16000}
           />
           <p className="mt-1 text-xs text-muted-foreground">Maximum output length (100-16000)</p>
+        </div>
+      </div>
+
+      {/* ─── Connector Steps ──────────────────────────────────────────── */}
+      <div className="border-t border-border pt-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">Connector Steps</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Add API connector steps to interact with external services (Slack, HubSpot, Notion, etc.)
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={addConnectorStep}>
+            + Add Connector
+          </Button>
+        </div>
+
+        {form.connectorSteps.length === 0 && (
+          <div className="mt-4 rounded-lg border border-dashed border-border p-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              No connector steps added. Your tool will use only AI prompts.
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Add a connector to send data to Slack, create HubSpot contacts, update Notion pages, and more.
+            </p>
+          </div>
+        )}
+
+        <div className="mt-4 space-y-4">
+          {form.connectorSteps.map((step, index) => {
+            const connector = AVAILABLE_CONNECTORS.find((c) => c.service === step.service);
+            const action = connector?.actions.find((a) => a.id === step.action);
+
+            return (
+              <Card key={step.id}>
+                <CardContent className="pt-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <Badge variant="secondary" className="shrink-0">
+                      Connector #{index + 1}
+                    </Badge>
+                    <button
+                      type="button"
+                      onClick={() => removeConnectorStep(index)}
+                      className="text-xs text-destructive hover:text-destructive/80"
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {/* Service selector */}
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-foreground">Service</label>
+                      <select
+                        value={step.service}
+                        onChange={(e) => updateConnectorStep(index, { service: e.target.value })}
+                        className="flex h-9 w-full rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring/20"
+                      >
+                        <option value="">Select a service...</option>
+                        {AVAILABLE_CONNECTORS.map((c) => (
+                          <option key={c.service} value={c.service}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Action selector */}
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-foreground">Action</label>
+                      <select
+                        value={step.action}
+                        onChange={(e) => updateConnectorStep(index, { action: e.target.value })}
+                        disabled={!connector}
+                        className="flex h-9 w-full rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring/20 disabled:opacity-50"
+                      >
+                        <option value="">Select an action...</option>
+                        {connector?.actions.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Parameter fields based on selected action */}
+                  {action && action.params.length > 0 && (
+                    <div className="mt-4 space-y-3">
+                      <label className="block text-xs font-medium text-foreground">Parameters</label>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {action.params.map((param) => (
+                          <div key={param}>
+                            <label className="mb-1 block text-xs text-muted-foreground">{param}</label>
+                            <Input
+                              value={step.params[param] || ''}
+                              onChange={(e) => updateConnectorParam(index, param, e.target.value)}
+                              placeholder={`{{input.${param}}} or static value`}
+                              className="h-8 font-mono text-xs"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Use {'{{input.fieldName}}'} to reference user inputs or {'{{steps.stepId}}'} to reference previous step outputs.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -929,6 +1142,12 @@ function StepPreview({
               <span className="text-muted-foreground">Max Tokens</span>
               <span className="text-foreground">{form.maxTokens}</span>
             </div>
+            {form.connectorSteps.length > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Connector Steps</span>
+                <span className="text-foreground">{form.connectorSteps.filter(s => s.service && s.action).length}</span>
+              </div>
+            )}
             {form.systemPrompt && (
               <div className="mt-3">
                 <p className="text-xs font-medium text-muted-foreground">System Prompt</p>
@@ -1103,6 +1322,7 @@ export default function CreateToolPage() {
     model: 'gpt-4o-mini',
     temperature: 0.7,
     maxTokens: 1000,
+    connectorSteps: [],
     pricingModel: 'per_run',
     creditsPerRun: 5,
     pricingTiers: [],
@@ -1158,8 +1378,45 @@ export default function CreateToolPage() {
       pricing = { model: 'per_run', creditsPerRun: form.creditsPerRun };
     }
 
+    // Build pipeline steps
+    const steps: Array<Record<string, unknown>> = [];
+
+    // LLM step (always included)
+    steps.push({
+      type: 'llm',
+      id: 'llm_main',
+      model: form.model,
+      prompt: form.userPromptTemplate,
+      systemPrompt: form.systemPrompt,
+      temperature: form.temperature,
+      maxTokens: form.maxTokens,
+    });
+
+    // Connector steps
+    for (const cs of form.connectorSteps) {
+      if (cs.service && cs.action) {
+        steps.push({
+          type: 'connector',
+          id: `connector_${cs.id}`,
+          service: cs.service,
+          action: cs.action,
+          params: cs.params,
+        });
+      }
+    }
+
+    // Output step
+    steps.push({
+      type: 'output',
+      id: 'output',
+      template: '{{steps.llm_main}}',
+    });
+
+    const hasConnectors = form.connectorSteps.some((cs) => cs.service && cs.action);
+
     // Build config
     const config = {
+      steps,
       systemPrompt: form.systemPrompt,
       userPromptTemplate: form.userPromptTemplate,
       model: form.model,
@@ -1178,7 +1435,7 @@ export default function CreateToolPage() {
       slug: form.slug,
       description: form.description,
       categoryId: form.categoryId || undefined,
-      executionType: 'prompt' as const,
+      executionType: hasConnectors ? ('pipeline' as const) : ('prompt' as const),
       pricing,
       inputSchema,
       config,

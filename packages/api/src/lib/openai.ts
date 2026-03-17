@@ -44,13 +44,28 @@ export async function chatCompletion(
   messages: ChatMessage[],
   options: ChatCompletionOptions = {}
 ): Promise<string> {
-  const resolvedModel = resolveModel(model);
+  return chatCompletionWithKey(model, messages, options, env.OPENAI_API_KEY);
+}
 
-  const response = await fetch(`${LLM_BASE_URL}/chat/completions`, {
+/**
+ * Chat completion using a specific API key.
+ * Used for BYOM (Bring Your Own Model) where users provide their own keys.
+ */
+export async function chatCompletionWithKey(
+  model: string,
+  messages: ChatMessage[],
+  options: ChatCompletionOptions = {},
+  apiKey: string,
+  baseUrl?: string
+): Promise<string> {
+  const resolvedModel = resolveModel(model);
+  const url = baseUrl || LLM_BASE_URL;
+
+  const response = await fetch(`${url}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model: resolvedModel,

@@ -1,0 +1,49 @@
+{
+  "service": "hubspot",
+  "name": "HubSpot",
+  "authType": "bearer_token",
+  "authHeader": "Authorization",
+  "authPrefix": "Bearer ",
+  "actions": [
+    {
+      "id": "create_contact",
+      "name": "Create Contact",
+      "method": "POST",
+      "url": "https://api.hubapi.com/crm/v3/objects/contacts",
+      "bodyTemplate": {
+        "properties": {
+          "email": "{{email}}",
+          "firstname": "{{firstName}}",
+          "lastname": "{{lastName}}",
+          "company": "{{company}}"
+        }
+      }
+    },
+    {
+      "id": "get_contact",
+      "name": "Get Contact",
+      "method": "GET",
+      "url": "https://api.hubapi.com/crm/v3/objects/contacts/{{contactId}}"
+    },
+    {
+      "id": "list_contacts",
+      "name": "List Contacts",
+      "method": "GET",
+      "url": "https://api.hubapi.com/crm/v3/objects/contacts"
+    },
+    {
+      "id": "create_deal",
+      "name": "Create Deal",
+      "method": "POST",
+      "url": "https://api.hubapi.com/crm/v3/objects/deals",
+      "bodyTemplate": {
+        "properties": {
+          "dealname": "{{dealName}}",
+          "amount": "{{amount}}",
+          "pipeline": "{{pipeline}}",
+          "dealstage": "{{stage}}"
+        }
+      }
+    }
+  ]
+}

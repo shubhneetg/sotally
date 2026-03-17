@@ -40,7 +40,7 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
   const { slug } = use(params);
   const { isAuthenticated, token } = useAuthStore();
   const { balance, fetchBalance } = useCreditStore();
-  const { execute, isExecuting, result, error, reset } = useToolExecution();
+  const { execute, isExecuting, result, error, progress, reset } = useToolExecution();
   const { addToast } = useToast();
 
   const [tool, setTool] = useState<ToolData | null>(null);
@@ -266,10 +266,26 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
       {isExecuting && (
         <div className="mt-8 rounded-xl border border-border bg-card p-8 text-center">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-accent/30 border-t-accent" />
-          <p className="mt-4 text-sm font-medium text-foreground">Running tool...</p>
-          <p className="mt-1 text-xs text-muted-foreground">This may take a few seconds</p>
+          <p className="mt-4 text-sm font-medium text-foreground">
+            {progress?.message || 'Running tool...'}
+          </p>
+          {progress?.stepIndex !== undefined && progress?.totalSteps !== undefined && (
+            <p className="mt-1 text-xs text-accent font-medium">
+              Executing step {progress.stepIndex + 1} of {progress.totalSteps}...
+            </p>
+          )}
+          <p className="mt-1 text-xs text-muted-foreground">
+            {progress?.status === 'running' ? 'Processing your request' : 'This may take a few seconds'}
+          </p>
           <div className="mt-4 mx-auto h-1.5 w-48 overflow-hidden rounded-full bg-muted">
-            <div className="h-full w-1/3 animate-pulse rounded-full bg-accent" />
+            {progress?.stepIndex !== undefined && progress?.totalSteps ? (
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-500"
+                style={{ width: `${((progress.stepIndex + 1) / progress.totalSteps) * 100}%` }}
+              />
+            ) : (
+              <div className="h-full w-1/3 animate-pulse rounded-full bg-accent" />
+            )}
           </div>
         </div>
       )}

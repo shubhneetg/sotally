@@ -49,8 +49,8 @@ export const api = {
       return fetchAPI(`/tools?${searchParams}`);
     },
     get: (slug: string) => fetchAPI(`/tools/${slug}`),
-    execute: (token: string, slug: string, input: Record<string, unknown>) =>
-      fetchAPI(`/tools/${slug}/execute`, { method: 'POST', body: JSON.stringify({ input }), token }),
+    execute: (token: string, slug: string, input: Record<string, unknown>, options?: { useOwnKey?: boolean }) =>
+      fetchAPI(`/tools/${slug}/execute`, { method: 'POST', body: JSON.stringify({ input, ...(options?.useOwnKey && { useOwnKey: true }) }), token }),
     reviews: (slug: string, page = 1) => fetchAPI(`/tools/${slug}/reviews?page=${page}`),
     report: (slug: string, data: { reason: string; description?: string }) =>
       fetchAPI(`/tools/${slug}/report`, { method: 'POST', body: JSON.stringify(data) }),

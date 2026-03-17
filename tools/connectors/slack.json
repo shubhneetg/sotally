@@ -1,0 +1,35 @@
+{
+  "service": "slack",
+  "name": "Slack",
+  "authType": "bearer_token",
+  "authHeader": "Authorization",
+  "authPrefix": "Bearer ",
+  "actions": [
+    {
+      "id": "send_message",
+      "name": "Send Message",
+      "method": "POST",
+      "url": "https://slack.com/api/chat.postMessage",
+      "bodyTemplate": {
+        "channel": "{{channel}}",
+        "text": "{{message}}"
+      }
+    },
+    {
+      "id": "list_channels",
+      "name": "List Channels",
+      "method": "GET",
+      "url": "https://slack.com/api/conversations.list"
+    },
+    {
+      "id": "set_topic",
+      "name": "Set Channel Topic",
+      "method": "POST",
+      "url": "https://slack.com/api/conversations.setTopic",
+      "bodyTemplate": {
+        "channel": "{{channel}}",
+        "topic": "{{topic}}"
+      }
+    }
+  ]
+}

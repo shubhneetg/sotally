@@ -2,11 +2,12 @@ import { resolveTemplate, resolveValue, type TemplateContext } from './template'
 import { executeLlmStep } from './steps/llm';
 import { executeHttpStep } from './steps/http';
 import { executeTransformStep } from './steps/transform';
+import { executeConnectorStep } from './steps/connector';
 
 const MAX_EXECUTION_TIMEOUT_MS = 60_000;
 
 export interface PipelineStep {
-  type: 'llm' | 'http' | 'transform' | 'output';
+  type: 'llm' | 'http' | 'transform' | 'output' | 'connector';
   id: string;
   [key: string]: any;
 }
@@ -14,6 +15,11 @@ export interface PipelineStep {
 export interface PipelineConfig {
   steps: PipelineStep[];
   timeout?: number;
+}
+
+export interface PipelineRunOptions {
+  userId?: string;
+  useOwnKey?: boolean;
 }
 
 export interface PipelineResult {
@@ -29,7 +35,8 @@ export interface PipelineResult {
 export async function runPipeline(
   config: PipelineConfig,
   input: Record<string, any>,
-  envVars: Record<string, string> = {}
+  envVars: Record<string, string> = {},
+  options: PipelineRunOptions = {}
 ): Promise<PipelineResult> {
   const startTime = Date.now();
   const timeout = Math.min(config.timeout ?? MAX_EXECUTION_TIMEOUT_MS, MAX_EXECUTION_TIMEOUT_MS);
@@ -54,7 +61,7 @@ export async function runPipeline(
     }
 
     try {
-      const result = await executeStep(step, context, timeout - elapsed);
+      const result = await executeStep(step, context, timeout - elapsed, options);
       context.steps[step.id] = result;
       finalOutput = result;
     } catch (error) {
@@ -77,17 +84,21 @@ export async function runPipeline(
 async function executeStep(
   step: PipelineStep,
   context: TemplateContext,
-  remainingTimeMs: number
+  remainingTimeMs: number,
+  options: PipelineRunOptions = {}
 ): Promise<any> {
   switch (step.type) {
     case 'llm':
-      return executeLlmStepWithContext(step, context);
+      return executeLlmStepWithContext(step, context, options);
 
     case 'http':
       return executeHttpStepWithContext(step, context);
 
     case 'transform':
       return executeTransformStepWithContext(step, context);
+
+    case 'connector':
+      return executeConnectorStepWithContext(step, context, options);
 
     case 'output':
       return executeOutputStep(step, context);
@@ -99,7 +110,8 @@ async function executeStep(
 
 async function executeLlmStepWithContext(
   step: PipelineStep,
-  context: TemplateContext
+  context: TemplateContext,
+  options: PipelineRunOptions = {}
 ): Promise<string> {
   const prompt = resolveTemplate(step.prompt ?? '', context);
   const systemPrompt = step.systemPrompt
@@ -112,7 +124,31 @@ async function executeLlmStepWithContext(
     systemPrompt,
     temperature: step.temperature,
     maxTokens: step.maxTokens,
+    useOwnKey: options.useOwnKey,
+    userId: options.userId,
   });
+}
+
+async function executeConnectorStepWithContext(
+  step: PipelineStep,
+  context: TemplateContext,
+  options: PipelineRunOptions = {}
+): Promise<any> {
+  if (!options.userId) {
+    throw new Error('Connector steps require an authenticated user');
+  }
+
+  const params = step.params ? resolveValue(step.params, context) : {};
+
+  return executeConnectorStep(
+    {
+      service: step.service,
+      action: step.action,
+      params,
+      credentialsKey: step.credentialsKey,
+    },
+    options.userId
+  );
 }
 
 async function executeHttpStepWithContext(

@@ -285,6 +285,7 @@ toolRoutes.post('/:slug/execute', rateLimit({ windowMs: 60_000, maxRequests: 30,
 
   // Validate input against tool's inputSchema if present
   const input = body.input ?? {};
+  const useOwnKey = body.useOwnKey ?? false;
 
   // Create execution record (userId is null for guests)
   const [execution] = await db
@@ -331,6 +332,7 @@ toolRoutes.post('/:slug/execute', rateLimit({ windowMs: 60_000, maxRequests: 30,
       config: tool.config,
       executionType: tool.executionType,
       creditsCharged: creditsToCharge,
+      useOwnKey,
     },
     {
       jobId: execution.id,

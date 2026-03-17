@@ -25,9 +25,10 @@ streamRoutes.get('/executions/:id/stream', authMiddleware, async (c) => {
     subscriber.on('message', (ch, message) => {
       if (ch === channel) {
         const event = JSON.parse(message);
-        stream.writeSSE({ event: event.type || 'progress', data: message });
+        const eventType = event.status || event.type || 'progress';
+        stream.writeSSE({ event: eventType, data: message });
 
-        if (event.type === 'completed' || event.type === 'failed' || event.type === 'error') {
+        if (eventType === 'completed' || eventType === 'failed' || eventType === 'error') {
           completed = true;
           subscriber.unsubscribe(channel);
           subscriber.quit();
