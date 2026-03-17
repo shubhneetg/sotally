@@ -50,10 +50,11 @@ export async function execute(executionId: string): Promise<ExecutionResult> {
 
   // 4. Resolve pricing
   const useOwnKey = (execution.metadata as any)?.useOwnKey ?? false;
-  const pricing = resolveCredits(
+  const pricing = await resolveCredits(
     tool.pricing as ToolPricing,
     user as UserContext,
-    (execution.input as Record<string, any>) ?? {}
+    (execution.input as Record<string, any>) ?? {},
+    tool.id
   );
 
   // BYOM discount: 50% off when user provides their own API key

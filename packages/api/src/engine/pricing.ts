@@ -1,6 +1,13 @@
+import { eq, and, sql } from 'drizzle-orm';
+import { db } from '../db/client';
+import { toolSubscriptions, toolLicenses } from '../db/schema/index';
+
 export interface ToolPricing {
   model: string;
   creditsPerRun?: number;
+  creditsPerMonth?: number;
+  runsLimit?: number;
+  licenseCost?: number;
   tiers?: PricingTier[];
   [key: string]: any;
 }
@@ -26,15 +33,14 @@ export interface PricingResult {
 
 /**
  * Resolves the credit cost for a tool execution based on the tool's pricing model.
- *
- * MVP implements: free, per_run, tiered.
- * Future: subscription, one_time, metered.
+ * Supports: free, per_run, tiered, subscription, one_time.
  */
-export function resolveCredits(
+export async function resolveCredits(
   toolPricing: ToolPricing,
-  _user: UserContext,
-  input: Record<string, any>
-): PricingResult {
+  user: UserContext,
+  input: Record<string, any>,
+  toolId?: string
+): Promise<PricingResult> {
   const model = toolPricing.model;
 
   switch (model) {
@@ -48,16 +54,88 @@ export function resolveCredits(
       return resolveTiered(toolPricing, input);
 
     case 'subscription':
+      return resolveSubscription(user, toolId);
+
     case 'one_time':
-    case 'metered':
-      throw new PricingError(
-        `PRICING_MODEL_NOT_SUPPORTED: "${model}" is not yet implemented`,
-        model
-      );
+      return resolveOneTime(user, toolId);
 
     default:
       throw new PricingError(`Unknown pricing model: "${model}"`, model);
   }
+}
+
+/**
+ * Subscription model: check for active subscription with runs remaining.
+ * Returns 0 credits (already paid via subscription).
+ */
+async function resolveSubscription(user: UserContext, toolId?: string): Promise<PricingResult> {
+  if (!toolId) throw new PricingError('Subscription pricing requires toolId', 'subscription');
+
+  const now = new Date();
+  const [sub] = await db
+    .select()
+    .from(toolSubscriptions)
+    .where(
+      and(
+        eq(toolSubscriptions.userId, user.id),
+        eq(toolSubscriptions.toolId, toolId),
+        eq(toolSubscriptions.status, 'active'),
+        sql`${toolSubscriptions.currentPeriodEnd} > ${now}`
+      )
+    )
+    .limit(1);
+
+  if (!sub) {
+    throw new PricingError(
+      'Active subscription required. Subscribe to use this tool.',
+      'subscription'
+    );
+  }
+
+  if (sub.runsLimit > 0 && sub.runsUsed >= sub.runsLimit) {
+    throw new PricingError(
+      `Run limit reached (${sub.runsUsed}/${sub.runsLimit}). Wait for next billing period.`,
+      'subscription'
+    );
+  }
+
+  // Increment runs used
+  await db
+    .update(toolSubscriptions)
+    .set({ runsUsed: sql`${toolSubscriptions.runsUsed} + 1` })
+    .where(eq(toolSubscriptions.id, sub.id));
+
+  return { credits: 0, model: 'subscription', tier: null };
+}
+
+/**
+ * One-time purchase: check for valid license.
+ * Returns 0 credits (already paid via license purchase).
+ */
+async function resolveOneTime(user: UserContext, toolId?: string): Promise<PricingResult> {
+  if (!toolId) throw new PricingError('One-time pricing requires toolId', 'one_time');
+
+  const now = new Date();
+  const [license] = await db
+    .select()
+    .from(toolLicenses)
+    .where(
+      and(
+        eq(toolLicenses.userId, user.id),
+        eq(toolLicenses.toolId, toolId),
+        sql`(${toolLicenses.expiresAt} IS NULL OR ${toolLicenses.expiresAt} > ${now})`
+      )
+    )
+    .limit(1);
+
+  if (!license) {
+    throw new PricingError(
+      'License required. Purchase a license to use this tool.',
+      'one_time'
+    );
+  }
+
+  return { credits: 0, model: 'one_time', tier: null };
 }
 
 function resolvePerRun(pricing: ToolPricing): PricingResult {

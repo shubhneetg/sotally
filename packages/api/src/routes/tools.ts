@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc, asc, sql, and, ilike } from 'drizzle-orm';
 import { db } from '../db/client';
-import { tools, users, categories, reviews, executions, toolReports } from '../db/schema/index';
+import { tools, users, categories, reviews, executions, toolReports, toolSubscriptions, toolLicenses } from '../db/schema/index';
 import { authMiddleware, optionalAuthMiddleware, type AuthUser } from '../middleware/auth';
 import { holdCredits } from '../services/credit.service';
 import { executionQueue } from '../lib/queue';
@@ -382,6 +382,125 @@ toolRoutes.post('/:slug/execute', rateLimit({ windowMs: 60_000, maxRequests: 30,
     },
     202,
   );
+});
+
+// POST /tools/:slug/subscribe — subscribe to a tool
+toolRoutes.post('/:slug/subscribe', authMiddleware, async (c) => {
+  const user = c.get('user') as AuthUser;
+  const slug = c.req.param('slug')!;
+
+  const [tool] = await db
+    .select({ id: tools.id, pricing: tools.pricing })
+    .from(tools)
+    .where(and(eq(tools.slug, slug), eq(tools.status, 'published')))
+    .limit(1);
+
+  if (!tool) return c.json({ success: false, data: null, error: { code: 'NOT_FOUND', message: 'Tool not found' } }, 404);
+
+  const pricing = tool.pricing as any;
+  if (pricing.model !== 'subscription') {
+    return c.json({ success: false, data: null, error: { code: 'BAD_REQUEST', message: 'This tool does not use subscription pricing' } }, 400);
+  }
+
+  // Check existing active subscription
+  const [existing] = await db
+    .select({ id: toolSubscriptions.id })
+    .from(toolSubscriptions)
+    .where(and(
+      eq(toolSubscriptions.userId, user.id),
+      eq(toolSubscriptions.toolId, tool.id),
+      eq(toolSubscriptions.status, 'active')
+    ))
+    .limit(1);
+
+  if (existing) {
+    return c.json({ success: false, data: null, error: { code: 'CONFLICT', message: 'Already subscribed' } }, 409);
+  }
+
+  const creditsPerMonth = pricing.creditsPerMonth ?? 50;
+  const runsLimit = pricing.runsLimit ?? 0; // 0 = unlimited
+
+  // Hold subscription credits
+  const hold = await holdCredits(user.id, creditsPerMonth, tool.id, 'subscription');
+  if (!hold.success) {
+    return c.json({ success: false, data: null, error: { code: 'INSUFFICIENT_CREDITS', message: 'Not enough credits for subscription' } }, 402);
+  }
+
+  const now = new Date();
+  const periodEnd = new Date(now);
+  periodEnd.setMonth(periodEnd.getMonth() + 1);
+
+  const [sub] = await db
+    .insert(toolSubscriptions)
+    .values({
+      userId: user.id,
+      toolId: tool.id,
+      status: 'active',
+      creditsPerMonth,
+      runsLimit,
+      currentPeriodStart: now,
+      currentPeriodEnd: periodEnd,
+      nextBillingAt: periodEnd,
+    })
+    .returning();
+
+  return c.json({ success: true, data: sub, error: null }, 201);
+});
+
+// POST /tools/:slug/purchase — one-time purchase license
+toolRoutes.post('/:slug/purchase', authMiddleware, async (c) => {
+  const user = c.get('user') as AuthUser;
+  const slug = c.req.param('slug')!;
+
+  const [tool] = await db
+    .select({ id: tools.id, pricing: tools.pricing })
+    .from(tools)
+    .where(and(eq(tools.slug, slug), eq(tools.status, 'published')))
+    .limit(1);
+
+  if (!tool) return c.json({ success: false, data: null, error: { code: 'NOT_FOUND', message: 'Tool not found' } }, 404);
+
+  const pricing = tool.pricing as any;
+  if (pricing.model !== 'one_time') {
+    return c.json({ success: false, data: null, error: { code: 'BAD_REQUEST', message: 'This tool does not use one-time pricing' } }, 400);
+  }
+
+  // Check existing license
+  const [existing] = await db
+    .select({ id: toolLicenses.id })
+    .from(toolLicenses)
+    .where(and(
+      eq(toolLicenses.userId, user.id),
+      eq(toolLicenses.toolId, tool.id),
+      sql`(${toolLicenses.expiresAt} IS NULL OR ${toolLicenses.expiresAt} > NOW())`
+    ))
+    .limit(1);
+
+  if (existing) {
+    return c.json({ success: false, data: null, error: { code: 'CONFLICT', message: 'License already owned' } }, 409);
+  }
+
+  const licenseCost = pricing.licenseCost ?? pricing.creditsPerRun ?? 100;
+
+  // Hold license credits
+  const hold = await holdCredits(user.id, licenseCost, tool.id, 'license');
+  if (!hold.success) {
+    return c.json({ success: false, data: null, error: { code: 'INSUFFICIENT_CREDITS', message: 'Not enough credits' } }, 402);
+  }
+
+  const [license] = await db
+    .insert(toolLicenses)
+    .values({
+      userId: user.id,
+      toolId: tool.id,
+      creditsPaid: licenseCost,
+      expiresAt: pricing.licenseExpiresAfterDays
+        ? new Date(Date.now() + pricing.licenseExpiresAfterDays * 86400000)
+        : null, // null = forever
+    })
+    .returning();
+
+  return c.json({ success: true, data: license, error: null }, 201);
 });
 
 // GET /tools/:slug/reviews — paginated reviews
