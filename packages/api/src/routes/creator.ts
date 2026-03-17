@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, desc, and, sql, inArray } from 'drizzle-orm';
+import { eq, desc, and, sql, inArray, ilike } from 'drizzle-orm';
 import { db } from '../db/client';
 import {
   tools,
@@ -8,9 +8,11 @@ import {
   executions,
   creatorProfiles,
   creatorTransactions,
+  toolTemplates,
 } from '../db/schema/index';
 import { authMiddleware, optionalAuthMiddleware, type AuthUser } from '../middleware/auth';
 import { createToolSchema } from '@sotally/shared';
+import { chatCompletion } from '../lib/openai';
 
 const creatorRoutes = new Hono();
 
@@ -73,6 +75,113 @@ creatorRoutes.get('/profile/:userId', async (c) => {
     })
     .from(tools)
     .where(and(eq(tools.creatorId, userId), eq(tools.status, 'published')))
+    .orderBy(desc(tools.totalRuns));
+
+  // Calculate aggregate stats
+  const totalTools = publishedTools.length;
+  const totalRuns = publishedTools.reduce((sum, t) => sum + (t.totalRuns ?? 0), 0);
+  const ratedTools = publishedTools.filter((t) => t.avgRating && parseFloat(t.avgRating) > 0);
+  const avgRating =
+    ratedTools.length > 0
+      ? (ratedTools.reduce((sum, t) => sum + parseFloat(t.avgRating!), 0) / ratedTools.length).toFixed(1)
+      : null;
+
+  return c.json({
+    success: true,
+    data: {
+      id: user.id,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      bio: profile.bio,
+      specialization: profile.specialization,
+      website: profile.website,
+      socialLinks: profile.socialLinks,
+      level: profile.level,
+      verified: profile.verified,
+      memberSince: profile.createdAt,
+      stats: {
+        totalTools,
+        totalRuns,
+        avgRating,
+      },
+      tools: publishedTools,
+    },
+    error: null,
+  });
+});
+
+// ─── GET /creator/storefront/:username — Public creator storefront (no auth) ─
+
+creatorRoutes.get('/storefront/:username', async (c) => {
+  const username = c.req.param('username')!;
+
+  // Try lookup by name (case-insensitive) or by user ID
+  let [user] = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(users)
+    .where(ilike(users.name, username))
+    .limit(1);
+
+  if (!user) {
+    // Fallback: try as UUID
+    [user] = await db
+      .select({
+        id: users.id,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+      })
+      .from(users)
+      .where(eq(users.id, username))
+      .limit(1);
+  }
+
+  if (!user) {
+    return c.json(
+      { success: false, data: null, error: { code: 'NOT_FOUND', message: 'Creator not found' } },
+      404,
+    );
+  }
+
+  const [profile] = await db
+    .select({
+      bio: creatorProfiles.bio,
+      specialization: creatorProfiles.specialization,
+      website: creatorProfiles.website,
+      socialLinks: creatorProfiles.socialLinks,
+      level: creatorProfiles.level,
+      verified: creatorProfiles.verified,
+      createdAt: creatorProfiles.createdAt,
+    })
+    .from(creatorProfiles)
+    .where(eq(creatorProfiles.userId, user.id))
+    .limit(1);
+
+  if (!profile) {
+    return c.json(
+      { success: false, data: null, error: { code: 'NOT_FOUND', message: 'Creator profile not found' } },
+      404,
+    );
+  }
+
+  // Get published tools
+  const publishedTools = await db
+    .select({
+      id: tools.id,
+      slug: tools.slug,
+      name: tools.name,
+      description: tools.description,
+      iconUrl: tools.iconUrl,
+      pricing: tools.pricing,
+      totalRuns: tools.totalRuns,
+      avgRating: tools.avgRating,
+      createdAt: tools.createdAt,
+    })
+    .from(tools)
+    .where(and(eq(tools.creatorId, user.id), eq(tools.status, 'published')))
     .orderBy(desc(tools.totalRuns));
 
   // Calculate aggregate stats
@@ -637,6 +746,116 @@ creatorRoutes.delete('/tools/:id', async (c) => {
     .returning();
 
   return c.json({ success: true, data: updated, error: null });
+});
+
+// ─── GET /creator/templates — List all tool templates ─────────────────────────
+
+creatorRoutes.get('/templates', async (c) => {
+  const templates = await db
+    .select({
+      id: toolTemplates.id,
+      name: toolTemplates.name,
+      description: toolTemplates.description,
+      executionType: toolTemplates.executionType,
+      defaultConfig: toolTemplates.defaultConfig,
+      inputSchema: toolTemplates.inputSchema,
+      outputSchema: toolTemplates.outputSchema,
+      createdAt: toolTemplates.createdAt,
+    })
+    .from(toolTemplates)
+    .orderBy(toolTemplates.name);
+
+  return c.json({ success: true, data: templates, error: null });
+});
+
+// ─── POST /creator/canvas/generate — AI-assisted tool generation ─────────────
+
+creatorRoutes.post('/canvas/generate', async (c) => {
+  const user = c.get('user') as AuthUser;
+  await ensureCreator(user);
+
+  const body = await c.req.json();
+  const description = body.description;
+
+  if (!description || typeof description !== 'string' || description.trim().length < 10) {
+    return c.json(
+      {
+        success: false,
+        data: null,
+        error: { code: 'VALIDATION_ERROR', message: 'Please provide a description of at least 10 characters' },
+      },
+      400,
+    );
+  }
+
+  const metaPrompt = `You are a tool builder assistant. Given a description of what a tool should do, generate a complete tool configuration in JSON format.
+
+User's description: ${description.trim()}
+
+Generate JSON with:
+- name: Tool name (concise, descriptive)
+- slug: URL-friendly version of name (lowercase, hyphens, no spaces)
+- description: One-line description (max 200 chars)
+- inputSchema: JSON Schema for user inputs (include helpful titles and descriptions, use "type": "object" with "properties" and "required")
+- config: { steps: [{ type: "llm", id: "main", model: "deepseek-chat", systemPrompt: "...", prompt: "...", temperature: 0.7, maxTokens: 1000 }, { type: "output", id: "result", template: "{{steps.main}}", format: "markdown" }] }
+- suggestedCategory: one of (ai-writing, marketing, data-tools, productivity, development, business)
+- suggestedPrice: number of credits (2-20)
+
+Return ONLY valid JSON, no explanation.`;
+
+  try {
+    const result = await chatCompletion(
+      'deepseek-chat',
+      [
+        { role: 'system', content: 'You generate tool configurations in JSON format. Return only valid JSON.' },
+        { role: 'user', content: metaPrompt },
+      ],
+      { temperature: 0.7, maxTokens: 2000 },
+    );
+
+    // Parse the JSON response
+    let parsed;
+    try {
+      // Handle potential markdown code blocks in response
+      const cleaned = result.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      parsed = JSON.parse(cleaned);
+    } catch {
+      return c.json(
+        {
+          success: false,
+          data: null,
+          error: { code: 'GENERATION_ERROR', message: 'Failed to parse AI response. Please try again.' },
+        },
+        500,
+      );
+    }
+
+    return c.json({
+      success: true,
+      data: {
+        name: parsed.name || 'Untitled Tool',
+        slug: parsed.slug || 'untitled-tool',
+        description: parsed.description || '',
+        inputSchema: parsed.inputSchema || {},
+        config: parsed.config || {},
+        suggestedCategory: parsed.suggestedCategory || 'productivity',
+        suggestedPrice: parsed.suggestedPrice || 5,
+      },
+      error: null,
+    });
+  } catch (err) {
+    return c.json(
+      {
+        success: false,
+        data: null,
+        error: {
+          code: 'GENERATION_ERROR',
+          message: err instanceof Error ? err.message : 'Failed to generate tool configuration',
+        },
+      },
+      500,
+    );
+  }
 });
 
 export default creatorRoutes;

@@ -10,6 +10,43 @@ import { rateLimit } from '../middleware/rate-limit';
 
 const toolRoutes = new Hono();
 
+// GET /tools/trending — trending tools (most executions in last 7 days)
+toolRoutes.get('/trending', async (c) => {
+  const trendingTools = await db
+    .select({
+      id: tools.id,
+      slug: tools.slug,
+      name: tools.name,
+      description: tools.description,
+      iconUrl: tools.iconUrl,
+      pricing: tools.pricing,
+      totalRuns: tools.totalRuns,
+      avgRating: tools.avgRating,
+      isFeatured: tools.isFeatured,
+      categoryId: tools.categoryId,
+      creatorId: tools.creatorId,
+      createdAt: tools.createdAt,
+      recentRuns: sql<number>`count(${executions.id})::int`,
+    })
+    .from(tools)
+    .innerJoin(executions, eq(executions.toolId, tools.id))
+    .where(
+      and(
+        eq(tools.status, 'published'),
+        sql`${executions.createdAt} > NOW() - INTERVAL '7 days'`,
+      ),
+    )
+    .groupBy(tools.id)
+    .orderBy(sql`count(${executions.id}) DESC`)
+    .limit(10);
+
+  return c.json({
+    success: true,
+    data: trendingTools,
+    error: null,
+  });
+});
+
 // GET /tools — list published tools
 toolRoutes.get('/', async (c) => {
   const q = c.req.query('q');
@@ -380,6 +417,63 @@ toolRoutes.get('/:slug/reviews', async (c) => {
       pageSize: perPage,
       totalPages: Math.ceil(total / perPage),
     },
+    error: null,
+  });
+});
+
+// GET /tools/:slug/similar — tools that users also ran
+toolRoutes.get('/:slug/similar', async (c) => {
+  const slug = c.req.param('slug')!;
+
+  // Resolve tool ID from slug
+  const [tool] = await db
+    .select({ id: tools.id })
+    .from(tools)
+    .where(eq(tools.slug, slug))
+    .limit(1);
+
+  if (!tool) {
+    return c.json(
+      { success: false, data: null, error: { code: 'NOT_FOUND', message: 'Tool not found' } },
+      404,
+    );
+  }
+
+  // Find other tools run by users who also ran this tool, ranked by frequency
+  const similarTools = await db
+    .select({
+      id: tools.id,
+      slug: tools.slug,
+      name: tools.name,
+      description: tools.description,
+      iconUrl: tools.iconUrl,
+      pricing: tools.pricing,
+      totalRuns: tools.totalRuns,
+      avgRating: tools.avgRating,
+      isFeatured: tools.isFeatured,
+      categoryId: tools.categoryId,
+      creatorId: tools.creatorId,
+      createdAt: tools.createdAt,
+      overlapCount: sql<number>`count(*)::int`,
+    })
+    .from(tools)
+    .innerJoin(executions, eq(executions.toolId, tools.id))
+    .where(
+      and(
+        sql`${executions.userId} IN (
+          SELECT DISTINCT ${executions.userId} FROM ${executions} WHERE ${executions.toolId} = ${tool.id} AND ${executions.userId} IS NOT NULL
+        )`,
+        sql`${tools.id} != ${tool.id}`,
+        eq(tools.status, 'published'),
+      ),
+    )
+    .groupBy(tools.id)
+    .orderBy(sql`count(*) DESC`)
+    .limit(6);
+
+  return c.json({
+    success: true,
+    data: similarTools,
     error: null,
   });
 });

@@ -54,6 +54,8 @@ export const api = {
     reviews: (slug: string, page = 1) => fetchAPI(`/tools/${slug}/reviews?page=${page}`),
     report: (slug: string, data: { reason: string; description?: string }) =>
       fetchAPI(`/tools/${slug}/report`, { method: 'POST', body: JSON.stringify(data) }),
+    trending: () => fetchAPI('/tools/trending'),
+    similar: (slug: string) => fetchAPI(`/tools/${slug}/similar`),
   },
   executions: {
     get: (token: string, id: string) => fetchAPI(`/executions/${id}`, { token }),
@@ -80,6 +82,14 @@ export const api = {
       fetchAPI(`/creator/analytics?days=${days}`, { token }),
     earnings: (token: string, page = 1) =>
       fetchAPI(`/creator/earnings?page=${page}`, { token }),
+    templates: (token: string) =>
+      fetchAPI('/creator/templates', { token }),
+    canvasGenerate: (token: string, description: string) =>
+      fetchAPI('/creator/canvas/generate', {
+        method: 'POST',
+        body: JSON.stringify({ description }),
+        token,
+      }),
   },
   affiliates: {
     apply: (token: string) =>
@@ -96,5 +106,7 @@ export const api = {
   creators: {
     profile: (userId: string) =>
       fetchAPI(`/creator/profile/${userId}`),
+    storefront: (username: string) =>
+      fetchAPI(`/creator/storefront/${encodeURIComponent(username)}`),
   },
 };

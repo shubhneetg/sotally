@@ -69,6 +69,7 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [similarTools, setSimilarTools] = useState<Tool[]>([]);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('spam');
   const [reportDescription, setReportDescription] = useState('');
@@ -104,8 +105,21 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
       }
     }
 
+    async function fetchSimilar() {
+      try {
+        const res = (await api.tools.similar(slug)) as {
+          success: boolean;
+          data: Tool[];
+        };
+        setSimilarTools(Array.isArray(res.data) ? res.data : []);
+      } catch {
+        // Non-critical
+      }
+    }
+
     fetchTool();
     fetchReviews();
+    fetchSimilar();
   }, [slug]);
 
   const handleReportSubmit = async () => {
@@ -288,6 +302,39 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
             </div>
           </div>
         </div>
+
+        {/* Users also ran */}
+        {similarTools.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-lg font-semibold text-primary">Users also ran...</h2>
+            <div className="mt-4 flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 scrollbar-thin scrollbar-thumb-border">
+              {similarTools.map((similarTool) => (
+                <Link
+                  key={similarTool.slug}
+                  href={`/tools/${similarTool.slug}`}
+                  className="flex-shrink-0 w-64 rounded-xl border border-border bg-card p-4 shadow-sm transition-all duration-200 hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-xl">
+                      {similarTool.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-primary truncate">
+                        {similarTool.name}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {(similarTool.runCount || 0).toLocaleString()} runs
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-xs text-muted-foreground leading-relaxed">
+                    {similarTool.description}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Report Modal */}
         {showReportModal && (

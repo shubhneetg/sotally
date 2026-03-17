@@ -37,6 +37,8 @@ const steps = [
 export default function HomePage() {
   const [featuredTools, setFeaturedTools] = useState<Tool[]>([]);
   const [toolsLoading, setToolsLoading] = useState(true);
+  const [trendingTools, setTrendingTools] = useState<Tool[]>([]);
+  const [trendingLoading, setTrendingLoading] = useState(true);
 
   useEffect(() => {
     async function fetchFeatured() {
@@ -54,6 +56,21 @@ export default function HomePage() {
       }
     }
     fetchFeatured();
+
+    async function fetchTrending() {
+      try {
+        const res = (await api.tools.trending()) as {
+          success: boolean;
+          data: Tool[];
+        };
+        setTrendingTools(Array.isArray(res.data) ? res.data.slice(0, 6) : []);
+      } catch {
+        // Non-critical
+      } finally {
+        setTrendingLoading(false);
+      }
+    }
+    fetchTrending();
   }, []);
 
   return (
@@ -136,6 +153,37 @@ export default function HomePage() {
             Browse All Tools
           </Link>
         </div>
+      </section>
+
+      {/* Trending Tools */}
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <h2 className="text-2xl font-bold text-primary sm:text-3xl">Trending Tools</h2>
+        <p className="mt-2 text-muted-foreground">Most-used tools this week.</p>
+        {trendingLoading ? (
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="rounded-xl border border-border bg-card p-5 shadow-sm animate-pulse">
+                <div className="flex items-start gap-3">
+                  <div className="h-12 w-12 rounded-lg bg-muted" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-3/4 rounded bg-muted" />
+                    <div className="h-3 w-1/2 rounded bg-muted" />
+                  </div>
+                </div>
+                <div className="mt-3 space-y-2">
+                  <div className="h-3 w-full rounded bg-muted" />
+                  <div className="h-3 w-2/3 rounded bg-muted" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : trendingTools.length > 0 ? (
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {trendingTools.map((tool) => (
+              <ToolCard key={tool.slug} {...tool} />
+            ))}
+          </div>
+        ) : null}
       </section>
 
       {/* How it Works */}

@@ -27,11 +27,13 @@ export async function generateMetadata({
       type: 'website',
       siteName: 'Sotally',
       url: `https://sotally.com/tools/${slug}`,
+      images: [`https://sotally.com/api/og/${slug}`],
     },
     twitter: {
       card: 'summary_large_image',
       title: `${title} | Sotally`,
       description: `Run ${title} on Sotally. Pay only for what you use.`,
+      images: [`https://sotally.com/api/og/${slug}`],
     },
   };
 }

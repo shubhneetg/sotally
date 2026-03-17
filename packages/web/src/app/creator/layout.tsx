@@ -11,6 +11,8 @@ const sidebarNav = [
   { href: '/creator', label: 'Dashboard', icon: DashboardIcon },
   { href: '/creator/tools', label: 'My Tools', icon: ToolsIcon },
   { href: '/creator/tools/new', label: 'Create Tool', icon: PlusIcon },
+  { href: '/creator/templates', label: 'Templates', icon: TemplatesIcon },
+  { href: '/creator/canvas', label: 'AI Canvas', icon: CanvasIcon },
   { href: '/creator/analytics', label: 'Analytics', icon: ChartIcon },
   { href: '/creator/earnings', label: 'Earnings', icon: EarningsIcon },
 ];
