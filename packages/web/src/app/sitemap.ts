@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { INTEGRATIONS } from '@/data/integrations';
+import { GUIDES } from '@/data/guides';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://sotally.com';
@@ -14,7 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticPages = [
     '', '/tools', '/pricing', '/about', '/terms', '/privacy',
-    '/login', '/register', '/integrations', '/bounties',
+    '/login', '/register', '/integrations', '/bounties', '/guides',
   ];
 
   return [
@@ -35,6 +36,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'weekly' as const,
       priority: 0.8,
+    })),
+    ...GUIDES.map(guide => ({
+      url: `${baseUrl}/guides/${guide.slug}`,
+      lastModified: new Date(),
+      changeFrequency: 'weekly' as const,
+      priority: 0.85,
     })),
   ];
 }
