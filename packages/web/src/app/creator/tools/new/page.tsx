@@ -780,7 +780,7 @@ function StepAILogic({
               <Card key={step.id}>
                 <CardContent className="pt-4">
                   <div className="flex items-start justify-between gap-4">
-                    <Badge variant="secondary" className="shrink-0">
+                    <Badge variant="muted" className="shrink-0">
                       Connector #{index + 1}
                     </Badge>
                     <button
