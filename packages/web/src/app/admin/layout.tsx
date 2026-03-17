@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: 'chart' },
@@ -21,13 +21,23 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, loadUser } = useAuthStore();
+  const [hydrated, setHydrated] = React.useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== 'admin') {
+    setHydrated(true);
+    if (!isAuthenticated) loadUser();
+  }, []);
+
+  useEffect(() => {
+    if (hydrated && !isAuthenticated) {
       router.push('/');
     }
-  }, [isAuthenticated, user, router]);
+  }, [hydrated, isAuthenticated, router]);
+
+  if (!hydrated) {
+    return <div className="flex min-h-screen items-center justify-center"><div className="animate-pulse">Loading...</div></div>;
+  }
 
   if (!isAuthenticated || user?.role !== 'admin') {
     return null;

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
 import { useCreditStore } from '@/stores/credit.store';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 
 const sidebarNav = [
   { href: '/creator', label: 'Dashboard', icon: DashboardIcon },
@@ -75,14 +75,32 @@ function EarningsIcon({ className }: { className?: string }) {
 
 export default function CreatorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { isAuthenticated, token } = useAuthStore();
+  const { isAuthenticated, token, loadUser } = useAuthStore();
   const { balance, fetchBalance } = useCreditStore();
+  const [hydrated, setHydrated] = React.useState(false);
+
+  useEffect(() => {
+    // Wait for Zustand to hydrate from localStorage
+    setHydrated(true);
+    if (!isAuthenticated && typeof window !== 'undefined') {
+      // Try loading user from stored token
+      loadUser();
+    }
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && token) {
       fetchBalance(token);
     }
   }, [isAuthenticated, token, fetchBalance]);
+
+  if (!hydrated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="animate-pulse text-muted-foreground">Loading Creator Studio...</div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
