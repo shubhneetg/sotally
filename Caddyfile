@@ -1,3 +1,4 @@
+# Main domain
 {$DOMAIN:sotally.com} {
     handle /api/* {
         uri strip_prefix /api
@@ -16,4 +17,26 @@
         -Server
     }
     encode gzip
+}
+
+# Creator subdomains — *.sotools.com
+# Next.js middleware handles rewriting subdomain to /creators/{username}
+*.sotools.com, sotools.com {
+    handle /api/* {
+        uri strip_prefix /api
+        reverse_proxy api:4000
+    }
+    handle {
+        reverse_proxy web:3000
+    }
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        -Server
+    }
+    encode gzip
+    tls {
+        on_demand
+    }
 }

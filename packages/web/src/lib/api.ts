@@ -109,5 +109,9 @@ export const api = {
       fetchAPI(`/creator/profile/${userId}`),
     storefront: (username: string) =>
       fetchAPI(`/creator/storefront/${encodeURIComponent(username)}`),
+    follow: (token: string, userId: string) =>
+      fetchAPI(`/creator/follow/${userId}`, { method: 'POST', token }),
+    following: (token: string | null, userId: string) =>
+      fetchAPI(`/creator/following/${userId}`, { ...(token && { token }) }),
   },
 };

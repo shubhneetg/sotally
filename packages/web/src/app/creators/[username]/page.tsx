@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/stores/auth.store';
 
 interface CreatorTool {
   id: string;
@@ -35,6 +36,7 @@ interface CreatorProfile {
     totalTools: number;
     totalRuns: number;
     avgRating: string | null;
+    followerCount?: number;
   };
   tools: CreatorTool[];
 }
@@ -45,6 +47,10 @@ export default function CreatorStorefrontPage() {
   const [creator, setCreator] = useState<CreatorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
+  const { isAuthenticated, token } = useAuthStore();
 
   useEffect(() => {
     async function load() {
@@ -55,6 +61,23 @@ export default function CreatorStorefrontPage() {
         };
         if (res.success) {
           setCreator(res.data);
+          setFollowerCount(res.data.stats.followerCount ?? 0);
+
+          // Check follow status
+          if (res.data.id) {
+            try {
+              const followRes = (await api.creators.following(token, res.data.id)) as {
+                success: boolean;
+                data: { following: boolean; followerCount: number };
+              };
+              if (followRes.success) {
+                setIsFollowing(followRes.data.following);
+                setFollowerCount(followRes.data.followerCount);
+              }
+            } catch {
+              // Not critical if follow check fails
+            }
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load creator profile');
@@ -64,7 +87,26 @@ export default function CreatorStorefrontPage() {
     }
 
     load();
-  }, [username]);
+  }, [username, token]);
+
+  const handleFollow = useCallback(async () => {
+    if (!isAuthenticated || !token || !creator) return;
+    setFollowLoading(true);
+    try {
+      const res = (await api.creators.follow(token, creator.id)) as {
+        success: boolean;
+        data: { following: boolean };
+      };
+      if (res.success) {
+        setIsFollowing(res.data.following);
+        setFollowerCount((prev) => prev + (res.data.following ? 1 : -1));
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setFollowLoading(false);
+    }
+  }, [isAuthenticated, token, creator]);
 
   if (loading) {
     return (
@@ -165,9 +207,22 @@ export default function CreatorStorefrontPage() {
 
           {/* Actions */}
           <div className="flex flex-col gap-2 sm:items-end">
-            <Button variant="outline" disabled>
-              Follow
-            </Button>
+            {isAuthenticated ? (
+              <Button
+                variant={isFollowing ? 'outline' : 'accent'}
+                onClick={handleFollow}
+                disabled={followLoading}
+              >
+                {followLoading ? '...' : isFollowing ? 'Following' : 'Follow'}
+              </Button>
+            ) : (
+              <Link href={`/login?redirect=/creators/${username}`}>
+                <Button variant="accent">Follow</Button>
+              </Link>
+            )}
+            {followerCount > 0 && (
+              <span className="text-xs text-muted-foreground">{followerCount} follower{followerCount !== 1 ? 's' : ''}</span>
+            )}
             {creator.website && (
               <a
                 href={creator.website}

@@ -9,6 +9,7 @@ import {
   creatorProfiles,
   creatorTransactions,
   toolTemplates,
+  follows,
 } from '../db/schema/index';
 import { authMiddleware, optionalAuthMiddleware, type AuthUser } from '../middleware/auth';
 import { createToolSchema } from '@sotally/shared';
@@ -167,22 +168,28 @@ creatorRoutes.get('/storefront/:username', async (c) => {
     );
   }
 
-  // Get published tools
-  const publishedTools = await db
-    .select({
-      id: tools.id,
-      slug: tools.slug,
-      name: tools.name,
-      description: tools.description,
-      iconUrl: tools.iconUrl,
-      pricing: tools.pricing,
-      totalRuns: tools.totalRuns,
-      avgRating: tools.avgRating,
-      createdAt: tools.createdAt,
-    })
-    .from(tools)
-    .where(and(eq(tools.creatorId, user.id), eq(tools.status, 'published')))
-    .orderBy(desc(tools.totalRuns));
+  // Get published tools + follower count
+  const [publishedTools, followerCountResult] = await Promise.all([
+    db
+      .select({
+        id: tools.id,
+        slug: tools.slug,
+        name: tools.name,
+        description: tools.description,
+        iconUrl: tools.iconUrl,
+        pricing: tools.pricing,
+        totalRuns: tools.totalRuns,
+        avgRating: tools.avgRating,
+        createdAt: tools.createdAt,
+      })
+      .from(tools)
+      .where(and(eq(tools.creatorId, user.id), eq(tools.status, 'published')))
+      .orderBy(desc(tools.totalRuns)),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(follows)
+      .where(eq(follows.creatorId, user.id)),
+  ]);
 
   // Calculate aggregate stats
   const totalTools = publishedTools.length;
@@ -210,9 +217,71 @@ creatorRoutes.get('/storefront/:username', async (c) => {
         totalTools,
         totalRuns,
         avgRating,
+        followerCount: followerCountResult[0]?.count ?? 0,
       },
       tools: publishedTools,
     },
+    error: null,
+  });
+});
+
+// ─── POST /creator/follow/:userId — Toggle follow (requires auth) ───────────
+
+creatorRoutes.post('/follow/:userId', authMiddleware, async (c) => {
+  const user = c.get('user') as AuthUser;
+  const creatorId = c.req.param('userId')!;
+
+  if (user.id === creatorId) {
+    return c.json(
+      { success: false, data: null, error: { code: 'BAD_REQUEST', message: 'Cannot follow yourself' } },
+      400,
+    );
+  }
+
+  // Check if already following
+  const [existing] = await db
+    .select()
+    .from(follows)
+    .where(and(eq(follows.followerId, user.id), eq(follows.creatorId, creatorId)))
+    .limit(1);
+
+  if (existing) {
+    // Unfollow
+    await db
+      .delete(follows)
+      .where(and(eq(follows.followerId, user.id), eq(follows.creatorId, creatorId)));
+    return c.json({ success: true, data: { following: false }, error: null });
+  } else {
+    // Follow
+    await db.insert(follows).values({ followerId: user.id, creatorId });
+    return c.json({ success: true, data: { following: true }, error: null });
+  }
+});
+
+// ─── GET /creator/following/:userId — Check if current user follows creator ──
+
+creatorRoutes.get('/following/:userId', optionalAuthMiddleware, async (c) => {
+  const user = c.get('user') as AuthUser | undefined;
+  const creatorId = c.req.param('userId')!;
+
+  if (!user) {
+    return c.json({ success: true, data: { following: false, followerCount: 0 }, error: null });
+  }
+
+  const [existing] = await db
+    .select()
+    .from(follows)
+    .where(and(eq(follows.followerId, user.id), eq(follows.creatorId, creatorId)))
+    .limit(1);
+
+  const [countResult] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(follows)
+    .where(eq(follows.creatorId, creatorId));
+
+  return c.json({
+    success: true,
+    data: { following: !!existing, followerCount: countResult?.count ?? 0 },
     error: null,
   });
 });
