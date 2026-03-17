@@ -129,6 +129,35 @@ export default function DashboardPage() {
         </button>
       </div>
 
+      {/* Quick Actions — Recently Used Tools */}
+      {!loading && executions.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Quick Actions</h2>
+          <div className="mt-3 flex gap-3 overflow-x-auto pb-2">
+            {Array.from(new Map(
+              executions
+                .filter(e => e.toolSlug && e.status === 'completed')
+                .map(e => [e.toolSlug, e])
+            ).values()).slice(0, 5).map((e) => (
+              <Link
+                key={e.toolSlug}
+                href={`/tools/${e.toolSlug}/run`}
+                className="flex shrink-0 items-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 shadow-sm hover:border-accent/50 hover:shadow-md transition-all"
+              >
+                <span className="text-sm font-medium text-foreground">{e.toolName || e.toolSlug}</span>
+                <span className="rounded-md bg-accent/10 px-1.5 py-0.5 text-[10px] font-semibold text-accent">Run</span>
+              </Link>
+            ))}
+            <Link
+              href="/tools"
+              className="flex shrink-0 items-center gap-2 rounded-lg border border-dashed border-border px-4 py-2.5 text-sm text-muted-foreground hover:border-accent/50 hover:text-foreground transition-colors"
+            >
+              + Discover new tools
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Credit Balance Card */}
       <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
@@ -188,9 +217,19 @@ export default function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <span className="text-sm text-muted-foreground">
-                    🪙 {execution.creditsCost}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-muted-foreground">
+                      🪙 {execution.creditsCost}
+                    </span>
+                    {execution.toolSlug && (
+                      <Link
+                        href={`/tools/${execution.toolSlug}/run`}
+                        className="rounded-md bg-accent/10 px-2.5 py-1 text-xs font-medium text-accent hover:bg-accent/20 transition-colors"
+                      >
+                        Run again
+                      </Link>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

@@ -14,6 +14,7 @@ interface ToolCardProps {
   creditCost: number;
   creatorName: string;
   pricingModel?: string;
+  createdAt?: string;
 }
 
 function PricingBadge({ creditCost, pricingModel }: { creditCost: number; pricingModel?: string }) {
@@ -59,12 +60,32 @@ export function ToolCard({
   creditCost,
   creatorName,
   pricingModel,
+  createdAt,
 }: ToolCardProps) {
+  const isNew = createdAt ? (Date.now() - new Date(createdAt).getTime()) < 7 * 86400000 : false;
+  const isPopular = runCount >= 50;
+
   return (
     <Link
       href={`/tools/${slug}`}
       className="group flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-200 hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5"
     >
+      {/* Badges */}
+      {(isNew || isPopular) && (
+        <div className="flex gap-1.5 mb-3">
+          {isPopular && (
+            <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+              Popular
+            </span>
+          )}
+          {isNew && (
+            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+              New
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Icon + Name */}
       <div className="flex items-start gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted text-2xl">
