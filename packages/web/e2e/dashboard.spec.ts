@@ -7,7 +7,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { registerViaApi, injectAuthState } from './helpers';
+import { registerAndLogin, waitForLoading } from './helpers';
 
 test.describe('Dashboard', () => {
   // Test 41: Unauthenticated user visiting /dashboard is redirected to login
@@ -20,10 +20,9 @@ test.describe('Dashboard', () => {
 
   // Test 42: Authenticated user sees the dashboard with credit balance card
   test('authenticated user sees dashboard with credit balance and welcome message', async ({ page }) => {
-    const { token } = await registerViaApi(page);
-    await injectAuthState(page, token);
+    await registerAndLogin(page);
 
-    await page.goto('/dashboard');
+    // After registerAndLogin, we are already on /dashboard
     await page.waitForLoadState('domcontentloaded');
 
     // Welcome heading: "Welcome back, {firstName}" or just "Dashboard"
@@ -31,7 +30,7 @@ test.describe('Dashboard', () => {
       page.getByRole('heading', { name: /welcome back|dashboard/i })
     ).toBeVisible({ timeout: 10_000 });
 
-    // Credit balance card
+    // Credit balance card text: "Your Credit Balance"
     await expect(page.getByText(/your credit balance/i)).toBeVisible({ timeout: 8_000 });
 
     // Buy Credits link
@@ -42,14 +41,12 @@ test.describe('Dashboard', () => {
 
   // Test 43: Dashboard shows empty state for executions on a new account
   test('new user dashboard shows no executions empty state', async ({ page }) => {
-    const { token } = await registerViaApi(page);
-    await injectAuthState(page, token);
+    await registerAndLogin(page);
 
-    await page.goto('/dashboard');
     await page.waitForLoadState('domcontentloaded');
 
     // Wait for loading state to resolve
-    await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 10_000 }).catch(() => {});
+    await waitForLoading(page);
 
     // New account should show "No executions yet."
     await expect(
@@ -64,8 +61,7 @@ test.describe('Dashboard', () => {
 
   // Test 44: Dashboard history page is accessible and shows the right heading
   test('dashboard history page loads for authenticated user', async ({ page }) => {
-    const { token } = await registerViaApi(page);
-    await injectAuthState(page, token);
+    await registerAndLogin(page);
 
     await page.goto('/dashboard/history');
     await page.waitForLoadState('domcontentloaded');

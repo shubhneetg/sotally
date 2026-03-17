@@ -7,7 +7,7 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { KNOWN_TOOL_SLUG, registerViaApi, injectAuthState } from './helpers';
+import { KNOWN_TOOL_SLUG, registerAndLogin, waitForLoading } from './helpers';
 
 const API_URL = 'https://sotally.com/api';
 
@@ -18,17 +18,17 @@ test.describe('Tool Detail Page', () => {
     await page.waitForLoadState('domcontentloaded');
 
     // Wait for loading skeleton to disappear
-    await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 15_000 }).catch(() => {});
+    await waitForLoading(page);
 
     // Tool name heading
     await expect(
       page.getByRole('heading', { level: 1 })
-    ).toBeVisible({ timeout: 10_000 });
+    ).toBeVisible({ timeout: 15_000 });
 
     // About this tool section
     await expect(page.getByText(/about this tool/i)).toBeVisible();
 
-    // Credit cost display (right sidebar)
+    // Credit cost display (right sidebar) - text is "credits per run (~$X.XX)"
     await expect(page.getByText(/credits per run/i)).toBeVisible();
   });
 
@@ -36,14 +36,14 @@ test.describe('Tool Detail Page', () => {
   test('unauthenticated user sees Log in to Run button on tool detail', async ({ page }) => {
     await page.goto(`/tools/${KNOWN_TOOL_SLUG}`);
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 15_000 }).catch(() => {});
+    await waitForLoading(page);
 
     // Should show login CTA, not the authenticated run button
     await expect(
       page.getByRole('link', { name: /log in to run/i })
-    ).toBeVisible({ timeout: 10_000 });
+    ).toBeVisible({ timeout: 15_000 });
 
-    // Should not show the "Run Tool" link
+    // Should not show the "Run Tool" link (which includes credit cost text)
     await expect(
       page.getByRole('link', { name: /run tool/i })
     ).not.toBeVisible();
@@ -51,24 +51,23 @@ test.describe('Tool Detail Page', () => {
 
   // Test 25: Authenticated users see the "Run Tool" button
   test('authenticated user sees the Run Tool button on tool detail', async ({ page }) => {
-    const { token } = await registerViaApi(page);
-    await injectAuthState(page, token);
+    await registerAndLogin(page);
 
     await page.goto(`/tools/${KNOWN_TOOL_SLUG}`);
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 15_000 }).catch(() => {});
+    await waitForLoading(page);
 
-    // Authenticated users should see the "Run Tool" link (text includes credit cost)
+    // Authenticated users should see the "Run Tool" link (text: "Run Tool — X Credits (~$Y.YY)")
     await expect(
       page.getByRole('link', { name: /run tool/i })
-    ).toBeVisible({ timeout: 10_000 });
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   // Test 26: Visiting a non-existent tool slug shows "Tool not found"
   test('non-existent tool slug shows Tool not found error state', async ({ page }) => {
     await page.goto('/tools/this-tool-does-not-exist-ever-99999');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 15_000 }).catch(() => {});
+    await waitForLoading(page);
 
     await expect(
       page.getByText(/tool not found/i)

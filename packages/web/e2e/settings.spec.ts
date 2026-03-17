@@ -8,13 +8,12 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { registerViaApi, injectAuthState } from './helpers';
+import { registerAndLogin } from './helpers';
 
 test.describe('Settings Page', () => {
   // Test 50: Settings page renders all five sections
   test('settings page renders Profile, Password, API Keys, Notifications, and Danger Zone sections', async ({ page }) => {
-    const { token } = await registerViaApi(page);
-    await injectAuthState(page, token);
+    await registerAndLogin(page);
 
     await page.goto('/dashboard/settings');
     await page.waitForLoadState('domcontentloaded');
@@ -37,8 +36,7 @@ test.describe('Settings Page', () => {
 
   // Test 51: Clicking "Delete Account" opens the confirmation modal
   test('Delete Account button opens the confirmation modal with cancel option', async ({ page }) => {
-    const { token } = await registerViaApi(page);
-    await injectAuthState(page, token);
+    await registerAndLogin(page);
 
     await page.goto('/dashboard/settings');
     await page.waitForLoadState('domcontentloaded');
@@ -67,8 +65,7 @@ test.describe('Settings Page', () => {
 
   // Test 52: Notification preference toggles are interactive
   test('notification preference toggles can be clicked to toggle their state', async ({ page }) => {
-    const { token } = await registerViaApi(page);
-    await injectAuthState(page, token);
+    await registerAndLogin(page);
 
     await page.goto('/dashboard/settings');
     await page.waitForLoadState('domcontentloaded');

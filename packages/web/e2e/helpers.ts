@@ -143,10 +143,53 @@ export async function loginUser(
 }
 
 /**
+ * Logs in a user via UI and returns after the dashboard loads.
+ * This is the reliable way to set auth state that survives SSR navigation.
+ */
+export async function loginViaUI(
+  page: Page,
+  email: string,
+  password: string = TEST_PASSWORD
+): Promise<void> {
+  await page.goto('/login');
+  await page.waitForLoadState('domcontentloaded');
+
+  await page.fill('#email', email);
+  await page.fill('#password', password);
+
+  await page.click('button[type="submit"]');
+
+  // Wait for redirect to dashboard (indicates successful login + auth state set)
+  await page.waitForURL('**/dashboard**', { timeout: 15_000 });
+}
+
+/**
+ * Registers a new user via API (fast) then logs in via UI (sets real auth state).
+ * This is the standard way to get an authenticated page for tests.
+ */
+export async function registerAndLogin(
+  page: Page
+): Promise<{ email: string; password: string; name: string }> {
+  const email = randomEmail();
+  const password = TEST_PASSWORD;
+  const name = randomName();
+
+  // Register via API (fast, no UI)
+  await registerViaApi(page, name, email, password);
+
+  // Login via UI (sets actual Zustand auth state that survives navigation)
+  await loginViaUI(page, email, password);
+
+  return { email, password, name };
+}
+
+/**
  * Sets authentication state by injecting auth token and user data
  * directly into the browser's localStorage/zustand store via JS.
- * This is faster than going through the login UI for tests that
- * need authentication as a precondition rather than as the subject.
+ *
+ * WARNING: This does NOT survive Next.js SSR navigation reliably.
+ * Prefer loginViaUI() or registerAndLogin() for tests that navigate.
+ * Only use this for tests that stay on the same page after injection.
  */
 export async function injectAuthState(
   page: Page,
@@ -156,11 +199,6 @@ export async function injectAuthState(
   await page.goto('/', { waitUntil: 'domcontentloaded' });
 
   // Inject into localStorage following Zustand's persist format.
-  // Although the store only partializes { token }, Zustand's rehydration
-  // will merge whatever we put into localStorage. We inject the full auth
-  // state so that isAuthenticated is true immediately on page load,
-  // preventing premature redirects to /login on dashboard pages.
-  // The header's loadUser() will then fetch the real user profile.
   await page.evaluate(
     ({ token }) => {
       const storeKey = 'sotally-auth';
@@ -206,6 +244,17 @@ export async function waitForApiResponse(
     action(),
   ]);
   return response.json();
+}
+
+/**
+ * Waits for loading indicators to disappear.
+ * Catches timeout errors (indicator may never appear if data loads instantly).
+ */
+export async function waitForLoading(page: Page, timeout = 15_000): Promise<void> {
+  // Wait for any animate-pulse (skeleton) or animate-spin (spinner) to vanish
+  await page
+    .waitForSelector('.animate-pulse, .animate-spin', { state: 'detached', timeout })
+    .catch(() => {});
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────

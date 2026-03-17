@@ -7,6 +7,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { waitForLoading } from './helpers';
 
 test.describe('Landing Page', () => {
   test.beforeEach(async ({ page }) => {
@@ -43,11 +44,11 @@ test.describe('Landing Page', () => {
 
   // Test 3: Featured tools section shows tool cards
   test('featured tools section displays tool cards with names and credit costs', async ({ page }) => {
-    const featuredSection = page.locator('section').filter({ hasText: 'Featured Tools' });
-    await expect(featuredSection).toBeVisible({ timeout: 10_000 });
-
     // Wait for loading skeletons to disappear
-    await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 15_000 }).catch(() => {});
+    await waitForLoading(page);
+
+    const featuredSection = page.locator('section').filter({ hasText: /featured tools/i });
+    await expect(featuredSection).toBeVisible({ timeout: 15_000 });
 
     // Should show at least one tool card (may be up to 6)
     const toolCards = featuredSection.locator('a[href*="/tools/"]');
@@ -66,8 +67,8 @@ test.describe('Landing Page', () => {
     await expect(howItWorksSection).toBeVisible();
 
     // Three numbered steps with h3 titles: Browse, Run, Pay only for what you use
-    await expect(howItWorksSection.locator('h3').filter({ hasText: 'Browse' })).toBeVisible();
-    await expect(howItWorksSection.locator('h3').filter({ hasText: 'Run' })).toBeVisible();
+    await expect(howItWorksSection.locator('h3').filter({ hasText: /browse/i })).toBeVisible();
+    await expect(howItWorksSection.locator('h3').filter({ hasText: /run/i })).toBeVisible();
     await expect(howItWorksSection.locator('h3').filter({ hasText: /pay only/i })).toBeVisible();
   });
 

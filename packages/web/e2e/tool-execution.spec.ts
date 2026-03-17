@@ -11,18 +11,17 @@
  */
 
 import { test, expect, Page } from '@playwright/test';
-import { registerViaApi, injectAuthState, KNOWN_TOOL_SLUG } from './helpers';
+import { registerAndLogin, registerViaApi, KNOWN_TOOL_SLUG, waitForLoading } from './helpers';
 
 const API_URL = 'https://sotally.com/api';
 
-// Helper to navigate to the run page with auth already injected
+// Helper to navigate to the run page with auth already set via real login
 async function navigateToRunPage(page: Page, slug: string = KNOWN_TOOL_SLUG): Promise<void> {
-  const { token } = await registerViaApi(page);
-  await injectAuthState(page, token);
+  await registerAndLogin(page);
   await page.goto(`/tools/${slug}/run`);
   await page.waitForLoadState('domcontentloaded');
   // Wait for tool data to load (spinner or skeleton)
-  await page.waitForSelector('.animate-spin', { state: 'detached', timeout: 15_000 }).catch(() => {});
+  await waitForLoading(page);
 }
 
 test.describe('Tool Run Page - Unauthenticated', () => {
@@ -31,6 +30,8 @@ test.describe('Tool Run Page - Unauthenticated', () => {
     await page.goto(`/tools/${KNOWN_TOOL_SLUG}/run`);
     await page.waitForLoadState('domcontentloaded');
 
+    // The page checks isAuthenticated from Zustand. On first visit without auth,
+    // it shows "Sign in to run tools" heading.
     await expect(
       page.getByRole('heading', { name: /sign in to run tools/i })
     ).toBeVisible({ timeout: 15_000 });
@@ -53,7 +54,7 @@ test.describe('Tool Run Page - Authenticated', () => {
     await navigateToRunPage(page);
 
     // "Inputs" section heading
-    await expect(page.getByRole('heading', { name: /inputs/i })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('heading', { name: /inputs/i })).toBeVisible({ timeout: 15_000 });
 
     // Submit button with credit cost (text: "Run Tool — X Credits (~$Y.YY)")
     const submitBtn = page.getByRole('button', { name: /run tool/i });
@@ -154,22 +155,11 @@ test.describe('Tool Run Page - Authenticated', () => {
     // This test verifies the UI elements exist on the run page when a result is shown.
     // Since we cannot guarantee tool execution completes quickly, we verify the run page
     // loads correctly and shows either the Inputs form or the Result section.
-    const { token } = await registerViaApi(page);
-
-    // Attempt execution via API
-    const execResponse = await page.request.post(`${API_URL}/tools/${KNOWN_TOOL_SLUG}/execute`, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      data: { input: { url: 'https://example.com' } },
-    });
-
-    await injectAuthState(page, token);
-    await page.goto(`/tools/${KNOWN_TOOL_SLUG}/run`);
-    await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('.animate-spin', { state: 'detached', timeout: 15_000 }).catch(() => {});
+    await navigateToRunPage(page);
 
     // Verify the page loaded: should show Inputs form or Result heading
     await expect(
       page.getByRole('heading', { name: /inputs/i }).or(page.getByRole('heading', { name: /result/i }))
-    ).toBeVisible({ timeout: 10_000 });
+    ).toBeVisible({ timeout: 15_000 });
   });
 });

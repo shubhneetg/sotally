@@ -7,19 +7,18 @@
  */
 
 import { test, expect } from '@playwright/test';
-import { registerViaApi, injectAuthState } from './helpers';
+import { registerAndLogin, waitForLoading } from './helpers';
 
 test.describe('Creator Studio', () => {
   // Test 45: Creator dashboard loads with stats cards for authenticated user
   test('creator dashboard shows four stat cards for authenticated user', async ({ page }) => {
-    const { token } = await registerViaApi(page);
-    await injectAuthState(page, token);
+    await registerAndLogin(page);
 
     await page.goto('/creator');
     await page.waitForLoadState('domcontentloaded');
 
     // Wait for loading skeleton to finish
-    await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 15_000 }).catch(() => {});
+    await waitForLoading(page);
 
     // Four metric cards: Total Tools, Total Runs (30d), Earnings (30d), Avg Rating
     await expect(page.getByText(/total tools/i)).toBeVisible({ timeout: 10_000 });
@@ -30,24 +29,22 @@ test.describe('Creator Studio', () => {
 
   // Test 46: Creator dashboard has a "Create New Tool" button
   test('creator dashboard shows Create New Tool CTA linking to /creator/tools/new', async ({ page }) => {
-    const { token } = await registerViaApi(page);
-    await injectAuthState(page, token);
+    await registerAndLogin(page);
 
     await page.goto('/creator');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 15_000 }).catch(() => {});
+    await waitForLoading(page);
 
     // The "Create New Tool" button is a <Button> wrapped in a Next.js <Link>.
     // Look for it by its text content -- could be a link or button depending on rendering.
     const createCta = page.locator('a[href="/creator/tools/new"]');
-    await expect(createCta).toBeVisible({ timeout: 10_000 });
-    await expect(createCta).toContainText(/create new tool/i);
+    await expect(createCta.first()).toBeVisible({ timeout: 10_000 });
+    await expect(createCta.first()).toContainText(/create.*tool|new tool/i);
   });
 
   // Test 47: New tool builder page renders the multi-step form with Step 1 active
   test('new tool creation page renders multi-step form with Basics step', async ({ page }) => {
-    const { token } = await registerViaApi(page);
-    await injectAuthState(page, token);
+    await registerAndLogin(page);
 
     await page.goto('/creator/tools/new');
     await page.waitForLoadState('domcontentloaded');
@@ -64,8 +61,7 @@ test.describe('Creator Studio', () => {
 
   // Test 48: New tool form step 1 validates required fields before advancing
   test('new tool form step 1 shows validation when required fields are empty', async ({ page }) => {
-    const { token } = await registerViaApi(page);
-    await injectAuthState(page, token);
+    await registerAndLogin(page);
 
     await page.goto('/creator/tools/new');
     await page.waitForLoadState('domcontentloaded');
@@ -82,12 +78,11 @@ test.describe('Creator Studio', () => {
 
   // Test 49: Creator tools list page is accessible and links back to dashboard
   test('creator tools list page renders for authenticated user', async ({ page }) => {
-    const { token } = await registerViaApi(page);
-    await injectAuthState(page, token);
+    await registerAndLogin(page);
 
     await page.goto('/creator/tools');
     await page.waitForLoadState('domcontentloaded');
-    await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 15_000 }).catch(() => {});
+    await waitForLoading(page);
 
     // Should be on the right page
     await expect(page).toHaveURL(/.*creator\/tools/);

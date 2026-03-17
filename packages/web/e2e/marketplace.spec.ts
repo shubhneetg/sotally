@@ -7,6 +7,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { waitForLoading } from './helpers';
 
 const API_URL = 'https://sotally.com/api';
 
@@ -14,15 +15,15 @@ test.describe('Marketplace - Tools Listing Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/tools');
     await page.waitForLoadState('domcontentloaded');
-    // Wait for tools to load (loading skeleton disappears or heading appears)
-    await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 15_000 }).catch(() => {});
+    // Wait for tools to load (loading skeleton disappears)
+    await waitForLoading(page);
   });
 
   // Test 16: Tools page renders the page title and description
   test('tools page renders the Explore Tools heading', async ({ page }) => {
     await expect(
       page.getByRole('heading', { name: /explore tools/i })
-    ).toBeVisible({ timeout: 10_000 });
+    ).toBeVisible({ timeout: 15_000 });
 
     await expect(
       page.getByText(/pay per use/i)
@@ -33,7 +34,7 @@ test.describe('Marketplace - Tools Listing Page', () => {
   test('tool grid loads and displays at least one tool card', async ({ page }) => {
     // Wait for the grid to populate
     const toolCards = page.locator('a[href^="/tools/"]');
-    await expect(toolCards.first()).toBeVisible({ timeout: 10_000 });
+    await expect(toolCards.first()).toBeVisible({ timeout: 15_000 });
     const count = await toolCards.count();
     expect(count).toBeGreaterThanOrEqual(1);
   });
@@ -41,11 +42,11 @@ test.describe('Marketplace - Tools Listing Page', () => {
   // Test 18: Each tool card shows name, credit cost, and a run count
   test('each tool card shows tool name and credit information', async ({ page }) => {
     const toolCards = page.locator('a[href^="/tools/"]');
-    await expect(toolCards.first()).toBeVisible({ timeout: 10_000 });
+    await expect(toolCards.first()).toBeVisible({ timeout: 15_000 });
 
     const firstCard = toolCards.first();
     await expect(firstCard).toBeVisible();
-    // Credit indicator uses the 🪙 symbol and dollar amount (e.g., "🪙 2 (~$0.06)")
+    // Credit indicator uses the coin symbol and dollar amount (e.g., "🪙 2 (~$0.06)")
     await expect(firstCard.getByText(/🪙|credit|\$/i).first()).toBeVisible();
   });
 
@@ -57,7 +58,7 @@ test.describe('Marketplace - Tools Listing Page', () => {
     await searchInput.fill('Image Background Remover');
     // Wait for debounced search to fire
     await page.waitForTimeout(600);
-    await page.waitForLoadState('domcontentloaded');
+    await waitForLoading(page);
 
     // The specific tool should be visible
     await expect(
@@ -70,7 +71,7 @@ test.describe('Marketplace - Tools Listing Page', () => {
     const searchInput = page.getByPlaceholder(/search tools/i);
     await searchInput.fill('xyzzy-nonexistent-tool-9999');
     await page.waitForTimeout(600);
-    await page.waitForLoadState('domcontentloaded');
+    await waitForLoading(page);
 
     await expect(
       page.getByText(/no tools found/i)

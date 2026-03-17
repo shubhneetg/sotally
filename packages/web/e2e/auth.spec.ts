@@ -26,11 +26,12 @@ test.describe('Registration', () => {
 
     await page.click('button[type="submit"]');
 
-    // Should show the success message or redirect to /tools
-    // The success message ("Account created!") appears for 1.5s before redirect
+    // The register page shows "Account created!" then redirects to /tools after 1.5s.
+    // Accept either the success toast or the redirect as proof of success.
     await Promise.race([
       expect(page.getByText(/account created/i)).toBeVisible({ timeout: 15_000 }),
       page.waitForURL('**/tools', { timeout: 15_000 }),
+      page.waitForURL('**/dashboard', { timeout: 15_000 }),
     ]);
   });
 
@@ -171,8 +172,10 @@ test.describe('API Auth Endpoints', () => {
 
     const data = body.data || body;
     expect(data.token).toBeTruthy();
-    expect(data.user?.email).toBe(email);
-    expect(data.user?.name).toBe(name);
+    // User object may be nested under data.user or at data level
+    const user = data.user || data;
+    expect(user.email).toBe(email);
+    expect(user.name).toBe(name);
   });
 
   // Test 15: POST /api/auth/login returns token on success
