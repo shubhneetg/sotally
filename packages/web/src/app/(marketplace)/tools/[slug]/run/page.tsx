@@ -55,7 +55,7 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
   const { slug } = use(params);
   const { isAuthenticated, token } = useAuthStore();
   const { balance, fetchBalance } = useCreditStore();
-  const { execute, isExecuting, result, error, progress, reset } = useToolExecution();
+  const { execute, isExecuting, result, error, progress, streamingOutput, reset } = useToolExecution();
   const { addToast } = useToast();
 
   const [tool, setTool] = useState<ToolData | null>(null);
@@ -321,29 +321,39 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
 
       {/* Loading State */}
       {isExecuting && (
-        <div className="mt-8 rounded-xl border border-border bg-card p-8 text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-accent/30 border-t-accent" />
-          <p className="mt-4 text-sm font-medium text-foreground">
-            {progress?.message || 'Running tool...'}
-          </p>
-          {progress?.stepIndex !== undefined && progress?.totalSteps !== undefined && (
-            <p className="mt-1 text-xs text-accent font-medium">
-              Executing step {progress.stepIndex + 1} of {progress.totalSteps}...
+        <div className="mt-8 rounded-xl border border-border bg-card p-6">
+          <div className="flex items-center gap-3">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
+            <p className="text-sm font-medium text-foreground">
+              {streamingOutput ? 'Generating...' : progress?.message || 'Running tool...'}
             </p>
-          )}
-          <p className="mt-1 text-xs text-muted-foreground">
-            {progress?.status === 'running' ? 'Processing your request' : 'This may take a few seconds'}
-          </p>
-          <div className="mt-4 mx-auto h-1.5 w-48 overflow-hidden rounded-full bg-muted">
-            {progress?.stepIndex !== undefined && progress?.totalSteps ? (
-              <div
-                className="h-full rounded-full bg-accent transition-all duration-500"
-                style={{ width: `${((progress.stepIndex + 1) / progress.totalSteps) * 100}%` }}
-              />
-            ) : (
-              <div className="h-full w-1/3 animate-pulse rounded-full bg-accent" />
-            )}
           </div>
+          {streamingOutput ? (
+            <div className="mt-4 rounded-lg bg-muted/50 p-4 prose prose-sm prose-neutral dark:prose-invert max-w-none [&_pre]:bg-background/50 [&_pre]:rounded-md [&_pre]:p-3 [&_code]:text-xs [&_p]:my-1.5">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {streamingOutput}
+              </ReactMarkdown>
+              <span className="inline-block w-0.5 h-4 bg-accent animate-pulse ml-0.5" />
+            </div>
+          ) : (
+            <>
+              {progress?.stepIndex !== undefined && progress?.totalSteps !== undefined && (
+                <p className="mt-2 text-xs text-accent font-medium">
+                  Executing step {progress.stepIndex + 1} of {progress.totalSteps}...
+                </p>
+              )}
+              <div className="mt-3 mx-auto h-1.5 w-48 overflow-hidden rounded-full bg-muted">
+                {progress?.stepIndex !== undefined && progress?.totalSteps ? (
+                  <div
+                    className="h-full rounded-full bg-accent transition-all duration-500"
+                    style={{ width: `${((progress.stepIndex + 1) / progress.totalSteps) * 100}%` }}
+                  />
+                ) : (
+                  <div className="h-full w-1/3 animate-pulse rounded-full bg-accent" />
+                )}
+              </div>
+            </>
+          )}
         </div>
       )}
 

@@ -27,6 +27,7 @@ interface UseToolExecutionReturn {
   result: ExecutionResult | null;
   error: string | null;
   progress: ProgressEvent | null;
+  streamingOutput: string;
   reset: () => void;
 }
 
@@ -46,6 +47,7 @@ function trySSEStream(
     onProgress: (event: ProgressEvent) => void;
     onComplete: (result: ExecutionResult) => void;
     onError: (error: string) => void;
+    onStreamChunk?: (chunk: string) => void;
   }
 ): { connected: Promise<boolean>; cleanup: () => void } {
   let eventSource: EventSource | null = null;
@@ -94,6 +96,18 @@ function trySSEStream(
             message: data.message || 'Executing...',
             timestamp: data.timestamp,
           });
+        } catch {
+          // Ignore
+        }
+      });
+
+      // Handle streaming chunks (token-by-token LLM output)
+      eventSource.addEventListener('streaming', (e: MessageEvent) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.chunk && callbacks.onStreamChunk) {
+            callbacks.onStreamChunk(data.chunk);
+          }
         } catch {
           // Ignore
         }
@@ -178,6 +192,7 @@ export function useToolExecution(): UseToolExecutionReturn {
   const [result, setResult] = useState<ExecutionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState<ProgressEvent | null>(null);
+  const [streamingOutput, setStreamingOutput] = useState('');
   const cleanupRef = useRef<(() => void) | null>(null);
 
   const token = useAuthStore((s) => s.token);
@@ -213,6 +228,7 @@ export function useToolExecution(): UseToolExecutionReturn {
       setError(null);
       setResult(null);
       setProgress(null);
+      setStreamingOutput('');
 
       try {
         const executeBody: Record<string, unknown> = { input };
@@ -233,6 +249,7 @@ export function useToolExecution(): UseToolExecutionReturn {
         // Try SSE first (skip SSE for guests — no token for auth)
         const authToken = token || '';
         const sse = trySSEStream(response.executionId, authToken, {
+          onStreamChunk: (chunk) => setStreamingOutput((prev) => prev + chunk),
           onProgress: (evt) => setProgress(evt),
           onComplete: (executionResult) => {
             setResult(executionResult);
@@ -295,7 +312,8 @@ export function useToolExecution(): UseToolExecutionReturn {
     setResult(null);
     setError(null);
     setProgress(null);
+    setStreamingOutput('');
   }, []);
 
-  return { execute, isExecuting, result, error, progress, reset };
+  return { execute, isExecuting, result, error, progress, streamingOutput, reset };
 }

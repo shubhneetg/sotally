@@ -12,16 +12,14 @@ streamRoutes.get('/executions/:id/stream', async (c) => {
   const headerToken = c.req.header('authorization')?.replace('Bearer ', '');
   const token = queryToken || headerToken;
 
-  if (!token) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
-  // Verify token (inline, since authMiddleware sets c.set('user'))
-  const { jwtVerify } = await import('jose');
-  const secret = new TextEncoder().encode(env.NEXTAUTH_SECRET);
-  const verified = await jwtVerify(token, secret, { algorithms: ['HS256'] }).catch(() => null);
-  if (!verified?.payload?.sub) {
-    return c.json({ error: 'Invalid token' }, 401);
+  // Verify token if provided (guests on free tools may not have one)
+  if (token) {
+    const { jwtVerify } = await import('jose');
+    const secret = new TextEncoder().encode(env.NEXTAUTH_SECRET);
+    const verified = await jwtVerify(token, secret, { algorithms: ['HS256'] }).catch(() => null);
+    if (!verified?.payload?.sub) {
+      return c.json({ error: 'Invalid token' }, 401);
+    }
   }
 
   const executionId = c.req.param('id');

@@ -20,6 +20,7 @@ export interface PipelineConfig {
 export interface PipelineRunOptions {
   userId?: string;
   useOwnKey?: boolean;
+  onChunk?: (stepId: string, chunk: string) => void;
 }
 
 export interface PipelineResult {
@@ -126,6 +127,7 @@ async function executeLlmStepWithContext(
     maxTokens: step.maxTokens,
     useOwnKey: options.useOwnKey,
     userId: options.userId,
+    onChunk: options.onChunk ? (chunk: string) => options.onChunk!(step.id, chunk) : undefined,
   });
 }
 

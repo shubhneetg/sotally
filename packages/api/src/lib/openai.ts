@@ -94,6 +94,82 @@ export async function chatCompletionWithKey(
   return content;
 }
 
+/**
+ * Streaming chat completion. Yields text chunks as they arrive from the LLM.
+ * Uses the OpenAI-compatible streaming API (SSE format).
+ */
+export async function* chatCompletionStream(
+  model: string,
+  messages: ChatMessage[],
+  options: ChatCompletionOptions = {},
+  apiKey?: string,
+  baseUrl?: string
+): AsyncGenerator<string, string, undefined> {
+  const resolvedModel = resolveModel(model);
+  const url = baseUrl || LLM_BASE_URL;
+  const key = apiKey || env.OPENAI_API_KEY;
+
+  const response = await fetch(`${url}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${key}`,
+    },
+    body: JSON.stringify({
+      model: resolvedModel,
+      messages,
+      temperature: options.temperature ?? 0.7,
+      max_tokens: options.maxTokens ?? 1024,
+      stream: true,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text().catch(() => 'unknown error');
+    throw new OpenAIError(
+      `LLM API error: ${response.status} ${response.statusText}`,
+      response.status,
+      errorBody
+    );
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('No response body for streaming');
+
+  const decoder = new TextDecoder();
+  let fullText = '';
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.startsWith('data: ')) continue;
+      const data = trimmed.slice(6);
+      if (data === '[DONE]') continue;
+
+      try {
+        const parsed = JSON.parse(data);
+        const chunk = parsed.choices?.[0]?.delta?.content;
+        if (chunk) {
+          fullText += chunk;
+          yield chunk;
+        }
+      } catch {
+        // Skip malformed chunks
+      }
+    }
+  }
+
+  return fullText;
+}
+
 export class OpenAIError extends Error {
   constructor(
     message: string,

@@ -225,7 +225,13 @@ async function dispatch(tool: any, execution: any): Promise<any> {
         { steps: config.steps, timeout: config.timeout },
         input,
         buildSafeEnv(),
-        { userId: execution.userId, useOwnKey }
+        {
+          userId: execution.userId,
+          useOwnKey,
+          onChunk: (stepId: string, chunk: string) => {
+            publishEvent(executionId, 'streaming', { stepId, chunk }).catch(() => {});
+          },
+        }
       );
       return result.output;
     }

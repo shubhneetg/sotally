@@ -1,4 +1,4 @@
-import { chatCompletion, chatCompletionWithKey, OpenAIError } from '../../../lib/openai';
+import { chatCompletion, chatCompletionWithKey, chatCompletionStream, OpenAIError } from '../../../lib/openai';
 import type { ChatMessage } from '../../../lib/openai';
 import { eq, and } from 'drizzle-orm';
 import { db } from '../../../db/client';
@@ -14,6 +14,7 @@ export interface LlmStepConfig {
   maxTokens?: number;
   useOwnKey?: boolean;
   userId?: string;
+  onChunk?: (chunk: string) => void;
 }
 
 // Map model names to provider service types for credential lookup
@@ -64,7 +65,7 @@ async function resolveUserApiKey(
  * Retries once on 500/503 errors. Fails immediately on 400/401/429.
  */
 export async function executeLlmStep(config: LlmStepConfig): Promise<string> {
-  const { model, prompt, systemPrompt, temperature, maxTokens, useOwnKey, userId } = config;
+  const { model, prompt, systemPrompt, temperature, maxTokens, useOwnKey, userId, onChunk } = config;
 
   const messages: ChatMessage[] = [];
 
@@ -86,6 +87,35 @@ export async function executeLlmStep(config: LlmStepConfig): Promise<string> {
     }
   }
 
+  // Use streaming when onChunk callback is provided
+  if (onChunk) {
+    try {
+      const stream = chatCompletionStream(
+        model,
+        messages,
+        { temperature, maxTokens },
+        userApiKey || undefined,
+      );
+      let fullText = '';
+      for await (const chunk of stream) {
+        fullText += chunk;
+        onChunk(chunk);
+      }
+      return fullText || (await stream.return('')).value;
+    } catch (error) {
+      if (error instanceof OpenAIError && error.isRetryable) {
+        await delay(1000);
+        // Retry without streaming as fallback
+        const fn = userApiKey
+          ? (m: string, msgs: ChatMessage[], opts: any) => chatCompletionWithKey(m, msgs, opts, userApiKey!)
+          : chatCompletion;
+        return await fn(model, messages, { temperature, maxTokens });
+      }
+      throw error;
+    }
+  }
+
+  // Non-streaming path
   const completionFn = userApiKey
     ? (m: string, msgs: ChatMessage[], opts: { temperature?: number; maxTokens?: number }) =>
         chatCompletionWithKey(m, msgs, opts, userApiKey!)
