@@ -10,6 +10,7 @@ import { env } from '../lib/env';
 import { authMiddleware, type AuthUser } from '../middleware/auth';
 import { grantCredits } from '../services/credit.service';
 import { rateLimit } from '../middleware/rate-limit';
+import { trackAffiliateReferral } from '../middleware/affiliate-tracking';
 
 const scryptAsync = promisify(scrypt);
 const secret = new TextEncoder().encode(env.NEXTAUTH_SECRET);
@@ -118,6 +119,11 @@ auth.post('/register', rateLimit({ windowMs: 60_000, maxRequests: 5, keyPrefix: 
   // Grant referral bonus to the referring user
   if (referrerId) {
     await grantCredits(referrerId, 50, 'referral_bonus', `Referral bonus: ${user.email} signed up`, user.id, 'referral');
+  }
+
+  // Track affiliate referral (separate from user-to-user referral bonus)
+  if (incomingReferralCode) {
+    await trackAffiliateReferral(incomingReferralCode, user.id);
   }
 
   const token = await createJwt({ id: user.id, email: user.email, role: user.role });

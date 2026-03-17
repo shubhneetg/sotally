@@ -46,7 +46,7 @@ export function ToolCard({
   return (
     <Link
       href={`/tools/${slug}`}
-      className="group flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-accent/50 hover:shadow-md"
+      className="group flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition-all duration-200 hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5"
     >
       {/* Icon + Name */}
       <div className="flex items-start gap-3">

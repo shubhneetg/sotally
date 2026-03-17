@@ -10,6 +10,7 @@ import reviewRoutes from './routes/reviews';
 import adminRoutes from './routes/admin';
 import settingsRoutes from './routes/settings';
 import streamRoutes from './routes/stream';
+import affiliateRoutes from './routes/affiliates';
 import { handleWebhook } from './services/stripe.service';
 import { rateLimit } from './middleware/rate-limit';
 
@@ -35,6 +36,7 @@ app.route('/reviews', reviewRoutes);
 app.route('/admin', adminRoutes);
 app.route('/settings', settingsRoutes);
 app.route('/stream', streamRoutes);
+app.route('/affiliates', affiliateRoutes);
 
 // Stripe webhook — raw body, no auth
 app.post('/webhooks/stripe', async (c) => {

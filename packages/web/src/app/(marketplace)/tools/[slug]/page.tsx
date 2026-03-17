@@ -3,8 +3,10 @@
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
+import { useToast } from '@/components/ui/toast';
 
 function creditsToDollars(credits: number): string {
   return `$${(credits * 0.03).toFixed(2)}`;
@@ -49,13 +51,28 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
+const REPORT_REASONS = [
+  { value: 'spam', label: 'Spam' },
+  { value: 'misleading', label: 'Misleading' },
+  { value: 'broken', label: 'Broken' },
+  { value: 'inappropriate', label: 'Inappropriate' },
+  { value: 'copyright', label: 'Copyright violation' },
+  { value: 'malicious', label: 'Malicious' },
+  { value: 'other', label: 'Other' },
+];
+
 export default function ToolDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
   const { isAuthenticated } = useAuthStore();
+  const { addToast } = useToast();
   const [tool, setTool] = useState<Tool | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('spam');
+  const [reportDescription, setReportDescription] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
 
   useEffect(() => {
     async function fetchTool() {
@@ -90,6 +107,27 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
     fetchTool();
     fetchReviews();
   }, [slug]);
+
+  const handleReportSubmit = async () => {
+    setReportSubmitting(true);
+    try {
+      await api.tools.report(slug, {
+        reason: reportReason,
+        description: reportDescription || undefined,
+      });
+      addToast('Report submitted. Thank you for helping keep Sotally safe.', 'success');
+      setShowReportModal(false);
+      setReportReason('spam');
+      setReportDescription('');
+    } catch (err) {
+      addToast(
+        err instanceof Error ? err.message : 'Failed to submit report. Please try again.',
+        'error'
+      );
+    } finally {
+      setReportSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -240,8 +278,82 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
                 </div>
               </div>
             </div>
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+              >
+                Report this tool
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Report Modal */}
+        {showReportModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setShowReportModal(false)}
+            />
+            <div className="relative w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-xl mx-4">
+              <h3 className="text-lg font-semibold text-primary">Report Tool</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Help us maintain quality by reporting issues with this tool.
+              </p>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label htmlFor="report-reason" className="block text-sm font-medium text-foreground">
+                    Reason
+                  </label>
+                  <select
+                    id="report-reason"
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring/20"
+                  >
+                    {REPORT_REASONS.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="report-description" className="block text-sm font-medium text-foreground">
+                    Description <span className="text-muted-foreground">(optional)</span>
+                  </label>
+                  <textarea
+                    id="report-description"
+                    value={reportDescription}
+                    onChange={(e) => setReportDescription(e.target.value)}
+                    rows={3}
+                    placeholder="Tell us more about the issue..."
+                    className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring/20 resize-none"
+                  />
+                </div>
+                <div className="flex items-center justify-end gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowReportModal(false)}
+                    disabled={reportSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleReportSubmit}
+                    disabled={reportSubmitting}
+                  >
+                    {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
   );
 }

@@ -36,6 +36,8 @@ export const api = {
         token,
       }),
     packages: () => fetchAPI('/credits/packages'),
+    claimDaily: (token: string) =>
+      fetchAPI('/credits/claim-daily', { method: 'POST', token }),
   },
   tools: {
     list: (params?: { q?: string; category?: string; sort?: string; page?: number }) => {
@@ -50,6 +52,8 @@ export const api = {
     execute: (token: string, slug: string, input: Record<string, unknown>) =>
       fetchAPI(`/tools/${slug}/execute`, { method: 'POST', body: JSON.stringify({ input }), token }),
     reviews: (slug: string, page = 1) => fetchAPI(`/tools/${slug}/reviews?page=${page}`),
+    report: (slug: string, data: { reason: string; description?: string }) =>
+      fetchAPI(`/tools/${slug}/report`, { method: 'POST', body: JSON.stringify(data) }),
   },
   executions: {
     get: (token: string, id: string) => fetchAPI(`/executions/${id}`, { token }),
@@ -76,5 +80,21 @@ export const api = {
       fetchAPI(`/creator/analytics?days=${days}`, { token }),
     earnings: (token: string, page = 1) =>
       fetchAPI(`/creator/earnings?page=${page}`, { token }),
+  },
+  affiliates: {
+    apply: (token: string) =>
+      fetchAPI('/affiliates/apply', { method: 'POST', token }),
+    dashboard: (token: string) =>
+      fetchAPI('/affiliates/dashboard', { token }),
+    referrals: (token: string, page = 1) =>
+      fetchAPI(`/affiliates/referrals?page=${page}`, { token }),
+    earnings: (token: string, page = 1) =>
+      fetchAPI(`/affiliates/earnings?page=${page}`, { token }),
+    requestPayout: (token: string) =>
+      fetchAPI('/affiliates/payouts', { method: 'POST', token }),
+  },
+  creators: {
+    profile: (userId: string) =>
+      fetchAPI(`/creator/profile/${userId}`),
   },
 };

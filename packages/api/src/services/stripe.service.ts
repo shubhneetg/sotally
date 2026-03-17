@@ -5,6 +5,7 @@ import { db } from '../db/client';
 import { creditPurchases } from '../db/schema/index';
 import { CREDIT_PACKAGES } from '@sotally/shared';
 import { grantCredits } from './credit.service';
+import { processAffiliateCommission } from '../middleware/affiliate-tracking';
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-02-24.acacia' as any,
@@ -109,6 +110,11 @@ export async function handleWebhook(
       );
 
       console.log(`[Stripe] Granted ${credits} credits to user ${userId}`);
+
+      // Process affiliate commission if the purchasing user was referred by an affiliate
+      const amountUsd = (session.amount_total ?? 0) / 100;
+      await processAffiliateCommission(userId, amountUsd.toFixed(2), purchaseId);
+
       break;
     }
 

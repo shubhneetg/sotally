@@ -9,12 +9,106 @@ import {
   creatorProfiles,
   creatorTransactions,
 } from '../db/schema/index';
-import { authMiddleware, type AuthUser } from '../middleware/auth';
+import { authMiddleware, optionalAuthMiddleware, type AuthUser } from '../middleware/auth';
 import { createToolSchema } from '@sotally/shared';
 
 const creatorRoutes = new Hono();
 
-// All creator routes require auth
+// ─── GET /creator/profile/:userId — Public creator profile (no auth) ────────
+
+creatorRoutes.get('/profile/:userId', async (c) => {
+  const userId = c.req.param('userId')!;
+
+  // Get user + creator profile
+  const [user] = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      avatarUrl: users.avatarUrl,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  if (!user) {
+    return c.json(
+      { success: false, data: null, error: { code: 'NOT_FOUND', message: 'Creator not found' } },
+      404,
+    );
+  }
+
+  const [profile] = await db
+    .select({
+      bio: creatorProfiles.bio,
+      specialization: creatorProfiles.specialization,
+      website: creatorProfiles.website,
+      socialLinks: creatorProfiles.socialLinks,
+      level: creatorProfiles.level,
+      verified: creatorProfiles.verified,
+      createdAt: creatorProfiles.createdAt,
+    })
+    .from(creatorProfiles)
+    .where(eq(creatorProfiles.userId, userId))
+    .limit(1);
+
+  if (!profile) {
+    return c.json(
+      { success: false, data: null, error: { code: 'NOT_FOUND', message: 'Creator profile not found' } },
+      404,
+    );
+  }
+
+  // Get published tools
+  const publishedTools = await db
+    .select({
+      id: tools.id,
+      slug: tools.slug,
+      name: tools.name,
+      description: tools.description,
+      iconUrl: tools.iconUrl,
+      pricing: tools.pricing,
+      totalRuns: tools.totalRuns,
+      avgRating: tools.avgRating,
+      createdAt: tools.createdAt,
+    })
+    .from(tools)
+    .where(and(eq(tools.creatorId, userId), eq(tools.status, 'published')))
+    .orderBy(desc(tools.totalRuns));
+
+  // Calculate aggregate stats
+  const totalTools = publishedTools.length;
+  const totalRuns = publishedTools.reduce((sum, t) => sum + (t.totalRuns ?? 0), 0);
+  const ratedTools = publishedTools.filter((t) => t.avgRating && parseFloat(t.avgRating) > 0);
+  const avgRating =
+    ratedTools.length > 0
+      ? (ratedTools.reduce((sum, t) => sum + parseFloat(t.avgRating!), 0) / ratedTools.length).toFixed(1)
+      : null;
+
+  return c.json({
+    success: true,
+    data: {
+      id: user.id,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      bio: profile.bio,
+      specialization: profile.specialization,
+      website: profile.website,
+      socialLinks: profile.socialLinks,
+      level: profile.level,
+      verified: profile.verified,
+      memberSince: profile.createdAt,
+      stats: {
+        totalTools,
+        totalRuns,
+        avgRating,
+      },
+      tools: publishedTools,
+    },
+    error: null,
+  });
+});
+
+// All remaining creator routes require auth
 creatorRoutes.use('*', authMiddleware);
 
 // ─── Helper: ensure user has creator role (auto-upgrade if needed) ──────────

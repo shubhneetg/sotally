@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ToolCard } from '@/components/marketplace/tool-card';
 import { api } from '@/lib/api';
 
@@ -22,7 +22,9 @@ export default function ToolsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchTools = useCallback(async (q?: string, category?: string) => {
     setLoading(true);
@@ -45,12 +47,24 @@ export default function ToolsPage() {
   }, []);
 
   useEffect(() => {
-    fetchTools(search || undefined, activeCategory);
-  }, [activeCategory, fetchTools, search]);
+    fetchTools(debouncedSearch || undefined, activeCategory);
+  }, [activeCategory, fetchTools, debouncedSearch]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
+    const value = e.target.value;
+    setSearch(value);
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+    }, 300);
   };
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
 
   const handleCategoryClick = (category: string) => {
     setActiveCategory(category);
@@ -133,8 +147,30 @@ export default function ToolsPage() {
                 <ToolCard key={tool.slug} {...tool} />
               ))
             ) : (
-              <div className="col-span-full py-12 text-center">
-                <p className="text-muted-foreground">No tools found. Try a different search or category.</p>
+              <div className="col-span-full py-16 text-center">
+                <svg className="mx-auto h-12 w-12 text-muted-foreground/40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                </svg>
+                <h3 className="mt-4 text-base font-semibold text-primary">
+                  {search
+                    ? `No tools found for "${search}"`
+                    : 'No tools found'}
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Try a different search or browse all tools.
+                </p>
+                {(search || activeCategory !== 'All') && (
+                  <button
+                    onClick={() => {
+                      setSearch('');
+                      setDebouncedSearch('');
+                      setActiveCategory('All');
+                    }}
+                    className="mt-4 inline-flex items-center rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
             )}
           </div>

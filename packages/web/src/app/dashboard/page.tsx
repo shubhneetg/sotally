@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth.store';
 import { useCreditStore } from '@/stores/credit.store';
+import { useToast } from '@/components/ui/toast';
 import { api } from '@/lib/api';
 
 interface Execution {
@@ -20,9 +21,12 @@ export default function DashboardPage() {
   const router = useRouter();
   const { isAuthenticated, token, user } = useAuthStore();
   const { balance, fetchBalance } = useCreditStore();
+  const { addToast } = useToast();
   const [executions, setExecutions] = useState<Execution[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dailyClaimed, setDailyClaimed] = useState(false);
+  const [claimLoading, setClaimLoading] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
@@ -52,6 +56,27 @@ export default function DashboardPage() {
     fetchExecutions();
   }, [isAuthenticated, token, router, fetchBalance]);
 
+  const handleClaimDaily = async () => {
+    if (!token || claimLoading) return;
+    setClaimLoading(true);
+    try {
+      await api.credits.claimDaily(token);
+      addToast('You claimed 5 free credits!', 'success');
+      setDailyClaimed(true);
+      fetchBalance(token);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to claim credits';
+      if (message.toLowerCase().includes('already')) {
+        setDailyClaimed(true);
+        addToast('You already claimed today. Come back tomorrow!', 'info');
+      } else {
+        addToast(message, 'error');
+      }
+    } finally {
+      setClaimLoading(false);
+    }
+  };
+
   if (!isAuthenticated) {
     return null;
   }
@@ -78,6 +103,31 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold text-primary">
         {user?.name ? `Welcome back, ${user.name.split(' ')[0]}` : 'Dashboard'}
       </h1>
+
+      {/* Daily Credits Banner */}
+      <div className="rounded-xl border border-accent/30 bg-accent/5 p-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-foreground">
+            {dailyClaimed ? 'Daily credits claimed!' : 'Claim your daily 5 free credits!'}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {dailyClaimed
+              ? 'Come back tomorrow for more free credits.'
+              : 'Log in every day to earn free credits.'}
+          </p>
+        </div>
+        <button
+          onClick={handleClaimDaily}
+          disabled={dailyClaimed || claimLoading}
+          className={`shrink-0 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+            dailyClaimed
+              ? 'bg-muted text-muted-foreground cursor-not-allowed'
+              : 'bg-accent text-accent-foreground hover:bg-accent/90'
+          }`}
+        >
+          {claimLoading ? 'Claiming...' : dailyClaimed ? 'Come back tomorrow!' : 'Claim Credits'}
+        </button>
+      </div>
 
       {/* Credit Balance Card */}
       <div className="rounded-xl border border-border bg-card p-6 shadow-sm">

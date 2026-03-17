@@ -7,6 +7,7 @@ import { useToolExecution } from '@/hooks/use-tool-execution';
 import { useAuthStore } from '@/stores/auth.store';
 import { useCreditStore } from '@/stores/credit.store';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/toast';
 import { api } from '@/lib/api';
 
 function creditsToDollars(credits: number): string {
@@ -40,6 +41,7 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
   const { isAuthenticated, token } = useAuthStore();
   const { balance, fetchBalance } = useCreditStore();
   const { execute, isExecuting, result, error, reset } = useToolExecution();
+  const { addToast } = useToast();
 
   const [tool, setTool] = useState<ToolData | null>(null);
   const [toolLoading, setToolLoading] = useState(true);
@@ -144,7 +146,26 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
         ? result.output
         : JSON.stringify(result.output, null, 2);
       navigator.clipboard.writeText(text);
+      addToast('Result copied to clipboard', 'success');
     }
+  };
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}/tools/${slug}`;
+    navigator.clipboard.writeText(url);
+    addToast('Link copied to clipboard', 'success');
+  };
+
+  const handleShareTwitter = () => {
+    if (!tool) return;
+    const text = encodeURIComponent(`I just used ${tool.name} on @sotally! \uD83D\uDE80`);
+    const url = encodeURIComponent(`${window.location.origin}/tools/${slug}`);
+    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+  };
+
+  const handleShareLinkedIn = () => {
+    const url = encodeURIComponent(`${window.location.origin}/tools/${slug}`);
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
   };
 
   const insufficientCredits = balance < tool.creditCost;
@@ -193,6 +214,29 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
               Run Again
             </Button>
           </div>
+          {result.status === 'completed' && (
+            <div className="mt-3 flex items-center gap-2 border-t border-border pt-3">
+              <span className="text-xs text-muted-foreground">Share:</span>
+              <button
+                onClick={handleCopyLink}
+                className="rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                Copy Link
+              </button>
+              <button
+                onClick={handleShareTwitter}
+                className="rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                Twitter
+              </button>
+              <button
+                onClick={handleShareLinkedIn}
+                className="rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              >
+                LinkedIn
+              </button>
+            </div>
+          )}
           {result.status === 'completed' && result.creditsCost > 0 && (
             <p className="mt-3 text-xs text-muted-foreground">
               {result.duration > 0 && `Completed in ${(result.duration / 1000).toFixed(1)}s | `}
