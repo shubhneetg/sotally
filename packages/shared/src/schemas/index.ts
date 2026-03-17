@@ -91,7 +91,8 @@ export const createToolSchema = z.object({
     .max(5000, "Long description must be at most 5000 characters")
     .trim()
     .optional(),
-  categoryId: z.string().uuid("Invalid category ID").optional(),
+  categoryId: z.string().optional(),
+  category: z.string().optional(),
   executionType: z.enum(["prompt", "pipeline", "docker", "external_api"]),
   pricing: toolPricingSchema,
   inputSchema: z.record(z.unknown()).optional(),

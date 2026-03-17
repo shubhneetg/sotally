@@ -287,6 +287,16 @@ creatorRoutes.post('/tools', async (c) => {
     );
   }
 
+  // Resolve category: accept UUID or name
+  let resolvedCategoryId = parsed.data.categoryId || (parsed.data as any).category || null;
+  if (resolvedCategoryId && !resolvedCategoryId.match(/^[0-9a-f]{8}-/)) {
+    // Not a UUID — treat as category name and look up
+    const [cat] = await db.select().from(categories).where(
+      sql`LOWER(${categories.name}) = LOWER(${resolvedCategoryId})`
+    ).limit(1);
+    resolvedCategoryId = cat?.id || null;
+  }
+
   const [tool] = await db
     .insert(tools)
     .values({
@@ -295,7 +305,7 @@ creatorRoutes.post('/tools', async (c) => {
       slug: parsed.data.slug,
       description: parsed.data.description,
       longDescription: parsed.data.longDescription,
-      categoryId: parsed.data.categoryId,
+      categoryId: resolvedCategoryId,
       executionType: parsed.data.executionType,
       pricing: parsed.data.pricing,
       inputSchema: parsed.data.inputSchema,

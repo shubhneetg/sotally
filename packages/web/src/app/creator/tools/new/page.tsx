@@ -1434,7 +1434,7 @@ export default function CreateToolPage() {
       name: form.name,
       slug: form.slug,
       description: form.description,
-      categoryId: form.categoryId || undefined,
+      category: form.categoryId || undefined, // Send category name, API will resolve to ID
       executionType: hasConnectors ? ('pipeline' as const) : ('prompt' as const),
       pricing,
       inputSchema,
