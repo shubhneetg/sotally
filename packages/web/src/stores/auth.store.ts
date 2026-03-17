@@ -122,7 +122,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'sotally-auth',
-      partialize: (state) => ({ token: state.token }),
+      partialize: (state) => ({ token: state.token, isAuthenticated: state.isAuthenticated, user: state.user }),
     }
   )
 );
