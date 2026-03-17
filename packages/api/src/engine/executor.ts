@@ -342,6 +342,50 @@ async function creditCreator(
     .update(users)
     .set({ earningsBalance: sql`${users.earningsBalance} + ${creatorShare}` })
     .where(eq(users.id, creatorId));
+
+  // Auto-advance creator level based on monthly execution count
+  await checkCreatorLevelAdvancement(creatorId, level);
+}
+
+/**
+ * Checks if a creator should be promoted to a higher level based on
+ * their execution count in the last 30 days.
+ */
+async function checkCreatorLevelAdvancement(creatorId: string, currentLevel: string): Promise<void> {
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    // Count executions for this creator's tools in the last 30 days
+    const [result] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(executions)
+      .innerJoin(tools, eq(executions.toolId, tools.id))
+      .where(
+        sql`${tools.creatorId} = ${creatorId} AND ${executions.createdAt} >= ${thirtyDaysAgo} AND ${executions.status} = 'completed'`
+      );
+
+    const monthlyExecutions = result?.count ?? 0;
+
+    // Find the highest tier this creator qualifies for
+    let newLevel = 'bronze';
+    for (const tier of REVENUE_SHARE) {
+      if (monthlyExecutions >= tier.minMonthlyExecutions) {
+        newLevel = tier.level;
+      }
+    }
+
+    // Only promote, never demote (demotion would need a separate scheduled job)
+    const levelOrder = ['bronze', 'silver', 'gold', 'platinum'];
+    if (levelOrder.indexOf(newLevel) > levelOrder.indexOf(currentLevel)) {
+      await db
+        .update(creatorProfiles)
+        .set({ level: newLevel as any })
+        .where(eq(creatorProfiles.userId, creatorId));
+    }
+  } catch {
+    // Non-critical — don't fail execution over level check
+  }
 }
 
 /**

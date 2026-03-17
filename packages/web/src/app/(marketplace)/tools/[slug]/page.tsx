@@ -91,6 +91,7 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [similarTools, setSimilarTools] = useState<Tool[]>([]);
+  const [creatorTools, setCreatorTools] = useState<Tool[]>([]);
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportReason, setReportReason] = useState('spam');
   const [reportDescription, setReportDescription] = useState('');
@@ -142,10 +143,55 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
       }
     }
 
-    fetchTool();
+    async function fetchCreatorTools(creatorName: string, currentSlug: string) {
+      try {
+        const res = (await api.creators.storefront(creatorName)) as {
+          success: boolean;
+          data: { tools: any[] };
+        };
+        if (res.success && res.data.tools) {
+          setCreatorTools(
+            res.data.tools
+              .filter((t: any) => t.slug !== currentSlug)
+              .slice(0, 6)
+              .map(mapToolFromApi)
+          );
+        }
+      } catch {
+        // Non-critical
+      }
+    }
+
+    fetchTool().then(() => {
+      // Fetch creator tools after we know the creator name
+    });
     fetchReviews();
     fetchSimilar();
   }, [slug]);
+
+  // Fetch creator's other tools when tool data is available
+  useEffect(() => {
+    if (tool?.creatorName) {
+      (async () => {
+        try {
+          const res = (await api.creators.storefront(tool.creatorName)) as {
+            success: boolean;
+            data: { tools: any[] };
+          };
+          if (res.success && res.data.tools) {
+            setCreatorTools(
+              res.data.tools
+                .filter((t: any) => t.slug !== slug)
+                .slice(0, 6)
+                .map(mapToolFromApi)
+            );
+          }
+        } catch {
+          // Non-critical
+        }
+      })();
+    }
+  }, [tool?.creatorName, slug]);
 
   const handleReportSubmit = async () => {
     setReportSubmitting(true);
@@ -445,6 +491,42 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
                   </div>
                   <p className="mt-2 line-clamp-2 text-xs text-muted-foreground leading-relaxed">
                     {similarTool.description}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* More by this creator */}
+        {creatorTools.length > 0 && tool && (
+          <div className="mt-12">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-primary">More by {tool.creatorName}</h2>
+              <Link href={`/creators/${encodeURIComponent(tool.creatorName)}`} className="text-sm text-accent hover:text-accent/80">
+                View all
+              </Link>
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {creatorTools.map((ct) => (
+                <Link
+                  key={ct.slug}
+                  href={`/tools/${ct.slug}`}
+                  className="rounded-xl border border-border bg-card p-4 shadow-sm transition-all duration-200 hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-xl">
+                      {ct.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-semibold text-primary truncate">{ct.name}</h3>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {(ct.runCount || 0).toLocaleString()} runs
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-xs text-muted-foreground leading-relaxed">
+                    {ct.description}
                   </p>
                 </Link>
               ))}
