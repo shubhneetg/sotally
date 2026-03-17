@@ -197,7 +197,7 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-primary sm:text-3xl">{tool.name}</h1>
                 <div className="mt-2 flex flex-wrap items-center gap-3">
-                  {tool.category && <Badge variant="outline">{tool.category}</Badge>}
+                  {tool.category && <Badge variant="outline">{typeof tool.category === 'object' ? (tool.category as any)?.name || '' : tool.category}</Badge>}
                   <StarRating rating={tool.rating} />
                   <span className="text-sm text-muted-foreground">
                     {(tool.runCount || 0).toLocaleString()} runs
@@ -274,7 +274,7 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
                   {tool.category && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Category</span>
-                      <span className="font-medium text-foreground">{tool.category}</span>
+                      <span className="font-medium text-foreground">{typeof tool.category === 'object' ? (tool.category as any)?.name || '' : tool.category}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
