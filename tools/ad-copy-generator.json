@@ -1,0 +1,70 @@
+{
+  "slug": "ad-copy-generator",
+  "name": "Ad Copy Generator",
+  "description": "Generate high-converting Google Ads and Facebook/Meta ad copy variants with headlines, descriptions, and CTAs.",
+  "longDescription": "Stop burning ad budget on mediocre copy. This tool generates platform-compliant ad copy variants for Google Search, Google Display, Facebook/Instagram, and LinkedIn ads. Each variant follows proven direct-response frameworks (PAS, AIDA, Before-After-Bridge) and respects character limits. Get multiple angles to A/B test and find your winner faster.",
+  "category": "marketing",
+  "tags": ["advertising", "google-ads", "facebook-ads", "ppc", "copywriting", "ctr", "conversion"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 4 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "product": {
+        "type": "string",
+        "title": "Product/service",
+        "description": "What are you advertising? Include key benefits and price if relevant.",
+        "minLength": 10,
+        "maxLength": 1500
+      },
+      "targetAudience": {
+        "type": "string",
+        "title": "Target audience",
+        "description": "Who are you targeting? Demographics, interests, pain points.",
+        "minLength": 5,
+        "maxLength": 500
+      },
+      "platform": {
+        "type": "string",
+        "title": "Ad platform",
+        "enum": ["google-search", "google-display", "facebook-instagram", "linkedin"],
+        "default": "google-search"
+      },
+      "objective": {
+        "type": "string",
+        "title": "Campaign objective",
+        "enum": ["conversions", "traffic", "leads", "brand-awareness"],
+        "default": "conversions"
+      },
+      "uniqueSellingPoint": {
+        "type": "string",
+        "title": "Unique selling point",
+        "description": "What makes your offer different from competitors?",
+        "maxLength": 500
+      }
+    },
+    "required": ["product", "targetAudience", "platform"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "generate",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a performance marketing copywriter who has managed $10M+ in ad spend across Google and Meta. You know what converts and what wastes budget.\n\nPlatform character limits (STRICT — never exceed):\n\n**Google Search Ads:**\n- Headlines: 30 characters each (provide 5 options)\n- Descriptions: 90 characters each (provide 3 options)\n- Display URL path: 15 chars each (provide 2 paths)\n\n**Google Display:**\n- Short headline: 25 characters\n- Long headline: 90 characters\n- Description: 90 characters\n- Business name: 25 characters\n\n**Facebook/Instagram:**\n- Primary text: 125 characters (before 'See More')\n- Headline: 27 characters (above CTA button)\n- Description: 27 characters\n- Also provide a longer version (up to 300 chars primary text)\n\n**LinkedIn:**\n- Intro text: 150 characters (before 'see more')\n- Headline: 70 characters\n- Description: 100 characters\n\nCopy principles:\n1. Lead with the benefit, not the feature\n2. Use numbers and specificity (\"Save 3 hours/week\" not \"Save time\")\n3. Match the searcher's intent and awareness level\n4. Include social proof when possible (\"10,000+ users\")\n5. Strong, specific CTAs (\"Get Your Free Audit\" not \"Learn More\")\n6. Create urgency without being sleazy\n\nOutput format:\n\n## Ad Set 1 — [Angle: e.g., Pain Point]\n[All required fields for the platform with character counts]\n\n## Ad Set 2 — [Angle: e.g., Social Proof]\n[All required fields]\n\n## Ad Set 3 — [Angle: e.g., Urgency/Offer]\n[All required fields]\n\n## Testing Recommendation\n- Which ad to test first and why\n- Suggested daily budget for testing\n- When to declare a winner (statistical significance)",
+        "prompt": "Product/service: {{input.product}}\nTarget audience: {{input.targetAudience}}\nPlatform: {{input.platform}}\nObjective: {{input.objective}}\nUSP: {{input.uniqueSellingPoint}}",
+        "temperature": 0.7,
+        "maxTokens": 1200
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.generate}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Ad Set 1 — Pain Point Angle\n**Headlines:**\n1. Stop Wasting Time on Reports (30)\n2. Automate Your Weekly Reports (29)\n3. Reports Done in 30 Seconds (27)\n4. AI-Powered Report Builder (26)\n5. Never Write Reports Again (27)\n\n**Descriptions:**\n1. Turn raw data into executive-ready reports in 30 seconds. Free trial, no credit card. (86)\n2. 5,000+ teams automated their reporting. Save 3 hours every week. Start free today. (84)\n3. Drag, drop, done. AI builds your weekly reports from connected data sources. Try free. (88)\n\n**Display URL paths:** /free-trial /ai-reports\n\n## Ad Set 2 — Social Proof Angle\n**Headlines:**\n1. Trusted by 5,000+ Teams (26)\n2. #1 Rated Report Builder (25)\n3. Join 5,000 Happy Teams (25)\n4. 4.9 Stars on G2 Reviews (26)\n5. Teams Save 3 Hrs/Week (24)\n\n**Descriptions:**\n1. Rated 4.9/5 on G2. See why 5,000+ teams switched to automated AI reporting. Free trial. (90)\n2. \"Best tool we've adopted this year\" — VP Ops at Stripe. Try AI reports free for 14 days. (89)\n3. From raw data to board-ready reports in seconds. Trusted by teams at 500+ companies. (87)\n\n**Display URL paths:** /reviews /customers\n\n## Testing Recommendation\n- Start with Ad Set 1 (Pain Point) — it speaks to the immediate frustration that drives search behavior\n- Suggested budget: $50/day for 7 days per variant\n- Declare winner after 100+ clicks per variant or when CTR difference exceeds 20%"
+  }
+}

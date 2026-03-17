@@ -1,0 +1,63 @@
+{
+  "slug": "invoice-description-writer",
+  "name": "Invoice Description Writer",
+  "description": "Write clear, professional invoice line item descriptions that justify your value and prevent payment disputes.",
+  "longDescription": "Vague invoice descriptions lead to payment delays and disputes. This tool generates professional, detailed line item descriptions that clearly communicate the value delivered, match the scope of the original agreement, and give clients no reason to question the charge. Whether you're a freelancer, consultant, or agency — get invoice copy that gets you paid on time.",
+  "category": "business",
+  "tags": ["business", "invoicing", "freelance", "consulting", "finance", "professional-services"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 3 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "workPerformed": {
+        "type": "string",
+        "title": "Work performed",
+        "description": "Describe what you did — tasks, deliverables, hours, outcomes",
+        "minLength": 10,
+        "maxLength": 3000
+      },
+      "clientType": {
+        "type": "string",
+        "title": "Client type",
+        "enum": ["corporate", "small-business", "startup", "individual", "government"],
+        "default": "corporate"
+      },
+      "serviceType": {
+        "type": "string",
+        "title": "Service type",
+        "enum": ["consulting", "development", "design", "marketing", "writing", "coaching", "legal", "other"],
+        "default": "consulting"
+      },
+      "billingStructure": {
+        "type": "string",
+        "title": "Billing structure",
+        "enum": ["hourly", "project-based", "retainer", "milestone"],
+        "default": "project-based"
+      }
+    },
+    "required": ["workPerformed"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "write",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a business operations specialist who helps freelancers and agencies write invoice descriptions that get paid without pushback. You understand that invoice copy serves three purposes: (1) remind the client what they received, (2) justify the cost, (3) create a paper trail.\n\nFor each piece of work, generate:\n\n## Invoice Line Items\n\n### Line Item 1\n**Description:** [Professional, specific description — 1-2 sentences max]\n**Details:**\n- [Specific deliverable or task]\n- [Specific deliverable or task]\n- [Outcome or result achieved]\n\n[Repeat for each logical grouping of work]\n\n## Complete Invoice Description (Copy-Paste Ready)\n[All line items formatted as they'd appear on an actual invoice — brief, professional, scannable]\n\n## Tips for This Invoice\n- [Any advice on presentation, timing, or follow-up]\n\nRules:\n- Be specific but concise — enough detail to justify, not so much it's overwhelming\n- Use outcome language (\"Designed and delivered\" not \"Worked on\")\n- Include quantities where applicable (hours, deliverables, revisions)\n- Match formality to client type (corporate = more formal, startup = less)\n- For hourly billing: break down by task category, not by individual hour\n- Never undersell — if the work was valuable, the description should reflect that\n- Avoid jargon the client's accounts payable team wouldn't understand",
+        "prompt": "Work performed: {{input.workPerformed}}\nClient type: {{input.clientType}}\nService type: {{input.serviceType}}\nBilling structure: {{input.billingStructure}}",
+        "temperature": 0.4,
+        "maxTokens": 800
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.write}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Invoice Line Items\n\n### Line Item 1\n**Description:** Website Redesign — Strategy & Design Phase\n**Details:**\n- Conducted stakeholder interviews (3 sessions) and competitive analysis (5 competitors)\n- Designed responsive wireframes for 8 pages (Home, About, Services, Blog, Contact, Pricing, Case Studies, FAQ)\n- Created high-fidelity mockups with 2 rounds of revisions per page\n- Delivered final design files (Figma) and style guide documentation\n\n### Line Item 2\n**Description:** Website Development & QA\n**Details:**\n- Built responsive website using Next.js with CMS integration (Sanity)\n- Implemented SEO optimizations (meta tags, schema markup, sitemap)\n- Conducted cross-browser testing (Chrome, Safari, Firefox, Edge) and mobile QA\n- Performance optimization achieving 95+ Lighthouse score\n\n## Complete Invoice Description (Copy-Paste Ready)\n```\n1. Website Redesign — Strategy & Design (8 pages)     $4,500\n   Stakeholder interviews, competitive analysis,\n   wireframes, high-fidelity mockups (2 revision rounds),\n   style guide and Figma deliverables\n\n2. Website Development & QA                            $6,500\n   Next.js responsive build, Sanity CMS integration,\n   SEO implementation, cross-browser/mobile QA,\n   performance optimization (95+ Lighthouse)\n```\n\n## Tips for This Invoice\n- Send within 24 hours of final delivery while the value is fresh\n- Attach the Lighthouse score screenshot as supporting documentation\n- Reference the original proposal/SOW number if one exists"
+  }
+}

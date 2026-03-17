@@ -1,0 +1,63 @@
+{
+  "slug": "code-reviewer",
+  "name": "AI Code Reviewer",
+  "description": "Get detailed code reviews with bug detection, performance suggestions, and security checks. Supports any language.",
+  "longDescription": "Get a thorough code review without waiting for a teammate. Paste your code and get feedback on bugs, security vulnerabilities, performance issues, code style, and maintainability. The reviewer checks for common pitfalls specific to your language and framework, suggests improvements with concrete code examples, and rates the overall quality. Like having a senior engineer review your PR instantly.",
+  "category": "development",
+  "tags": ["code-review", "development", "bugs", "security", "performance", "best-practices"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 5 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "code": {
+        "type": "string",
+        "title": "Code to review",
+        "description": "Paste the code you want reviewed",
+        "minLength": 10,
+        "maxLength": 15000
+      },
+      "language": {
+        "type": "string",
+        "title": "Language/framework",
+        "description": "e.g., 'TypeScript/React', 'Python/FastAPI', 'Go'",
+        "maxLength": 100
+      },
+      "context": {
+        "type": "string",
+        "title": "Context (optional)",
+        "description": "What does this code do? Any specific concerns?",
+        "maxLength": 1000
+      },
+      "reviewFocus": {
+        "type": "string",
+        "title": "Review focus",
+        "enum": ["comprehensive", "security", "performance", "readability", "bugs-only"],
+        "default": "comprehensive"
+      }
+    },
+    "required": ["code"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "review",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a senior software engineer with 15+ years of experience across multiple languages and frameworks. You give code reviews that are thorough, specific, and educational — not just criticism.\n\nReview structure:\n\n## Code Review Summary\n**Overall Quality:** [score]/10\n**Language:** [detected or specified]\n**Lines Reviewed:** [count]\n\n---\n\n### Critical Issues (fix before merging)\n[Issues that would cause bugs, security vulnerabilities, or data loss]\n\nFor each issue:\n- **Line [X]:** [Description of the issue]\n- **Risk:** [What could go wrong]\n- **Fix:**\n```[language]\n[Corrected code]\n```\n\n### Warnings (should fix)\n[Issues that could cause problems but aren't critical]\n\n### Suggestions (nice to have)\n[Style improvements, refactoring opportunities, better patterns]\n\n### Security Check\n- [ ] Input validation\n- [ ] SQL injection / query safety\n- [ ] XSS prevention\n- [ ] Auth/authz checks\n- [ ] Secrets exposure\n- [ ] Error information leakage\n[Explain any unchecked items]\n\n### Performance Notes\n- [Any performance concerns — N+1 queries, unnecessary re-renders, O(n^2) algorithms, etc.]\n\n### What's Good\n[2-3 things done well — positive reinforcement is part of good reviews]\n\n### Recommended Reading\n- [1-2 links or concepts relevant to the main issues found]\n\nRules:\n- Reference specific line numbers\n- Provide corrected code for critical issues, not just descriptions\n- Explain the WHY behind every suggestion\n- Don't nitpick style unless it impacts readability\n- If the code is genuinely good, say so — don't manufacture issues",
+        "prompt": "Language: {{input.language}}\nReview focus: {{input.reviewFocus}}\nContext: {{input.context}}\n\nCode:\n```\n{{input.code}}\n```",
+        "temperature": 0.3,
+        "maxTokens": 1500
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.review}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Code Review Summary\n**Overall Quality:** 6/10\n**Language:** TypeScript/Express\n**Lines Reviewed:** 34\n\n---\n\n### Critical Issues\n\n**Line 12: SQL Injection Vulnerability**\nDirect string interpolation in SQL query:\n```typescript\n// BEFORE (vulnerable)\nconst query = `SELECT * FROM users WHERE email = '${req.body.email}'`;\n\n// AFTER (parameterized)\nconst query = 'SELECT * FROM users WHERE email = $1';\nconst result = await db.query(query, [req.body.email]);\n```\n**Risk:** An attacker can execute arbitrary SQL by submitting a crafted email value.\n\n**Line 8: No Input Validation**\n`req.body.email` is used without any validation. Could be undefined, empty, or not a string.\n```typescript\n// Add at the top of the handler\nconst { email } = req.body;\nif (!email || typeof email !== 'string' || !email.includes('@')) {\n  return res.status(400).json({ error: 'Valid email is required' });\n}\n```\n\n### Warnings\n\n**Line 20: Error details leaked to client**\n`res.status(500).json({ error: err.message })` exposes internal error messages. In production, return a generic message and log the details server-side.\n\n### Security Check\n- [x] Auth/authz checks (middleware present)\n- [ ] Input validation — **MISSING**\n- [ ] SQL injection — **VULNERABLE**\n- [x] Secrets exposure (none found)\n- [ ] Error information leakage — **LEAKING**\n\n### What's Good\n- Clean separation of route handler from business logic\n- Proper use of async/await with try/catch\n- Response status codes are appropriate (200, 404, 500)"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "slug": "decision-matrix-builder",
+  "name": "Decision Matrix Builder",
+  "description": "Build weighted decision matrices to make better choices. Compare options objectively with scored criteria.",
+  "longDescription": "Making a tough decision with multiple factors? This tool builds a weighted decision matrix that takes the emotion out of complex choices. Describe your options and what matters to you, and it generates a structured comparison with weighted scores, sensitivity analysis, and a clear recommendation. Uses decision science frameworks (MCDA, AHP) in plain English. Works for hiring decisions, vendor selection, product prioritization, and personal choices.",
+  "category": "productivity",
+  "tags": ["decision-making", "productivity", "analysis", "framework", "comparison", "prioritization"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 4 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "decision": {
+        "type": "string",
+        "title": "What decision are you making?",
+        "description": "Describe the decision and why it's important",
+        "minLength": 10,
+        "maxLength": 1000
+      },
+      "options": {
+        "type": "string",
+        "title": "Options to compare",
+        "description": "List the options you're choosing between (2-5 options)",
+        "minLength": 5,
+        "maxLength": 1000
+      },
+      "criteria": {
+        "type": "string",
+        "title": "What matters to you?",
+        "description": "What criteria matter in this decision? e.g., cost, speed, quality, risk",
+        "minLength": 5,
+        "maxLength": 1000
+      },
+      "context": {
+        "type": "string",
+        "title": "Additional context (optional)",
+        "description": "Any constraints, preferences, or background that might affect the decision",
+        "maxLength": 1000
+      }
+    },
+    "required": ["decision", "options", "criteria"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "build",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a decision analysis consultant who helps people make better decisions using structured frameworks. You use Multi-Criteria Decision Analysis (MCDA) and present it in plain, accessible language.\n\nProcess:\n1. Identify the decision, options, and criteria\n2. Suggest weights for each criterion (must sum to 100%)\n3. Score each option on each criterion (1-10 scale)\n4. Calculate weighted scores\n5. Provide a clear recommendation with reasoning\n\nOutput format:\n\n## Decision: [Restate the decision clearly]\n\n### Criteria & Weights\n| Criterion | Weight | Why This Weight |\n|-----------|--------|----------------|\n| [criterion] | [X%] | [brief justification] |\n\n### Scoring Matrix\n| Criterion (Weight) | [Option A] | [Option B] | [Option C] |\n|--------------------|-----------|-----------|------------|\n| [Criterion 1] (X%) | [score]/10 | [score]/10 | [score]/10 |\n| [Criterion 2] (X%) | [score]/10 | [score]/10 | [score]/10 |\n| **Weighted Total** | **[total]** | **[total]** | **[total]** |\n\n### Score Justifications\n[Brief explanation for each non-obvious score]\n\n### Recommendation\n**Winner: [Option]** — [2-3 sentence explanation]\n\n### Sensitivity Check\n- If you value [criterion] more: [how recommendation changes]\n- If you value [criterion] less: [how recommendation changes]\n- The decision is [robust/close-call] — [explanation]\n\n### What Could Change This\n- [Factor that might flip the decision]\n- [Information you'd want before deciding]\n\nBe honest about uncertainty. If options are genuinely close, say so — don't manufacture a winner.",
+        "prompt": "Decision: {{input.decision}}\nOptions: {{input.options}}\nCriteria: {{input.criteria}}\nContext: {{input.context}}",
+        "temperature": 0.4,
+        "maxTokens": 1200
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.build}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Decision: Which project management tool to adopt for a 20-person remote team\n\n### Criteria & Weights\n| Criterion | Weight | Why This Weight |\n|-----------|--------|----------------|\n| Ease of use | 30% | Adoption is the #1 risk — if the team won't use it, nothing else matters |\n| Integrations | 20% | Must connect to Slack, GitHub, and Google Workspace |\n| Price | 20% | 20-person team, budget-conscious startup |\n| Customization | 15% | Need to model your specific workflow |\n| Reporting | 15% | Executive visibility into progress |\n\n### Scoring Matrix\n| Criterion (Weight) | Linear | Asana | Monday.com |\n|--------------------|--------|-------|------------|\n| Ease of use (30%) | 9/10 | 7/10 | 6/10 |\n| Integrations (20%) | 8/10 | 9/10 | 7/10 |\n| Price (20%) | 7/10 | 6/10 | 5/10 |\n| Customization (15%) | 6/10 | 8/10 | 9/10 |\n| Reporting (15%) | 7/10 | 8/10 | 8/10 |\n| **Weighted Total** | **7.65** | **7.45** | **6.70** |\n\n### Recommendation\n**Winner: Linear** — It scores highest overall, driven by its significant advantage in ease of use (the highest-weighted criterion). For a remote team where adoption is critical, Linear's clean UX reduces the friction that kills tool adoption.\n\n### Sensitivity Check\n- If you value customization more (25% instead of 15%): Asana ties with Linear\n- If you value integrations more (30%): Asana edges ahead\n- The decision is a **close call** between Linear and Asana — the gap is only 0.20 points\n\n### What Could Change This\n- A free trial with your actual team (adoption data > feature comparison)\n- Whether your GitHub integration needs are basic or advanced (Linear wins for dev teams)"
+  }
+}

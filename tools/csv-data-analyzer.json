@@ -1,0 +1,57 @@
+{
+  "slug": "csv-data-analyzer",
+  "name": "CSV Data Analyzer",
+  "description": "Paste CSV data and get instant insights — trends, outliers, summary statistics, and visualization recommendations.",
+  "longDescription": "Turn raw CSV data into actionable insights without writing a single line of code. Paste your data and get summary statistics, trend analysis, outlier detection, correlation insights, and recommendations for the best chart types to visualize your findings. Perfect for quick data exploration, stakeholder reports, or when you need to make sense of a spreadsheet fast.",
+  "category": "data-tools",
+  "tags": ["data", "csv", "analytics", "insights", "statistics", "visualization"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 5 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "csvData": {
+        "type": "string",
+        "title": "CSV data",
+        "description": "Paste your CSV data here (include headers). Max ~100 rows for best results.",
+        "minLength": 20,
+        "maxLength": 15000
+      },
+      "analysisGoal": {
+        "type": "string",
+        "title": "What do you want to learn?",
+        "description": "What questions are you trying to answer with this data?",
+        "maxLength": 500
+      },
+      "analysisType": {
+        "type": "string",
+        "title": "Analysis type",
+        "enum": ["general-overview", "trend-analysis", "comparison", "outlier-detection", "correlation"],
+        "default": "general-overview"
+      }
+    },
+    "required": ["csvData"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "analyze",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a senior data analyst with expertise in exploratory data analysis. You can look at raw data and immediately spot patterns, anomalies, and stories the data is telling.\n\nWhen analyzing CSV data, provide:\n\n## Data Overview\n- Number of rows and columns\n- Column names and inferred data types\n- Completeness (any missing values?)\n\n## Summary Statistics\n- For numeric columns: min, max, mean, median, standard deviation\n- For categorical columns: unique values, most common values, distribution\n- Present as a clean markdown table\n\n## Key Insights\nProvide 3-5 numbered insights, ordered by significance. Each insight should:\n- State the finding clearly\n- Explain why it matters\n- Suggest an action or next question\n\n## Trends & Patterns\n- Any temporal trends (if date columns exist)\n- Correlations between columns\n- Clusters or segments in the data\n\n## Outliers & Anomalies\n- Flag any data points that look unusual\n- Explain what makes them unusual\n- Suggest whether they're errors or genuine outliers\n\n## Visualization Recommendations\n- Suggest 2-3 specific chart types with exact axis mappings\n- Explain what each chart would reveal\n\n## Data Quality Notes\n- Any issues with the data (inconsistent formats, potential errors)\n- Suggestions for improving data collection\n\nBe specific with numbers. Don't just say 'there's a trend' — say 'revenue increased 23% from Q1 to Q3.' Reference actual values from the data.",
+        "prompt": "Analysis goal: {{input.analysisGoal}}\nAnalysis type: {{input.analysisType}}\n\nCSV Data:\n{{input.csvData}}",
+        "temperature": 0.3,
+        "maxTokens": 1500
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.analyze}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Data Overview\n- **Rows:** 12 | **Columns:** 4\n- **Columns:** Month (date), Revenue (numeric), Users (numeric), Churn Rate (numeric)\n- **Completeness:** 100% — no missing values\n\n## Summary Statistics\n\n| Metric | Revenue | Users | Churn Rate |\n|--------|---------|-------|------------|\n| Min | $12,400 | 340 | 2.1% |\n| Max | $34,200 | 890 | 5.8% |\n| Mean | $22,150 | 612 | 3.6% |\n| Median | $21,800 | 605 | 3.4% |\n| Std Dev | $6,420 | 168 | 1.1% |\n\n## Key Insights\n\n1. **Revenue grew 176% over 12 months** ($12,400 to $34,200) — strong upward trajectory with acceleration in Q3-Q4. Growth rate increased from 8% MoM in Q1 to 14% MoM in Q4.\n\n2. **Churn spiked in Month 7 (5.8%)** — this is 2.7 standard deviations above the mean. Coincides with the month user growth was highest (net +120 users). Suggests onboarding quality dropped during rapid growth.\n\n3. **Revenue per user is declining** — despite growing revenue, revenue/user dropped from $36.47 to $38.43 peak in Month 4, then declined to $34.15 by Month 12. Could indicate lower-value customers or pricing pressure.\n\n## Visualization Recommendations\n1. **Dual-axis line chart**: Revenue (left axis) vs. Churn Rate (right axis) over time — reveals the inverse relationship and the Month 7 anomaly\n2. **Bar chart**: Revenue per User by month — makes the per-user decline visually obvious\n3. **Scatter plot**: User growth rate vs. Churn Rate — tests whether faster growth correlates with higher churn"
+  }
+}

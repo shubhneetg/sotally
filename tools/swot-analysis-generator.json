@@ -1,0 +1,63 @@
+{
+  "slug": "swot-analysis-generator",
+  "name": "SWOT Analysis Generator",
+  "description": "Generate comprehensive SWOT analyses for any business, product, or strategic initiative with actionable recommendations.",
+  "longDescription": "Get a thorough SWOT analysis that goes beyond surface-level bullet points. Describe your business or initiative and get a structured analysis of Strengths, Weaknesses, Opportunities, and Threats — plus a strategic action plan that connects the dots. Each point includes specific, actionable insights rather than generic observations. Uses the TOWS matrix to generate strategies from the intersection of internal and external factors.",
+  "category": "business",
+  "tags": ["business", "strategy", "swot", "analysis", "planning", "competitive-analysis"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 5 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "business": {
+        "type": "string",
+        "title": "Business/product description",
+        "description": "Describe your business, product, or initiative. Include industry, stage, size, and key differentiators.",
+        "minLength": 20,
+        "maxLength": 3000
+      },
+      "competitors": {
+        "type": "string",
+        "title": "Key competitors (optional)",
+        "description": "Who are your main competitors? What are they doing well?",
+        "maxLength": 1000
+      },
+      "context": {
+        "type": "string",
+        "title": "Strategic context (optional)",
+        "description": "Any specific decision or initiative you're evaluating? Market conditions?",
+        "maxLength": 1000
+      },
+      "analysisDepth": {
+        "type": "string",
+        "title": "Analysis depth",
+        "enum": ["quick-overview", "detailed", "comprehensive-with-tows"],
+        "default": "detailed"
+      }
+    },
+    "required": ["business"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "analyze",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a strategy consultant with experience at top-tier firms (McKinsey, BCG, Bain). You conduct SWOT analyses that are specific, evidence-based, and actionable — not generic filler that could apply to any company.\n\nOutput structure:\n\n## SWOT Analysis: [Business Name/Description]\n\n### Strengths (Internal, Positive)\n| Strength | Strategic Implication |\n|----------|---------------------|\n| [Specific strength] | [How to leverage it] |\n\n### Weaknesses (Internal, Negative)\n| Weakness | Mitigation Strategy |\n|----------|--------------------|\n| [Specific weakness] | [How to address it] |\n\n### Opportunities (External, Positive)\n| Opportunity | How to Capture |\n|-------------|---------------|\n| [Specific opportunity] | [Action to take] |\n\n### Threats (External, Negative)\n| Threat | How to Defend |\n|--------|---------------|\n| [Specific threat] | [Defensive action] |\n\n### TOWS Strategic Matrix (if comprehensive)\n| | **Strengths** | **Weaknesses** |\n|---|---|---|\n| **Opportunities** | SO: [Use strengths to capture opportunities] | WO: [Address weaknesses to capture opportunities] |\n| **Threats** | ST: [Use strengths to defend against threats] | WT: [Minimize weaknesses and avoid threats] |\n\n### Priority Actions (Top 3)\n1. [Highest-impact action] — [why and timeline]\n2. [Second action]\n3. [Third action]\n\n### Key Risks to Monitor\n- [Risk 1 with trigger/indicator to watch]\n- [Risk 2]\n\nRules:\n- Be SPECIFIC to this business, not generic\n- Each point should be actionable, not just observational\n- Distinguish between 'nice to know' and 'must act on'\n- If competitor info is provided, use it for relative positioning\n- Quantify where possible (market size, growth rates, etc.)",
+        "prompt": "Business: {{input.business}}\nCompetitors: {{input.competitors}}\nContext: {{input.context}}\nDepth: {{input.analysisDepth}}",
+        "temperature": 0.5,
+        "maxTokens": 1500
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.analyze}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## SWOT Analysis: Direct-to-Consumer Meal Kit Startup (Pre-Series A)\n\n### Strengths\n| Strength | Strategic Implication |\n|----------|---------------------|\n| Proprietary algorithm matching dietary preferences to recipes | Differentiator in a crowded market — lean into personalization in marketing |\n| 40% lower food waste than HelloFresh (per unit) | Use as sustainability positioning; ESG-conscious consumers are growing 15% YoY |\n| 92% week-2 retention rate | Strong product-market fit signal — focus on acquisition, not retention |\n\n### Weaknesses\n| Weakness | Mitigation Strategy |\n|----------|--------------------|\n| Limited to 3 metro areas (SF, LA, Seattle) | Expansion requires cold chain logistics investment; consider partnering with existing delivery networks |\n| Customer acquisition cost of $85 (industry avg: $60) | High CAC suggests over-reliance on paid channels; invest in referral program and organic content |\n| Single supplier for protein ingredients | Supply chain risk; qualify 2 backup suppliers within 90 days |\n\n### Opportunities\n| Opportunity | How to Capture |\n|-------------|---------------|\n| Corporate wellness programs ($8B market, growing 12% YoY) | Build a B2B offering — employer-subsidized meal kits as a benefit |\n| TikTok food content driving discovery (meal kit hashtag: 2.1B views) | Partner with 5-10 micro-influencers (10K-50K followers) for authentic content |\n\n### Priority Actions\n1. **Reduce CAC by 30% in 90 days** — Launch referral program (give $20, get $20) and shift 25% of paid budget to content marketing\n2. **Diversify supply chain** — Qualify 2 backup protein suppliers by end of Q2\n3. **Test B2B channel** — Run a 30-day pilot with 3 local tech companies for corporate wellness meal kits"
+  }
+}

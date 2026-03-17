@@ -1,0 +1,63 @@
+{
+  "slug": "customer-persona-builder",
+  "name": "Customer Persona Builder",
+  "description": "Build detailed buyer personas from your product info. Get demographics, psychographics, and messaging angles.",
+  "longDescription": "Stop guessing who your customer is. Describe your product or service and this tool builds a comprehensive buyer persona with demographics, psychographics, pain points, buying triggers, objection patterns, and messaging recommendations. Based on the Jobs-to-be-Done framework and behavioral psychology. Use it to align your team, sharpen your copy, and stop wasting budget targeting the wrong people.",
+  "category": "marketing",
+  "tags": ["marketing", "persona", "buyer-persona", "customer-research", "segmentation", "jtbd"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 5 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "product": {
+        "type": "string",
+        "title": "Product/service description",
+        "description": "What do you sell? Include price range, key features, and how it's delivered.",
+        "minLength": 20,
+        "maxLength": 2000
+      },
+      "currentCustomers": {
+        "type": "string",
+        "title": "Current customer info (optional)",
+        "description": "Any info about who currently buys from you — demographics, feedback, common traits",
+        "maxLength": 1500
+      },
+      "industry": {
+        "type": "string",
+        "title": "Industry",
+        "description": "What industry are you in?",
+        "maxLength": 200
+      },
+      "personaCount": {
+        "type": "string",
+        "title": "Number of personas",
+        "enum": ["1", "2", "3"],
+        "default": "1"
+      }
+    },
+    "required": ["product"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "build",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a customer research strategist who has built persona frameworks for Fortune 500 companies and high-growth startups. You combine the Jobs-to-be-Done (JTBD) framework with behavioral psychology to create personas that actually influence decisions.\n\nFor each persona, provide:\n\n## Persona: [Name — make it memorable]\n\n### Demographics\n- Age range\n- Role/title\n- Company size (if B2B) or household situation (if B2C)\n- Income range\n- Location tendency\n- Education\n\n### Psychographics\n- Values (what they optimize for)\n- Fears (what keeps them up at night)\n- Aspirations (where they want to be in 2 years)\n- Information diet (where they learn, who they follow)\n- Decision-making style (analytical/emotional/social proof)\n\n### The Job to Be Done\n- When [situation], I want to [motivation], so I can [desired outcome]\n- Functional job: [the practical outcome]\n- Emotional job: [how they want to feel]\n- Social job: [how they want to be perceived]\n\n### Pain Points (ranked by severity)\n1. [Most acute pain — what would make them search for a solution TODAY]\n2. [Secondary pain]\n3. [Latent pain they might not articulate]\n\n### Buying Triggers\n- What event or moment makes them actively seek a solution?\n- What competitor frustration drives switching?\n\n### Objections & Concerns\n1. [Objection] → [How to address it]\n2. [Objection] → [How to address it]\n3. [Objection] → [How to address it]\n\n### Messaging Playbook\n- **Hook that resonates:** [one line they'd click on]\n- **Value prop that converts:** [one sentence positioning]\n- **Proof they need:** [type of social proof that matters most]\n- **CTA that works:** [the right ask for their awareness level]\n\n### Where to Reach Them\n- Online channels (specific platforms and content types)\n- Offline channels (events, publications, communities)\n- Best ad targeting parameters",
+        "prompt": "Product/service: {{input.product}}\nCurrent customer info: {{input.currentCustomers}}\nIndustry: {{input.industry}}\nNumber of personas: {{input.personaCount}}",
+        "temperature": 0.65,
+        "maxTokens": 2000
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.build}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Persona: Scaling Sarah\n\n### Demographics\n- Age: 32-40\n- Role: Head of Marketing / VP Marketing\n- Company: B2B SaaS, 50-200 employees, Series A-B\n- Income: $120K-$180K\n- Location: US tech hubs (SF, Austin, NYC, remote)\n- Education: Bachelor's in Marketing or Business; some have MBA\n\n### Psychographics\n- Values: Efficiency, data-driven decisions, looking smart to the exec team\n- Fears: Scaling spend without scaling results; being replaced by someone more technical\n- Aspirations: Become CMO within 3 years; build a marketing machine, not just run campaigns\n- Information diet: Lenny's Newsletter, First Round Review, Marketing Brew, LinkedIn thought leaders\n- Decision style: Analytical first (needs data), then emotional (needs to feel confident in the bet)\n\n### The Job to Be Done\n- When my CEO asks me to 3x pipeline with the same budget, I want to find tools that multiply my team's output, so I can hit targets without burning out my 4-person team.\n- Functional: Produce more high-quality marketing assets faster\n- Emotional: Feel in control, not overwhelmed\n- Social: Be seen as the leader who modernized the marketing stack\n\n### Pain Points\n1. Team is maxed out — every new initiative means dropping something else\n2. Content quality drops when they try to scale with freelancers\n3. Can't justify headcount to finance but needs more output\n\n### Buying Triggers\n- Just got aggressive Q2 targets with no additional budget\n- Lost a key team member and can't backfill quickly\n- Competitor launched a content blitz and they need to respond\n\n### Objections & Concerns\n1. \"AI content feels generic\" → Show examples of customization with brand voice controls\n2. \"My team won't adopt another tool\" → Emphasize 5-minute onboarding, not another platform to learn\n3. \"How is this different from ChatGPT?\" → Purpose-built templates vs. blank prompt; team sharing; brand consistency\n\n### Messaging Playbook\n- **Hook:** Your marketing team doesn't need more people. It needs better tools.\n- **Value prop:** AI-powered tools that turn your 4-person team into a 12-person output machine.\n- **Proof:** Case study from a similar-stage SaaS company showing time saved and pipeline impact\n- **CTA:** See how [similar company] 3x'd their content output — free demo\n\n### Where to Reach Them\n- LinkedIn (sponsored content targeting Marketing VPs at 50-200 employee SaaS companies)\n- Podcast sponsorships (Lenny's Podcast, Marketing Against the Grain)\n- SaaStr, Pavilion events\n- Content marketing via SEO targeting 'marketing automation for small teams'"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "slug": "meeting-agenda-generator",
+  "name": "Meeting Agenda Generator",
+  "description": "Create structured meeting agendas with time allocations, discussion points, and action item frameworks.",
+  "longDescription": "Unstructured meetings waste everyone's time. Give this tool your meeting topics and attendees, and it generates a professional agenda with time allocations, clear objectives, discussion prompts, and a framework for capturing action items. Based on the practices of companies with the most effective meeting cultures (Amazon, Shopify, Basecamp). Make every meeting worth having.",
+  "category": "productivity",
+  "tags": ["productivity", "meetings", "agenda", "planning", "collaboration", "time-management"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 3 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "topics": {
+        "type": "string",
+        "title": "Meeting topics",
+        "description": "What needs to be discussed? List the topics, questions, or decisions needed.",
+        "minLength": 10,
+        "maxLength": 2000
+      },
+      "meetingDuration": {
+        "type": "string",
+        "title": "Meeting duration",
+        "enum": ["15 min", "30 min", "45 min", "60 min", "90 min"],
+        "default": "30 min"
+      },
+      "meetingType": {
+        "type": "string",
+        "title": "Meeting type",
+        "enum": ["team-standup", "project-kickoff", "decision-making", "brainstorming", "one-on-one", "client-meeting", "retrospective"],
+        "default": "decision-making"
+      },
+      "attendees": {
+        "type": "string",
+        "title": "Attendees (optional)",
+        "description": "Who will attend? Names and roles help tailor the agenda.",
+        "maxLength": 500
+      }
+    },
+    "required": ["topics", "meetingDuration"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "generate",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a meeting effectiveness consultant who helps teams run meetings that are worth the time. You've studied the meeting practices of high-performance organizations and know how to structure time for maximum decision-making and minimum waste.\n\nGenerate an agenda that includes:\n\n## Meeting Agenda: [Title based on topics]\n**Duration:** [X minutes]\n**Type:** [meeting type]\n**Objective:** [One clear sentence — what must be true when this meeting ends?]\n\n---\n\n### Pre-Meeting Prep (send 24h before)\n- [What attendees should read/review before the meeting]\n- [Any pre-work or thinking to do]\n\n---\n\n### Agenda\n\n**[Time] — [Topic]** ([X min]) — [Owner if applicable]\n- Objective: [What this block should achieve]\n- Key questions:\n  - [Specific question to answer]\n  - [Specific question to answer]\n- Decision needed: [Yes/No — what decision?]\n\n[Repeat for each agenda item]\n\n**[Time] — Action Items & Next Steps** (5 min)\n- Review decisions made\n- Assign owners and deadlines\n- Confirm follow-up meeting if needed\n\n---\n\n### Action Item Template\n| Action | Owner | Deadline | Status |\n|--------|-------|----------|--------|\n| | | | |\n\n### Meeting Rules\n- [2-3 ground rules appropriate for this meeting type]\n\nTime allocation principles:\n- Never more than 3-4 agenda items for a 30-min meeting\n- Decision items get more time than updates\n- Always reserve 5 min at the end for action items\n- If brainstorming: 60% diverge, 40% converge",
+        "prompt": "Topics: {{input.topics}}\nDuration: {{input.meetingDuration}}\nType: {{input.meetingType}}\nAttendees: {{input.attendees}}",
+        "temperature": 0.5,
+        "maxTokens": 1000
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.generate}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Meeting Agenda: Q2 Product Roadmap Prioritization\n**Duration:** 45 minutes\n**Type:** Decision-making\n**Objective:** Walk out with a ranked list of the top 5 features for Q2, with owners assigned.\n\n---\n\n### Pre-Meeting Prep (send 24h before)\n- Review the feature request spreadsheet (link)\n- Each person comes with their top 3 picks and a 1-line justification for each\n- Review Q1 metrics dashboard for context on what moved the needle\n\n---\n\n### Agenda\n\n**0:00 — Context Setting** (5 min) — Product Lead\n- Objective: Align on Q1 results and Q2 constraints\n- Key data: Q1 feature impact, available engineering capacity, strategic goals\n- No discussion — just information\n\n**0:05 — Feature Pitch Round** (15 min) — All\n- Objective: Hear every candidate feature\n- Each person: 2 min max to pitch their top pick\n- Key question: What metric does this move, and by how much?\n- Rule: No rebuttals during pitches\n\n**0:20 — Prioritization Discussion** (15 min) — Facilitated\n- Objective: Narrow to top 5 through structured debate\n- Framework: Impact (1-5) x Effort (1-5) scoring\n- Key questions:\n  - Which features compound (build on each other)?\n  - What's the cost of NOT doing each feature?\n- Decision needed: Yes — ranked top 5 list\n\n**0:35 — Owner Assignment & Next Steps** (10 min)\n- Assign an owner to each of the top 5\n- Set spec deadline for each\n- Schedule design review for top 2\n\n---\n\n### Action Item Template\n| Action | Owner | Deadline | Status |\n|--------|-------|----------|--------|\n| | | | |\n\n### Meeting Rules\n- No laptops except for the facilitator's notes\n- Disagree with the idea, not the person\n- If we can't decide in 15 min, the Product Lead makes the call"
+  }
+}

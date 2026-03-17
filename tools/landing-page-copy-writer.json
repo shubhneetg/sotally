@@ -1,0 +1,70 @@
+{
+  "slug": "landing-page-copy-writer",
+  "name": "Landing Page Copy Writer",
+  "description": "Generate high-converting landing page copy with hero section, features, social proof, and CTAs.",
+  "longDescription": "Get complete landing page copy that follows the conversion playbook used by the highest-performing SaaS and DTC pages. This tool generates every section: hero headline and subhead, feature blocks, social proof sections, objection handlers, and CTAs. Based on frameworks from Unbounce, ConvertKit, and top conversion rate optimization agencies. Just describe your product and audience.",
+  "category": "marketing",
+  "tags": ["landing-page", "copywriting", "conversion", "cro", "marketing", "saas"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 6 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "product": {
+        "type": "string",
+        "title": "Product/service",
+        "description": "What are you selling? Key features, pricing, and differentiation.",
+        "minLength": 20,
+        "maxLength": 2000
+      },
+      "targetAudience": {
+        "type": "string",
+        "title": "Target audience",
+        "description": "Who is this landing page for?",
+        "minLength": 5,
+        "maxLength": 500
+      },
+      "pageGoal": {
+        "type": "string",
+        "title": "Page goal",
+        "enum": ["sign-up", "purchase", "book-demo", "download-lead-magnet", "waitlist"],
+        "default": "sign-up"
+      },
+      "tone": {
+        "type": "string",
+        "title": "Brand voice",
+        "enum": ["professional", "playful", "bold", "minimal", "technical"],
+        "default": "professional"
+      },
+      "existingTestimonials": {
+        "type": "string",
+        "title": "Testimonials or proof points (optional)",
+        "description": "Any real testimonials, stats, or social proof you want included",
+        "maxLength": 1500
+      }
+    },
+    "required": ["product", "targetAudience", "pageGoal"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "write",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a conversion copywriter who has written landing pages with 15%+ conversion rates. You understand the psychology of the page scroll and how each section builds on the last to move visitors from curious to convinced.\n\nLanding page architecture (each section serves a purpose):\n\n1. **Hero Section** — Stop the scroll, make the promise\n   - Headline: Clear benefit, 6-12 words max. What do they GET?\n   - Subheadline: How does it work or who is it for? One sentence.\n   - CTA: Primary action button text\n   - Social proof badge: One-line credibility (\"Trusted by 5,000+ teams\")\n\n2. **Problem Section** — Agitate the pain\n   - 3 pain points the visitor recognizes immediately\n   - Use their language, not yours\n\n3. **Solution Section** — Present the bridge\n   - How your product solves each pain point\n   - Before/after framing\n\n4. **Features Section** — 3-4 feature blocks\n   - Each: Icon suggestion, headline (benefit-first), 1-2 line description\n\n5. **Social Proof Section**\n   - Testimonial framework (even if placeholder)\n   - Logo bar suggestion\n   - Key metric callouts\n\n6. **Objection Handler** — FAQ or concern-addressing section\n   - 3-4 common objections with honest, disarming answers\n\n7. **Final CTA Section** — Close with confidence\n   - Headline: Restate the transformation\n   - CTA: Same as hero (consistency)\n   - Risk reversal: Guarantee, free trial, no credit card\n\nOutput each section with clear labels. Write REAL copy, not placeholders.\n\nRules:\n- No jargon the visitor wouldn't use\n- Every headline should work standalone (people skim)\n- CTAs must be specific (\"Start Your Free Trial\" not \"Get Started\")\n- Include microcopy suggestions for buttons and form fields",
+        "prompt": "Product: {{input.product}}\nTarget audience: {{input.targetAudience}}\nPage goal: {{input.pageGoal}}\nBrand voice: {{input.tone}}\nExisting testimonials/proof: {{input.existingTestimonials}}",
+        "temperature": 0.7,
+        "maxTokens": 1500
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.write}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Hero Section\n**Headline:** Your team's knowledge, organized and findable in seconds\n**Subheadline:** The AI-powered wiki that learns how your company works. Stop searching, start finding.\n**CTA Button:** Start Free — No Credit Card\n**Social proof badge:** Trusted by 2,000+ remote teams\n\n---\n\n## Problem Section\n**Section headline:** Sound familiar?\n\n- You Slack someone a question and wait 3 hours for an answer that lives in a doc somewhere\n- New hires spend their first month asking \"where is...?\" instead of contributing\n- Your wiki has 500 pages and nobody can find anything in it\n\n---\n\n## Solution Section\n**Section headline:** There's a better way to manage team knowledge\n\n| Before | After |\n|--------|-------|\n| Searching Slack, Drive, Notion for 15 minutes | Ask in natural language, get the answer in 2 seconds |\n| New hires lost for weeks | Self-serve onboarding from day one |\n| Outdated docs nobody trusts | AI flags stale content automatically |\n\n---\n\n## Features Section\n\n**1. AI Search That Actually Works**\nAsk questions in plain English. Get answers pulled from your docs, Slack history, and meeting notes — with source links.\n\n**2. Auto-Organizing Wiki**\nDrop in your content. AI categorizes, tags, and cross-links it. No more manual organization.\n\n**3. Freshness Alerts**\nGet notified when docs are outdated. AI suggests updates based on recent Slack conversations and decisions.\n\n**4. Onboarding Autopilot**\nNew hire asks a question? They get the answer instantly — plus related context they didn't know to ask about.\n\n---\n\n## Final CTA Section\n**Headline:** Stop losing hours to searching. Start finding answers.\n**CTA Button:** Start Free — No Credit Card\n**Microcopy under button:** 14-day free trial. Setup takes 5 minutes. Cancel anytime."
+  }
+}

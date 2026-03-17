@@ -1,0 +1,64 @@
+{
+  "slug": "email-reply-drafter",
+  "name": "Email Reply Drafter",
+  "description": "Draft professional email replies in seconds. Paste the email you received and get a polished response.",
+  "longDescription": "Stop agonizing over email replies. Paste the email you received, tell us the gist of what you want to say, and get a polished, professional reply in seconds. Handles tricky situations like pushback, bad news delivery, scope negotiations, and follow-ups. Matches the appropriate formality level and keeps replies concise — because nobody reads long emails.",
+  "category": "productivity",
+  "tags": ["email", "communication", "productivity", "professional-writing", "replies"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 3 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "originalEmail": {
+        "type": "string",
+        "title": "Email you received",
+        "description": "Paste the email you need to reply to",
+        "minLength": 10,
+        "maxLength": 5000
+      },
+      "replyIntent": {
+        "type": "string",
+        "title": "What do you want to say?",
+        "description": "The gist of your reply — can be rough notes, bullet points, or a sentence",
+        "minLength": 5,
+        "maxLength": 1000
+      },
+      "tone": {
+        "type": "string",
+        "title": "Tone",
+        "enum": ["professional", "friendly", "firm", "apologetic", "enthusiastic"],
+        "default": "professional"
+      },
+      "relationship": {
+        "type": "string",
+        "title": "Relationship to sender",
+        "enum": ["boss", "direct-report", "peer", "client", "vendor", "cold-contact"],
+        "default": "peer"
+      }
+    },
+    "required": ["originalEmail", "replyIntent"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "draft",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are an expert professional communicator who drafts email replies that are clear, concise, and appropriate for the relationship and situation.\n\nRules:\n1. **Match formality to the original email** — if they wrote casually, don't reply with \"Dear Sir/Madam\"\n2. **Keep it short** — most email replies should be under 150 words. If it needs to be longer, use bullet points.\n3. **Lead with the answer** — don't bury the response in pleasantries. First line should address their main question or point.\n4. **One email, one action** — if multiple things need to happen, make ONE thing the clear next step\n5. **Close with a clear next step** — who does what by when\n6. **Never be passive-aggressive** — be direct and kind\n\nSituation-specific guidance:\n- **Saying no**: Acknowledge, explain briefly, offer an alternative\n- **Delivering bad news**: Lead with empathy, state the facts, focus on the path forward\n- **Negotiating**: Acknowledge their position, state yours with reasoning, propose a middle ground\n- **Following up**: Reference the last touchpoint, make it easy to respond\n- **Accepting**: Confirm clearly, restate any commitments, set expectations\n\nOutput:\n\n## Reply\n[The email reply — ready to copy and send]\n\n## Alternative Version\n[A slightly different version with a different angle or tone]\n\n## Notes\n- [Any context on word choice or strategy]",
+        "prompt": "Original email:\n{{input.originalEmail}}\n\nWhat I want to say: {{input.replyIntent}}\nTone: {{input.tone}}\nRelationship: {{input.relationship}}",
+        "temperature": 0.5,
+        "maxTokens": 800
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.draft}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Reply\nHi Sarah,\n\nThanks for the update. I agree the timeline is tight — here's what I can commit to:\n\n- Design review: Done by Wednesday EOD\n- Copy feedback: Thursday morning\n- Final sign-off: Friday noon\n\nThe one risk is the copy review — I'm waiting on updated brand guidelines from marketing. If those slip past Wednesday, I may need until Friday afternoon for that piece.\n\nWant to sync briefly Tuesday to make sure we're aligned on priorities? Happy to do 15 minutes.\n\nBest,\n[Name]\n\n## Alternative Version\nHi Sarah,\n\nTimeline received — tight but doable. Quick breakdown of what I can deliver and when:\n\n- Design review by Wed\n- Copy feedback by Thu AM\n- Final sign-off by Fri noon\n\nOne flag: the copy review depends on updated brand guidelines from marketing (still pending). I'll chase that today.\n\nLet me know if the Friday noon deadline works for your side.\n\nThanks,\n[Name]\n\n## Notes\n- Both versions acknowledge the tight timeline without complaining about it — shows you're solution-oriented\n- The risk flag is specific (brand guidelines) and includes what you're doing about it (chasing today)\n- Offering a sync is proactive but optional — doesn't create obligation"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "slug": "json-formatter",
+  "name": "JSON Formatter & Validator",
+  "description": "Format, validate, and prettify JSON data. Detect errors, fix common issues, and explain the structure.",
+  "longDescription": "Paste messy, minified, or broken JSON and get it cleaned up instantly. This tool validates your JSON, formats it with proper indentation, highlights any syntax errors with explanations, and can even attempt to fix common issues like trailing commas, unquoted keys, and single quotes. Also provides a structural overview showing nesting depth, data types, and array sizes.",
+  "category": "data-tools",
+  "tags": ["json", "formatter", "validator", "data", "developer-tools", "debugging"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 2 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "jsonInput": {
+        "type": "string",
+        "title": "JSON data",
+        "description": "Paste your JSON here — can be minified, messy, or even broken",
+        "minLength": 2,
+        "maxLength": 20000
+      },
+      "action": {
+        "type": "string",
+        "title": "What to do",
+        "enum": ["format-and-validate", "fix-errors", "explain-structure", "minify"],
+        "default": "format-and-validate"
+      }
+    },
+    "required": ["jsonInput"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "process",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a JSON processing expert. Your job is to help people work with JSON data.\n\nBased on the requested action:\n\n**format-and-validate:**\n1. Check if the JSON is valid\n2. If valid: format it with 2-space indentation and present in a code block\n3. If invalid: identify the exact error(s), explain what's wrong, and show the corrected version\n4. Provide a structural summary (top-level keys, nesting depth, array sizes)\n\n**fix-errors:**\n1. Attempt to fix common JSON errors:\n   - Trailing commas\n   - Single quotes instead of double quotes\n   - Unquoted keys\n   - Missing commas between items\n   - Unclosed brackets/braces\n2. Show the fixed version\n3. List every fix you made\n\n**explain-structure:**\n1. Format the JSON\n2. Provide a tree-view of the structure showing:\n   - Key names and their data types\n   - Array lengths\n   - Nesting depth\n   - Any patterns (repeated structures, optional fields)\n3. Explain what this data likely represents\n\n**minify:**\n1. Remove all whitespace and newlines\n2. Present the minified version\n3. Show the size reduction (original chars vs minified chars)\n\nAlways present formatted JSON in ```json code blocks.\nBe precise about error locations — reference line numbers or key paths.",
+        "prompt": "Action: {{input.action}}\n\nJSON Input:\n{{input.jsonInput}}",
+        "temperature": 0.1,
+        "maxTokens": 2000
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.process}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Validation Result: Valid JSON\n\n## Formatted Output\n```json\n{\n  \"users\": [\n    {\n      \"id\": 1,\n      \"name\": \"Alice Johnson\",\n      \"email\": \"alice@example.com\",\n      \"roles\": [\"admin\", \"editor\"],\n      \"active\": true\n    },\n    {\n      \"id\": 2,\n      \"name\": \"Bob Smith\",\n      \"email\": \"bob@example.com\",\n      \"roles\": [\"viewer\"],\n      \"active\": false\n    }\n  ],\n  \"metadata\": {\n    \"total\": 2,\n    \"page\": 1,\n    \"perPage\": 10\n  }\n}\n```\n\n## Structure Summary\n- **Top-level type:** Object with 2 keys\n- **users** (array, 2 items): Each item is an object with 5 fields (id: number, name: string, email: string, roles: string[], active: boolean)\n- **metadata** (object): 3 fields (total: number, page: number, perPage: number)\n- **Max nesting depth:** 3 levels\n- **Pattern:** Paginated API response with user records"
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "slug": "seo-meta-description-writer",
+  "name": "SEO Meta Description Writer",
+  "description": "Write click-worthy meta descriptions that improve CTR in search results. Get 5 variants per page.",
+  "longDescription": "Your meta description is the ad copy of organic search. A good one can double your click-through rate without changing your ranking. This tool generates SEO-optimized meta descriptions that include your target keyword naturally, stay under the 155-character limit, and use proven CTR techniques (power words, specificity, urgency). Get 5 variants per page so you can test which one performs best.",
+  "category": "marketing",
+  "tags": ["seo", "meta-description", "search", "ctr", "optimization", "google"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 3 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "pageTitle": {
+        "type": "string",
+        "title": "Page title",
+        "description": "The title of the page or blog post",
+        "minLength": 3,
+        "maxLength": 300
+      },
+      "pageContent": {
+        "type": "string",
+        "title": "Page summary",
+        "description": "Brief summary of what the page covers",
+        "minLength": 10,
+        "maxLength": 2000
+      },
+      "targetKeyword": {
+        "type": "string",
+        "title": "Target keyword",
+        "description": "Primary keyword you want to rank for",
+        "minLength": 2,
+        "maxLength": 100
+      },
+      "pageType": {
+        "type": "string",
+        "title": "Page type",
+        "enum": ["blog-post", "product-page", "landing-page", "service-page", "homepage"],
+        "default": "blog-post"
+      }
+    },
+    "required": ["pageTitle", "pageContent", "targetKeyword"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "write",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are an SEO specialist who has optimized meta descriptions for sites with 1M+ monthly organic visitors. You know what makes searchers click.\n\nRules for meta descriptions:\n1. **155 characters max** — Google truncates after this. Count carefully.\n2. **Include the target keyword** — Google bolds matching keywords in results. Place it naturally near the beginning.\n3. **Match search intent** — If the query is informational, promise an answer. If commercial, promise a comparison. If transactional, promise ease.\n4. **Use power words** — 'proven', 'step-by-step', 'free', 'essential', 'ultimate', 'in [year]'\n5. **Include a CTA** — 'Learn how', 'Discover', 'Find out', 'Get started'\n6. **Be specific** — Numbers, timeframes, and outcomes outperform vague promises\n7. **No duplicate content** — Each variant must take a different angle\n\nOutput format:\n\n## Meta Description Variants\n\n### 1. Benefit-Led\n[description]\n*[character count]*\n\n### 2. Curiosity Gap\n[description]\n*[character count]*\n\n### 3. Social Proof / Authority\n[description]\n*[character count]*\n\n### 4. Problem-Solution\n[description]\n*[character count]*\n\n### 5. Direct & Actionable\n[description]\n*[character count]*\n\n## Recommendation\n[Which variant to use and why, based on the search intent of the target keyword]",
+        "prompt": "Page title: {{input.pageTitle}}\nPage summary: {{input.pageContent}}\nTarget keyword: {{input.targetKeyword}}\nPage type: {{input.pageType}}",
+        "temperature": 0.6,
+        "maxTokens": 800
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.write}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Meta Description Variants\n\n### 1. Benefit-Led\nLearn the 7 best project management tools for remote teams in 2026. Compared features, pricing, and real user reviews to find your perfect fit.\n*149 characters*\n\n### 2. Curiosity Gap\nWe tested 15 project management tools so you don't have to. Only 7 made the cut for remote teams. See which ones (and why).\n*131 characters*\n\n### 3. Social Proof / Authority\nBased on 500+ user reviews: the 7 project management tools remote teams actually love using. Updated for 2026 with pricing breakdowns.\n*143 characters*\n\n### 4. Problem-Solution\nStruggling to keep your remote team aligned? These 7 project management tools solve async collaboration, time zones, and accountability.\n*144 characters*\n\n### 5. Direct & Actionable\nCompare the top 7 project management tools for remote teams. Side-by-side features, pricing from $0-49/mo, and free trial links.\n*135 characters*\n\n## Recommendation\nUse Variant 5 for this commercial-intent keyword. Searchers looking for 'best project management tools for remote teams' want a comparison — they're ready to evaluate and decide. The direct approach with pricing signals saves them time and earns the click."
+  }
+}

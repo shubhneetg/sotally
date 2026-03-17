@@ -1,0 +1,63 @@
+{
+  "slug": "weekly-report-writer",
+  "name": "Weekly Report Writer",
+  "description": "Generate polished weekly status reports from rough notes. Highlights wins, blockers, and next week's priorities.",
+  "longDescription": "Turn your messy weekly notes into a professional status report your manager and stakeholders actually want to read. Paste your accomplishments, blockers, and plans — this tool structures them into a clear, concise report with impact framing, risk flags, and help-needed callouts. Stop spending 30 minutes every Friday formatting the same report.",
+  "category": "productivity",
+  "tags": ["productivity", "reporting", "weekly-update", "status-report", "management", "communication"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 4 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "accomplishments": {
+        "type": "string",
+        "title": "What did you accomplish this week?",
+        "description": "List your wins, completed tasks, progress made — rough notes are fine",
+        "minLength": 10,
+        "maxLength": 3000
+      },
+      "blockers": {
+        "type": "string",
+        "title": "Blockers or challenges",
+        "description": "What's stuck, delayed, or at risk?",
+        "maxLength": 2000
+      },
+      "nextWeek": {
+        "type": "string",
+        "title": "Next week's priorities",
+        "description": "What are you focusing on next week?",
+        "maxLength": 2000
+      },
+      "audience": {
+        "type": "string",
+        "title": "Report audience",
+        "enum": ["direct-manager", "skip-level", "cross-functional-team", "executive"],
+        "default": "direct-manager"
+      }
+    },
+    "required": ["accomplishments"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "write",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a senior professional who writes excellent status reports. You know how to frame work in terms of impact, not just activity. You understand that different audiences need different levels of detail.\n\nReport structure:\n\n## Weekly Status Report — Week of [current week]\n\n### Highlights\n[2-3 bullet points of the most impactful accomplishments. Frame in terms of outcomes, not tasks. \"Shipped feature X, expected to reduce churn by 5%\" not \"Worked on feature X.\"]\n\n### Completed This Week\n| Item | Impact | Status |\n|------|--------|--------|\n| [task] | [why it matters] | Done |\n\n### In Progress\n| Item | Progress | ETA |\n|------|----------|-----|\n| [task] | [% or milestone] | [date] |\n\n### Blockers & Risks\n| Issue | Impact | Help Needed |\n|-------|--------|-------------|\n| [blocker] | [what it affects] | [specific ask] |\n\n*If no blockers: \"No blockers this week.\"*\n\n### Next Week Priorities\n1. [Priority 1 — with expected outcome]\n2. [Priority 2]\n3. [Priority 3]\n\n### Metrics / KPIs (if applicable)\n[Any relevant numbers that show progress]\n\nAudience-specific adjustments:\n- **Direct manager**: Include details, mention where you need input\n- **Skip-level**: Higher-level framing, strategic impact, less tactical detail\n- **Cross-functional**: Focus on dependencies and shared outcomes\n- **Executive**: 3 bullets max, metrics-driven, no jargon\n\nTone: Professional but human. No corporate fluff. Write like a competent person who respects the reader's time.",
+        "prompt": "Accomplishments: {{input.accomplishments}}\nBlockers: {{input.blockers}}\nNext week: {{input.nextWeek}}\nAudience: {{input.audience}}",
+        "temperature": 0.4,
+        "maxTokens": 1000
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.write}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Weekly Status Report — Week of March 17\n\n### Highlights\n- Launched the new onboarding flow to 100% of users — early data shows 23% improvement in activation rate (Day 1 → Day 7)\n- Closed the partnership deal with Acme Corp — $45K ARR, first enterprise customer in the vertical\n- Resolved the payment processing bug that was causing 3% of transactions to fail silently\n\n### Completed This Week\n| Item | Impact | Status |\n|------|--------|--------|\n| Onboarding flow v2 launch | 23% activation improvement (early) | Done |\n| Acme Corp contract signed | $45K ARR, opens enterprise segment | Done |\n| Payment bug fix (Stripe webhook) | Recovered ~$2K/week in failed transactions | Done |\n| Q1 metrics deck for board | Ready for Thursday's board meeting | Done |\n\n### In Progress\n| Item | Progress | ETA |\n|------|----------|-----|\n| API rate limiting implementation | 70% — testing phase | Mar 21 |\n| Customer interview synthesis (8 of 12 done) | 67% | Mar 24 |\n\n### Blockers & Risks\n| Issue | Impact | Help Needed |\n|-------|--------|-------------|\n| Waiting on Legal review for Acme DPA | Delays onboarding by ~1 week | Can you nudge Legal? Sent request Mar 12 |\n| Staging environment unstable | Slowing QA on rate limiting | DevOps ticket filed, need prioritization |\n\n### Next Week Priorities\n1. Ship API rate limiting — complete testing and deploy to production by Thursday\n2. Finish customer interview synthesis and share insights with product team\n3. Begin scoping Q2 roadmap based on interview findings and board feedback"
+  }
+}

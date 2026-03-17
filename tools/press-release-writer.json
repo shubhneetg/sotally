@@ -1,0 +1,70 @@
+{
+  "slug": "press-release-writer",
+  "name": "Press Release Writer",
+  "description": "Generate professional, AP-style press releases ready for distribution to media outlets.",
+  "longDescription": "Write press releases that journalists actually read. This tool generates AP-style press releases with proper formatting, compelling headlines, strong leads, and quotable quotes. Whether you're announcing a product launch, funding round, partnership, or milestone — get a distribution-ready press release that follows the inverted pyramid structure journalists expect.",
+  "category": "ai-writing",
+  "tags": ["ai", "press-release", "pr", "media", "communications", "journalism"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 6 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "announcement": {
+        "type": "string",
+        "title": "What are you announcing?",
+        "description": "Describe the news — product launch, funding, partnership, milestone, event, etc.",
+        "minLength": 20,
+        "maxLength": 3000
+      },
+      "companyName": {
+        "type": "string",
+        "title": "Company/organization name",
+        "description": "Full legal or brand name",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "spokesperson": {
+        "type": "string",
+        "title": "Spokesperson name & title",
+        "description": "Who should be quoted? e.g., 'Jane Smith, CEO'",
+        "maxLength": 200
+      },
+      "releaseType": {
+        "type": "string",
+        "title": "Release type",
+        "enum": ["product-launch", "funding", "partnership", "milestone", "event", "executive-hire", "general"],
+        "default": "general"
+      },
+      "additionalContext": {
+        "type": "string",
+        "title": "Additional context (optional)",
+        "description": "Key stats, background info, or specific points to include",
+        "maxLength": 2000
+      }
+    },
+    "required": ["announcement", "companyName"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "draft",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a veteran PR writer who has placed stories in TechCrunch, Forbes, and major wire services. You understand AP style, inverted pyramid structure, and what makes journalists click 'write about this' instead of 'delete.'\n\nPress release structure (STRICT):\n\n1. **FOR IMMEDIATE RELEASE** header\n2. **Headline**: Active voice, present tense, under 80 characters. No exclamation marks. Make it newsworthy, not promotional.\n3. **Subheadline**: One line that adds context the headline couldn't fit.\n4. **Dateline**: [CITY, State] — [Date] —\n5. **Lead paragraph**: WHO did WHAT, WHEN, WHERE, and WHY in the first 2 sentences. This is the only paragraph some journalists will read. Make it complete.\n6. **Body paragraphs**: Supporting details in descending order of importance (inverted pyramid). Include:\n   - Key metrics or proof points\n   - A direct quote from spokesperson (make it sound human, not corporate)\n   - Context about the market/industry\n   - A second quote from a partner/customer if relevant\n7. **Boilerplate**: Standard 'About [Company]' paragraph\n8. **Contact info**: Media contact details placeholder\n\nRules:\n- AP style: no Oxford comma, spell out numbers under 10, use % not 'percent'\n- No superlatives without proof ('leading' requires market share data)\n- Quotes should say something the press release body DOESN'T — add color, vision, or emotion\n- Keep it under 500 words total\n- Never start with 'We are excited to announce' — journalists delete those immediately",
+        "prompt": "Announcement: {{input.announcement}}\nCompany: {{input.companyName}}\nSpokesperson: {{input.spokesperson}}\nRelease type: {{input.releaseType}}\nAdditional context: {{input.additionalContext}}",
+        "temperature": 0.5,
+        "maxTokens": 1200
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.draft}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "**FOR IMMEDIATE RELEASE**\n\n# Sotally Launches AI Tool Marketplace Connecting Creators With Millions of Business Users\n*Platform enables anyone to build, sell and distribute AI-powered tools without writing code*\n\n**SAN FRANCISCO, March 17, 2026** — Sotally today launched its AI tool marketplace, a platform where creators can build and monetize AI-powered business tools without technical expertise. The marketplace opens with 30 tools across six categories and aims to onboard 1,000 creators in its first quarter.\n\nThe platform addresses a growing gap in the AI market: while businesses need specialized AI tools, most solutions require engineering resources to build and maintain. Sotally's no-code builder lets creators design tools using pre-built templates and custom prompts, then sell them through personalized storefronts.\n\n\"The next wave of AI isn't about bigger models — it's about better tools in the hands of domain experts,\" said Shubh Patni, founder of Sotally. \"A marketing consultant knows what marketers need far better than any AI lab. We're giving those experts the platform to productize their knowledge.\"\n\nCreators earn 80% of revenue from their tools and can customize their storefronts with custom domains. The platform handles payments, execution infrastructure and user management.\n\n**About Sotally**\nSotally is an AI tool marketplace that connects creators with businesses. Founded in 2026, the platform enables domain experts to build, sell and distribute AI-powered tools. Learn more at sotally.com.\n\n**Media Contact**\npress@sotally.com"
+  }
+}

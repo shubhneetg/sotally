@@ -1,0 +1,70 @@
+{
+  "slug": "email-sequence-writer",
+  "name": "Email Sequence Writer",
+  "description": "Create multi-email sales or nurture sequences with subject lines, body copy, and send timing.",
+  "longDescription": "Build complete email sequences that convert. Whether it's a welcome series, abandoned cart flow, product launch sequence, or cold outreach drip — this tool generates the full sequence with subject lines (A/B variants), body copy, optimal send timing, and strategic CTAs. Based on email marketing frameworks that achieve 30%+ open rates and 5%+ click-through rates.",
+  "category": "ai-writing",
+  "tags": ["ai", "email-marketing", "sales", "sequences", "automation", "copywriting", "drip-campaign"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 8 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "goal": {
+        "type": "string",
+        "title": "Sequence goal",
+        "description": "What should this email sequence achieve?",
+        "minLength": 10,
+        "maxLength": 1000
+      },
+      "product": {
+        "type": "string",
+        "title": "Product/service",
+        "description": "What are you selling or promoting? Include price point if relevant.",
+        "minLength": 5,
+        "maxLength": 1000
+      },
+      "audience": {
+        "type": "string",
+        "title": "Target audience",
+        "description": "Who will receive these emails? What's their awareness level?",
+        "maxLength": 500
+      },
+      "sequenceType": {
+        "type": "string",
+        "title": "Sequence type",
+        "enum": ["welcome-series", "sales-launch", "abandoned-cart", "cold-outreach", "re-engagement", "onboarding"],
+        "default": "sales-launch"
+      },
+      "emailCount": {
+        "type": "string",
+        "title": "Number of emails",
+        "enum": ["3", "5", "7"],
+        "default": "5"
+      }
+    },
+    "required": ["goal", "product"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "sequence",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are an email marketing strategist who has built sequences generating $1M+ in revenue for DTC brands, SaaS companies, and course creators. You understand the psychology of inbox behavior, deliverability best practices, and conversion optimization.\n\nFramework for each email:\n1. **Subject line psychology**: Use curiosity gaps, specificity, or pattern interrupts. Never clickbait — the email must deliver on the promise.\n2. **Preview text**: The overlooked conversion lever. Use it strategically.\n3. **Opening line**: The first 10 words determine if they keep reading. No \"I hope this finds you well.\"\n4. **Body structure**: Short paragraphs (1-2 sentences). One idea per email. Progressive disclosure.\n5. **CTA**: One clear CTA per email. Don't compete with yourself.\n6. **Timing**: Strategic delays between emails based on sequence type.\n\nSequence architecture:\n- Email 1: Hook + establish value (no selling)\n- Email 2: Story/social proof (build desire)\n- Email 3: Educate + soft pitch\n- Email 4: Overcome objections\n- Email 5: Urgency + hard CTA\n- Email 6: Last chance / deadline\n- Email 7: Break-up email\n\nOutput format for EACH email:\n\n---\n\n### Email [N] — [Strategic purpose]\n**Send timing:** [Day X / hours after previous]\n**Subject line A:** [option]\n**Subject line B:** [option]\n**Preview text:** [preview]\n\n[Full email body copy]\n\n**CTA:** [button text or link text]\n**Key principle:** [1-line explanation of why this email works]\n\n---\n\nAfter all emails, include:\n\n## Sequence Strategy Notes\n- Overall arc explanation\n- Key metrics to track\n- When to remove subscribers from the sequence\n- A/B testing priorities",
+        "prompt": "Sequence goal: {{input.goal}}\nProduct/service: {{input.product}}\nTarget audience: {{input.audience}}\nSequence type: {{input.sequenceType}}\nNumber of emails: {{input.emailCount}}",
+        "temperature": 0.7,
+        "maxTokens": 3000
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.sequence}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "### Email 1 — The Hook\n**Send timing:** Immediately after signup\n**Subject line A:** The $3,000 mistake I made so you don't have to\n**Subject line B:** I wish someone told me this before I started\n**Preview text:** It took me 6 months and a lot of wasted money to learn...\n\nHey {{first_name}},\n\nWelcome aboard.\n\nBefore I pitch you anything (I won't in this email), let me share the most expensive lesson I learned building my first online course.\n\nI spent $3,000 on Facebook ads before I had a single testimonial.\n\nZero sales. Zero leads. Just a lighter bank account and a bruised ego.\n\nThe fix was embarrassingly simple: I gave the course away to 10 people first, collected their results, and THEN ran ads using their words.\n\nCost of that strategy? $0.\nRevenue from the next ad campaign? $12,400.\n\nOver the next few days, I'll share the exact framework I used to go from failed launch to consistent $10K months. No fluff, no theory — just what worked.\n\nTalk tomorrow,\n[Name]\n\n**CTA:** [No CTA — pure value email]\n**Key principle:** Email 1 builds trust by leading with a vulnerability story and delivering genuine value with zero pitch.\n\n---\n\n## Sequence Strategy Notes\n- **Arc:** Trust → Desire → Education → Objection handling → Urgency\n- **Track:** Open rates (aim 35%+), click-through (aim 5%+), reply rate on email 1\n- **Remove:** Anyone who purchases; move non-openers after email 3 to re-engagement\n- **A/B priority:** Test subject lines first, then CTAs, then send times"
+  }
+}

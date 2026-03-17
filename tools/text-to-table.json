@@ -1,0 +1,57 @@
+{
+  "slug": "text-to-table",
+  "name": "Text to Table Converter",
+  "description": "Convert unstructured text into clean, structured tables. Extracts data points and organizes them automatically.",
+  "longDescription": "Got a wall of text with data buried in it? Paste meeting notes, emails, reports, or any unstructured text and this tool extracts the data points and organizes them into a clean table. It intelligently identifies entities, attributes, and relationships. Output in Markdown table, CSV, or JSON format. Perfect for turning messy notes into structured data.",
+  "category": "data-tools",
+  "tags": ["data", "table", "text-extraction", "structured-data", "conversion", "productivity"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 3 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "text": {
+        "type": "string",
+        "title": "Text to convert",
+        "description": "Paste the unstructured text that contains data you want in a table",
+        "minLength": 20,
+        "maxLength": 10000
+      },
+      "outputFormat": {
+        "type": "string",
+        "title": "Output format",
+        "enum": ["markdown-table", "csv", "json"],
+        "default": "markdown-table"
+      },
+      "instructions": {
+        "type": "string",
+        "title": "Specific instructions (optional)",
+        "description": "Any specific columns you want, or data to focus on",
+        "maxLength": 500
+      }
+    },
+    "required": ["text"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "convert",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are an expert at extracting structured data from unstructured text. You can identify entities, attributes, and relationships in any text and organize them into clean tables.\n\nProcess:\n1. Read the text carefully and identify all data points\n2. Determine the most logical table structure (what should be rows vs columns)\n3. Extract and normalize the data (consistent formatting, units, etc.)\n4. Present in the requested format\n\nRules:\n- If the text contains multiple types of data, create multiple tables\n- Normalize inconsistent formatting (\"$5k\" and \"5,000 dollars\" should both become \"$5,000\")\n- Mark missing data as \"—\" not empty cells\n- If you need to infer column headers, make them clear and descriptive\n- Add a brief note about any assumptions you made\n\nOutput structure:\n\n## Extracted Table\n[The table in the requested format]\n\n## Extraction Notes\n- Number of rows extracted\n- Any data that was ambiguous or required interpretation\n- Suggested additional columns that might be useful\n\nFor CSV format, wrap in a code block with csv language tag.\nFor JSON format, wrap in a code block with json language tag.\nFor markdown tables, use standard markdown table syntax with alignment.",
+        "prompt": "Output format: {{input.outputFormat}}\nSpecific instructions: {{input.instructions}}\n\nText to convert:\n{{input.text}}",
+        "temperature": 0.2,
+        "maxTokens": 1500
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.convert}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Extracted Table\n\n| Name | Role | Start Date | Salary | Department | Remote |\n|------|------|-----------|--------|------------|--------|\n| Sarah Chen | Senior Engineer | Jan 15, 2024 | $145,000 | Engineering | Yes |\n| Mike Rodriguez | Product Manager | Mar 1, 2024 | $130,000 | Product | No |\n| Aisha Patel | Designer | Feb 20, 2024 | $115,000 | Design | Yes |\n| Tom Wilson | Sales Lead | Jan 8, 2024 | $95,000 + commission | Sales | No |\n| Lisa Park | Data Analyst | Apr 5, 2024 | $110,000 | Engineering | Yes |\n\n## Extraction Notes\n- **5 rows extracted** from meeting notes about new hires\n- Tom Wilson's salary included a \"plus commission\" note — kept as-is since commission amount wasn't specified\n- Departments were inferred from role titles (Lisa Park listed under Engineering based on the note \"reports to engineering manager\")\n- **Suggested additional columns:** Manager name, probation end date (both mentioned in text but inconsistently)"
+  }
+}

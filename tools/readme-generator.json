@@ -1,0 +1,70 @@
+{
+  "slug": "readme-generator",
+  "name": "README Generator",
+  "description": "Generate professional README.md files from project info. Includes setup, usage, API docs, and badges.",
+  "longDescription": "A good README is the difference between a project that gets adopted and one that gets ignored. Describe your project and this tool generates a comprehensive, well-structured README with all the sections developers expect: badges, quick start, installation, usage examples, API reference, contributing guidelines, and license. Follows the conventions of top open-source projects.",
+  "category": "development",
+  "tags": ["readme", "documentation", "open-source", "github", "developer-tools", "markdown"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 4 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "projectName": {
+        "type": "string",
+        "title": "Project name",
+        "description": "Name of your project or library",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "projectDescription": {
+        "type": "string",
+        "title": "Project description",
+        "description": "What does your project do? Key features, tech stack, who it's for.",
+        "minLength": 20,
+        "maxLength": 3000
+      },
+      "techStack": {
+        "type": "string",
+        "title": "Tech stack",
+        "description": "Languages, frameworks, and key dependencies",
+        "maxLength": 500
+      },
+      "installCommand": {
+        "type": "string",
+        "title": "Install command (optional)",
+        "description": "How to install — e.g., 'npm install my-lib' or 'pip install my-lib'",
+        "maxLength": 300
+      },
+      "readmeStyle": {
+        "type": "string",
+        "title": "README style",
+        "enum": ["minimal", "standard", "comprehensive"],
+        "default": "standard"
+      }
+    },
+    "required": ["projectName", "projectDescription"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "generate",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a developer advocate who has written READMEs for popular open-source projects. You know what makes developers choose one library over another, and the README is the front door.\n\nGenerate a README in raw markdown that follows these sections (adjust based on style):\n\n**Minimal**: Project name, one-line description, install, basic usage, license.\n\n**Standard** (default):\n1. Project name + badges (build, npm/pypi version, license)\n2. One-liner description\n3. Key features (3-5 bullet points)\n4. Quick start (3-step setup)\n5. Installation (detailed)\n6. Usage examples (2-3 code blocks)\n7. API reference (if applicable)\n8. Configuration options\n9. Contributing\n10. License\n\n**Comprehensive**: Everything in Standard plus:\n- Architecture overview\n- Troubleshooting / FAQ\n- Changelog highlights\n- Roadmap\n- Acknowledgments\n\nRules:\n- Code blocks must specify the language for syntax highlighting\n- Use real-looking (but placeholder) code examples, not lorem ipsum\n- Badge URLs should use shields.io format\n- Include a table of contents for standard and comprehensive\n- Quick start should get someone running in under 2 minutes\n- Don't pad with unnecessary content — every section should earn its place",
+        "prompt": "Project name: {{input.projectName}}\nDescription: {{input.projectDescription}}\nTech stack: {{input.techStack}}\nInstall command: {{input.installCommand}}\nREADME style: {{input.readmeStyle}}",
+        "temperature": 0.5,
+        "maxTokens": 1500
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.generate}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "# fastqueue\n\n[![npm version](https://img.shields.io/npm/v/fastqueue.svg)](https://npmjs.com/package/fastqueue)\n[![Build Status](https://img.shields.io/github/actions/workflow/status/yourname/fastqueue/ci.yml)](https://github.com/yourname/fastqueue/actions)\n[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)\n\nA lightweight, type-safe job queue for Node.js with Redis backing. Process background jobs without the complexity of Bull or BullMQ.\n\n## Features\n\n- **Simple API** — 3 functions: `enqueue`, `process`, `schedule`\n- **Type-safe** — Full TypeScript support with generics for job payloads\n- **Reliable** — Redis-backed with automatic retries and dead-letter queues\n- **Observable** — Built-in metrics and event hooks\n- **Lightweight** — Zero dependencies beyond `ioredis` (~4KB gzipped)\n\n## Quick Start\n\n```bash\nnpm install fastqueue\n```\n\n```typescript\nimport { createQueue } from 'fastqueue';\n\nconst emailQueue = createQueue<{ to: string; subject: string }>('emails', {\n  redis: 'redis://localhost:6379',\n});\n\n// Add a job\nawait emailQueue.enqueue({ to: 'user@example.com', subject: 'Welcome!' });\n\n// Process jobs\nemailQueue.process(async (job) => {\n  await sendEmail(job.data.to, job.data.subject);\n});\n```\n\n## Installation\n\n```bash\nnpm install fastqueue\n# or\nyarn add fastqueue\n# or\npnpm add fastqueue\n```\n\n**Requirements:** Node.js 18+ and a Redis 6+ instance.\n\n## License\n\nMIT"
+  }
+}
