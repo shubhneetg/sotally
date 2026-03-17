@@ -137,12 +137,15 @@ toolRoutes.get('/', async (c) => {
         avgRating: tools.avgRating,
         isFeatured: tools.isFeatured,
         categoryId: tools.categoryId,
+        categorySlug: categories.slug,
+        categoryName: categories.name,
         creatorId: tools.creatorId,
         createdAt: tools.createdAt,
         creatorName: users.name,
       })
       .from(tools)
       .leftJoin(users, eq(tools.creatorId, users.id))
+      .leftJoin(categories, eq(tools.categoryId, categories.id))
       .where(where)
       .orderBy(primaryOrder, desc(tools.createdAt))
       .limit(perPage)

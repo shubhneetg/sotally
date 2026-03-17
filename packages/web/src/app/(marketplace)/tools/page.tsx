@@ -14,12 +14,14 @@ interface ApiTool {
   rating?: number;
   totalRuns?: number;
   runCount?: number;
-  pricing?: { creditsPerRun?: number; credits?: number };
+  pricing?: { model?: string; creditsPerRun?: number; credits?: number; tiers?: { credits: number }[] };
   creditCost?: number;
   creatorName?: string;
   creatorId?: string;
   creator?: { name?: string };
   category?: { name?: string } | string;
+  categorySlug?: string;
+  categoryName?: string;
 }
 
 interface Tool {
@@ -31,6 +33,7 @@ interface Tool {
   runCount: number;
   creditCost: number;
   creatorName: string;
+  pricingModel?: string;
 }
 
 const categoryEmojiMap: Record<string, string> = {
@@ -55,15 +58,28 @@ function getCategoryEmoji(category?: { name?: string } | string): string {
 }
 
 function mapToolFromApi(apiTool: ApiTool): Tool {
+  const pricingModel = apiTool.pricing?.model;
+  let creditCost = apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0;
+
+  // For tiered pricing, show lowest tier cost
+  if (pricingModel === 'tiered' && apiTool.pricing?.tiers?.length) {
+    const costs = apiTool.pricing.tiers.map((t) => t.credits).filter((c) => c >= 0);
+    creditCost = costs.length > 0 ? Math.min(...costs) : 0;
+  }
+
+  // Prefer categorySlug from API for emoji mapping
+  const categoryKey = apiTool.categorySlug || apiTool.categoryName || apiTool.category;
+
   return {
     name: apiTool.name,
     slug: apiTool.slug,
     description: apiTool.description,
-    icon: apiTool.iconUrl || apiTool.icon || getCategoryEmoji(apiTool.category),
+    icon: apiTool.iconUrl || apiTool.icon || getCategoryEmoji(categoryKey),
     rating: apiTool.avgRating ?? apiTool.rating ?? 0,
     runCount: apiTool.totalRuns ?? apiTool.runCount ?? 0,
-    creditCost: apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0,
+    creditCost,
     creatorName: apiTool.creatorName || apiTool.creator?.name || 'Sotally',
+    pricingModel,
   };
 }
 
@@ -87,28 +103,32 @@ export default function ToolsPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
+  const [sort, setSort] = useState('popular');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalTools, setTotalTools] = useState(0);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchTools = useCallback(async (q?: string, categorySlug?: string, currentPage = 1) => {
+  const fetchTools = useCallback(async (q?: string, categorySlug?: string, currentPage = 1, sortBy = 'popular') => {
     setLoading(true);
     setError(null);
     try {
-      const params: { q?: string; category?: string; page?: number; per_page?: number } = {
+      const params: { q?: string; category?: string; page?: number; per_page?: number; sort?: string } = {
         page: currentPage,
         per_page: PER_PAGE,
+        sort: sortBy,
       };
       if (q) params.q = q;
       if (categorySlug) params.category = categorySlug;
       const res = (await api.tools.list(params)) as {
         success: boolean;
-        data: { items: ApiTool[]; totalPages?: number } | ApiTool[];
+        data: { items: ApiTool[]; totalPages?: number; total?: number } | ApiTool[];
       };
       const data = Array.isArray(res.data) ? { items: res.data } : res.data;
       const rawItems = data.items || [];
       setTools(rawItems.map(mapToolFromApi));
       setTotalPages((data as { totalPages?: number }).totalPages ?? 1);
+      setTotalTools((data as { total?: number }).total ?? rawItems.length);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load tools');
     } finally {
@@ -117,8 +137,8 @@ export default function ToolsPage() {
   }, []);
 
   useEffect(() => {
-    fetchTools(debouncedSearch || undefined, activeCategory || undefined, page);
-  }, [activeCategory, fetchTools, debouncedSearch, page]);
+    fetchTools(debouncedSearch || undefined, activeCategory || undefined, page, sort);
+  }, [activeCategory, fetchTools, debouncedSearch, page, sort]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -183,6 +203,26 @@ export default function ToolsPage() {
           })}
         </div>
 
+        {/* Results Count + Sorting */}
+        {!loading && !error && (
+          <div className="mt-6 flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">
+              {totalTools > 0
+                ? `Showing ${tools.length} of ${totalTools} tool${totalTools !== 1 ? 's' : ''}`
+                : ''}
+            </p>
+            <select
+              value={sort}
+              onChange={(e) => { setSort(e.target.value); setPage(1); }}
+              className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring/20"
+            >
+              <option value="popular">Most Popular</option>
+              <option value="newest">Newest</option>
+              <option value="rating">Top Rated</option>
+            </select>
+          </div>
+        )}
+
         {/* Error State */}
         {error && (
           <div className="mt-8 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -221,7 +261,7 @@ export default function ToolsPage() {
             <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {tools.length > 0 ? (
                 tools.map((tool) => (
-                  <ToolCard key={tool.slug} {...tool} />
+                  <ToolCard key={tool.slug} {...tool} pricingModel={tool.pricingModel} />
                 ))
               ) : (
                 <div className="col-span-full py-16 text-center">

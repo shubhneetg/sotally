@@ -9,6 +9,8 @@ import { useCreditStore } from '@/stores/credit.store';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/toast';
 import { api } from '@/lib/api';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 function creditsToDollars(credits: number): string {
   return `$${(credits * 0.03).toFixed(2)}`;
@@ -210,12 +212,16 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
               {result.status}
             </span>
           </div>
-          <div className="mt-4 rounded-lg bg-muted/50 p-4">
-            <pre className="whitespace-pre-wrap text-sm text-foreground font-mono">
-              {typeof result.output === 'string'
-                ? result.output
-                : JSON.stringify(result.output, null, 2)}
-            </pre>
+          <div className="mt-4 rounded-lg bg-muted/50 p-4 prose prose-sm prose-neutral dark:prose-invert max-w-none [&_pre]:bg-background/50 [&_pre]:rounded-md [&_pre]:p-3 [&_code]:text-xs [&_table]:text-sm [&_th]:px-3 [&_th]:py-1.5 [&_td]:px-3 [&_td]:py-1.5 [&_ul]:my-1 [&_ol]:my-1 [&_li]:my-0.5 [&_p]:my-1.5 [&_h1]:text-lg [&_h2]:text-base [&_h3]:text-sm [&_h1]:font-semibold [&_h2]:font-semibold [&_h3]:font-semibold">
+            {typeof result.output === 'string' ? (
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {result.output}
+              </ReactMarkdown>
+            ) : (
+              <pre className="whitespace-pre-wrap text-sm text-foreground font-mono">
+                {JSON.stringify(result.output, null, 2)}
+              </pre>
+            )}
           </div>
           <div className="mt-4 flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={handleCopyResult}>

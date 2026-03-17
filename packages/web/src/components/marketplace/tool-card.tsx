@@ -13,6 +13,22 @@ interface ToolCardProps {
   runCount: number;
   creditCost: number;
   creatorName: string;
+  pricingModel?: string;
+}
+
+function PricingBadge({ creditCost, pricingModel }: { creditCost: number; pricingModel?: string }) {
+  if (pricingModel === 'free' || (creditCost === 0 && (!pricingModel || pricingModel === 'per_run'))) {
+    return (
+      <span className="inline-flex items-center rounded-md bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+        Free
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center rounded-md bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">
+      🪙 {creditCost} (~{creditsToDollars(creditCost)})
+    </span>
+  );
 }
 
 function StarRating({ rating }: { rating: number }) {
@@ -42,6 +58,7 @@ export function ToolCard({
   runCount,
   creditCost,
   creatorName,
+  pricingModel,
 }: ToolCardProps) {
   return (
     <Link
@@ -76,9 +93,7 @@ export function ToolCard({
             {runCount >= 1000 ? `${(runCount / 1000).toFixed(1)}k` : runCount} runs
           </span>
         </div>
-        <span className="inline-flex items-center rounded-md bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">
-          🪙 {creditCost} (~{creditsToDollars(creditCost)})
-        </span>
+        <PricingBadge creditCost={creditCost} pricingModel={pricingModel} />
       </div>
     </Link>
   );
