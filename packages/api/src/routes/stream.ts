@@ -6,9 +6,25 @@ import { env } from '../lib/env';
 
 const streamRoutes = new Hono();
 
-streamRoutes.get('/executions/:id/stream', authMiddleware, async (c) => {
+streamRoutes.get('/executions/:id/stream', async (c) => {
+  // SSE endpoints use query param auth since EventSource doesn't support headers
+  const queryToken = c.req.query('token');
+  const headerToken = c.req.header('authorization')?.replace('Bearer ', '');
+  const token = queryToken || headerToken;
+
+  if (!token) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  // Verify token (inline, since authMiddleware sets c.set('user'))
+  const { jwtVerify } = await import('jose');
+  const secret = new TextEncoder().encode(env.NEXTAUTH_SECRET);
+  const verified = await jwtVerify(token, secret, { algorithms: ['HS256'] }).catch(() => null);
+  if (!verified?.payload?.sub) {
+    return c.json({ error: 'Invalid token' }, 401);
+  }
+
   const executionId = c.req.param('id');
-  const user = c.get('user');
 
   return streamSSE(c, async (stream) => {
     const subscriber = new Redis(env.REDIS_URL);

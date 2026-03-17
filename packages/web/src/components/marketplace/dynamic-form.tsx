@@ -7,7 +7,11 @@ import { Button } from '@/components/ui/button';
 interface JsonSchemaProperty {
   type: string;
   title?: string;
+  label?: string;
   description?: string;
+  placeholder?: string;
+  helpText?: string;
+  format?: string;
   enum?: string[];
   maxLength?: number;
   minimum?: number;
@@ -59,7 +63,8 @@ export function DynamicForm({
     for (const field of required) {
       const value = formData[field];
       if (value === '' || value === undefined || value === null) {
-        const label = schema.properties[field]?.title || field;
+        const prop = schema.properties[field];
+        const label = prop?.title || (prop as any)?.label || field.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
         newErrors[field] = `${label} is required`;
       }
     }
@@ -91,7 +96,7 @@ export function DynamicForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {Object.entries(schema.properties).map(([key, prop]) => {
-        const label = prop.title || key;
+        const label = prop.title || (prop as any).label || key.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase());
         const isRequired = required.includes(key);
 
         return (
@@ -100,8 +105,8 @@ export function DynamicForm({
               {label}
               {isRequired && <span className="ml-1 text-destructive">*</span>}
             </label>
-            {prop.description && (
-              <p className="mt-0.5 text-xs text-muted-foreground">{prop.description}</p>
+            {(prop.description || prop.helpText) && (
+              <p className="mt-0.5 text-xs text-muted-foreground">{prop.helpText || prop.description}</p>
             )}
 
             <div className="mt-1.5">
@@ -146,17 +151,17 @@ export function DynamicForm({
                   disabled={disabled}
                   placeholder={`Enter ${label.toLowerCase()}`}
                 />
-              ) : prop.type === 'string' && prop.maxLength && prop.maxLength > 200 ? (
-                /* Long text -> Textarea */
+              ) : prop.type === 'string' && (prop.format === 'textarea' || (prop.maxLength && prop.maxLength > 200)) ? (
+                /* Long text / textarea format -> Textarea */
                 <textarea
                   id={key}
                   value={String(formData[key] || '')}
                   onChange={(e) => updateField(key, e.target.value)}
                   disabled={disabled}
-                  rows={4}
+                  rows={5}
                   maxLength={prop.maxLength}
-                  placeholder={`Enter ${label.toLowerCase()}`}
-                  className="flex w-full rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder={prop.placeholder || `Enter ${label.toLowerCase()}`}
+                  className="flex w-full rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring/20 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
                 />
               ) : (
                 /* Default string -> Input */
@@ -167,7 +172,7 @@ export function DynamicForm({
                   onChange={(e) => updateField(key, e.target.value)}
                   maxLength={prop.maxLength}
                   disabled={disabled}
-                  placeholder={`Enter ${label.toLowerCase()}`}
+                  placeholder={prop.placeholder || `Enter ${label.toLowerCase()}`}
                 />
               )}
 

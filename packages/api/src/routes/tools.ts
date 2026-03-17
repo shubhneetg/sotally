@@ -259,6 +259,7 @@ toolRoutes.post('/:slug/execute', rateLimit({ windowMs: 60_000, maxRequests: 30,
   let creditsToCharge = 0;
 
   switch (pricing.model) {
+    case 'per_run':
     case 'per_execution':
       creditsToCharge = pricing.creditsPerRun;
       break;
@@ -266,8 +267,11 @@ toolRoutes.post('/:slug/execute', rateLimit({ windowMs: 60_000, maxRequests: 30,
       creditsToCharge = 0;
       break;
     case 'tiered':
-      // Use first tier rate as default
-      creditsToCharge = pricing.tiers?.[0]?.creditsPerRun ?? 0;
+      // Use selected tier or first tier as default
+      const selectedTier = body.tierId
+        ? pricing.tiers?.find((t: any) => t.id === body.tierId)
+        : pricing.tiers?.[0];
+      creditsToCharge = selectedTier?.credits ?? 0;
       break;
     case 'freemium':
       creditsToCharge = pricing.creditsPerRunAfterFree ?? 0;
@@ -276,7 +280,7 @@ toolRoutes.post('/:slug/execute', rateLimit({ windowMs: 60_000, maxRequests: 30,
       creditsToCharge = Math.ceil(pricing.creditsPerBundle / pricing.bundleSize);
       break;
     default:
-      creditsToCharge = 5; // fallback
+      creditsToCharge = pricing.creditsPerRun ?? 5; // fallback
   }
 
   // Paid tools require authentication

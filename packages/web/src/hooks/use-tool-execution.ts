@@ -60,11 +60,8 @@ function trySSEStream(
 
   const connected = new Promise<boolean>((resolve) => {
     try {
-      const url = `${API_URL}/stream/executions/${executionId}/stream`;
-      eventSource = new EventSource(url, {
-        // Note: EventSource doesn't support custom headers natively.
-        // The auth token is passed as a query param for SSE endpoints.
-      } as EventSourceInit);
+      const url = `${API_URL}/stream/executions/${executionId}/stream?token=${encodeURIComponent(token)}`;
+      eventSource = new EventSource(url);
 
       // Connection opened successfully
       eventSource.onopen = () => {
