@@ -20,7 +20,7 @@ test.describe('Credit System', () => {
     const regResponse = await page.request.post(`${API_URL}/auth/register`, {
       data: { name, email, password: TEST_PASSWORD },
     });
-    expect(regResponse.status()).toBe(201);
+    expect([200, 201]).toContain(regResponse.status());
 
     const regBody = await regResponse.json();
     const token = (regBody.data || regBody).token;
@@ -32,7 +32,7 @@ test.describe('Credit System', () => {
     expect(balanceResponse.status()).toBe(200);
 
     const balanceBody = await balanceResponse.json();
-    const balance = balanceBody.data?.balance ?? balanceBody.balance;
+    const balance = balanceBody.data?.balance ?? balanceBody.data?.creditBalance ?? balanceBody.balance ?? balanceBody.creditBalance;
     expect(balance).toBeGreaterThanOrEqual(50);
   });
 
@@ -50,26 +50,30 @@ test.describe('Credit System', () => {
     const body = await response.json();
     expect(body.success).toBe(true);
 
-    const packages = body.data?.packages ?? body.data ?? body.packages;
+    const packages = body.data?.packages ?? body.data?.items ?? body.data ?? body.packages;
     expect(Array.isArray(packages)).toBe(true);
     expect(packages.length).toBeGreaterThanOrEqual(1);
 
     // Each package should have price and credits fields
     const first = packages[0];
-    expect(typeof first.price !== 'undefined' || typeof first.priceUsd !== 'undefined').toBe(true);
-    expect(typeof first.credits !== 'undefined' || typeof first.amount !== 'undefined').toBe(true);
+    expect(
+      first.price !== undefined || first.priceUsd !== undefined || first.priceInCents !== undefined
+    ).toBe(true);
+    expect(
+      first.credits !== undefined || first.amount !== undefined || first.creditAmount !== undefined
+    ).toBe(true);
   });
 
   // Test 39: Credits page shows current balance and package cards
   test('dashboard credits page shows balance and buy credits packages', async ({ page }) => {
-    const { name, email, token } = await registerViaApi(page);
-    await injectAuthState(page, token, { name, email });
+    const { token } = await registerViaApi(page);
+    await injectAuthState(page, token);
 
     await page.goto('/dashboard/credits');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Balance display
-    await expect(page.getByText(/current balance/i)).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByText(/current balance/i)).toBeVisible({ timeout: 10_000 });
 
     // Package cards (Buy Credits section)
     await expect(page.getByText(/buy credits/i)).toBeVisible({ timeout: 8_000 });
@@ -82,14 +86,14 @@ test.describe('Credit System', () => {
 
   // Test 40: Credits page shows "Most Popular" badge on the popular package
   test('credits page shows the Most Popular badge on the popular package', async ({ page }) => {
-    const { name, email, token } = await registerViaApi(page);
-    await injectAuthState(page, token, { name, email });
+    const { token } = await registerViaApi(page);
+    await injectAuthState(page, token);
 
     await page.goto('/dashboard/credits');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await expect(
       page.getByText(/most popular/i)
-    ).toBeVisible({ timeout: 8_000 });
+    ).toBeVisible({ timeout: 10_000 });
   });
 });

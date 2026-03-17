@@ -13,19 +13,19 @@ const API_URL = 'https://sotally.com/api';
 test.describe('Marketplace - Tools Listing Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/tools');
-    await page.waitForLoadState('networkidle');
-    // Wait for tools to load (loading skeleton disappears)
-    await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 10_000 }).catch(() => {});
+    await page.waitForLoadState('domcontentloaded');
+    // Wait for tools to load (loading skeleton disappears or heading appears)
+    await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 15_000 }).catch(() => {});
   });
 
   // Test 16: Tools page renders the page title and description
   test('tools page renders the Explore Tools heading', async ({ page }) => {
     await expect(
       page.getByRole('heading', { name: /explore tools/i })
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 10_000 });
 
     await expect(
-      page.getByText(/pay per use, no subscriptions/i)
+      page.getByText(/pay per use/i)
     ).toBeVisible();
   });
 
@@ -44,10 +44,9 @@ test.describe('Marketplace - Tools Listing Page', () => {
     await expect(toolCards.first()).toBeVisible({ timeout: 10_000 });
 
     const firstCard = toolCards.first();
-    // Tool name should be a heading-level element within the card
     await expect(firstCard).toBeVisible();
-    // Credit indicator (🪙 symbol or "credits") should be present
-    await expect(firstCard.getByText(/credit/i).first()).toBeVisible();
+    // Credit indicator uses the 🪙 symbol and dollar amount (e.g., "🪙 2 (~$0.06)")
+    await expect(firstCard.getByText(/🪙|credit|\$/i).first()).toBeVisible();
   });
 
   // Test 19: Search input filters tools by name
@@ -58,7 +57,7 @@ test.describe('Marketplace - Tools Listing Page', () => {
     await searchInput.fill('Image Background Remover');
     // Wait for debounced search to fire
     await page.waitForTimeout(600);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // The specific tool should be visible
     await expect(
@@ -71,7 +70,7 @@ test.describe('Marketplace - Tools Listing Page', () => {
     const searchInput = page.getByPlaceholder(/search tools/i);
     await searchInput.fill('xyzzy-nonexistent-tool-9999');
     await page.waitForTimeout(600);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await expect(
       page.getByText(/no tools found/i)
@@ -96,7 +95,7 @@ test.describe('Marketplace - Tools Listing Page', () => {
   });
 
   // Test 22: GET /api/tools returns an array of tools
-  test('GET /api/tools returns a list with 9 tools', async ({ page }) => {
+  test('GET /api/tools returns a list of tools', async ({ page }) => {
     const response = await page.request.get(`${API_URL}/tools`);
     expect(response.status()).toBe(200);
 

@@ -20,17 +20,16 @@ test.describe('Dashboard', () => {
 
   // Test 42: Authenticated user sees the dashboard with credit balance card
   test('authenticated user sees dashboard with credit balance and welcome message', async ({ page }) => {
-    const { name, email, token } = await registerViaApi(page);
-    await injectAuthState(page, token, { name, email });
+    const { token } = await registerViaApi(page);
+    await injectAuthState(page, token);
 
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
-    // Welcome heading uses the user's first name
-    const firstName = name.split(' ')[0];
+    // Welcome heading: "Welcome back, {firstName}" or just "Dashboard"
     await expect(
-      page.getByRole('heading', { name: new RegExp(`welcome back.*${firstName}|dashboard`, 'i') })
-    ).toBeVisible({ timeout: 8_000 });
+      page.getByRole('heading', { name: /welcome back|dashboard/i })
+    ).toBeVisible({ timeout: 10_000 });
 
     // Credit balance card
     await expect(page.getByText(/your credit balance/i)).toBeVisible({ timeout: 8_000 });
@@ -43,16 +42,16 @@ test.describe('Dashboard', () => {
 
   // Test 43: Dashboard shows empty state for executions on a new account
   test('new user dashboard shows no executions empty state', async ({ page }) => {
-    const { name, email, token } = await registerViaApi(page);
-    await injectAuthState(page, token, { name, email });
+    const { token } = await registerViaApi(page);
+    await injectAuthState(page, token);
 
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Wait for loading state to resolve
     await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 10_000 }).catch(() => {});
 
-    // New account should show "No executions yet"
+    // New account should show "No executions yet."
     await expect(
       page.getByText(/no executions yet/i)
     ).toBeVisible({ timeout: 10_000 });
@@ -65,15 +64,17 @@ test.describe('Dashboard', () => {
 
   // Test 44: Dashboard history page is accessible and shows the right heading
   test('dashboard history page loads for authenticated user', async ({ page }) => {
-    const { name, email, token } = await registerViaApi(page);
-    await injectAuthState(page, token, { name, email });
+    const { token } = await registerViaApi(page);
+    await injectAuthState(page, token);
 
     await page.goto('/dashboard/history');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     // Should not redirect away — history page should load
     await expect(page).toHaveURL(/.*dashboard\/history/);
-    // Page should render something meaningful (not blank)
-    await expect(page.locator('main, [class*="space-y"]').first()).toBeVisible({ timeout: 8_000 });
+    // Page should render the "Execution History" heading
+    await expect(
+      page.getByRole('heading', { name: /execution history/i })
+    ).toBeVisible({ timeout: 10_000 });
   });
 });

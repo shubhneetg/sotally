@@ -1,0 +1,78 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "Sotally" [ref=e5] [cursor=pointer]:
+          - /url: /
+        - navigation [ref=e6]:
+          - link "Tools" [ref=e7] [cursor=pointer]:
+            - /url: /tools
+          - link "Pricing" [ref=e8] [cursor=pointer]:
+            - /url: /pricing
+          - link "For Creators" [ref=e9] [cursor=pointer]:
+            - /url: /creators
+        - generic [ref=e10]:
+          - link "Log in" [ref=e11] [cursor=pointer]:
+            - /url: /login
+          - link "Get Started" [ref=e12] [cursor=pointer]:
+            - /url: /register
+    - main [ref=e13]:
+      - generic [ref=e14]:
+        - heading "Tool not found" [level=1] [ref=e15]
+        - paragraph [ref=e16]: Tool not found
+        - link "Back to marketplace" [ref=e17] [cursor=pointer]:
+          - /url: /tools
+    - contentinfo [ref=e18]:
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - generic [ref=e21]:
+            - heading "Product" [level=3] [ref=e22]
+            - list [ref=e23]:
+              - listitem [ref=e24]:
+                - link "Tools" [ref=e25] [cursor=pointer]:
+                  - /url: /tools
+              - listitem [ref=e26]:
+                - link "Pricing" [ref=e27] [cursor=pointer]:
+                  - /url: /pricing
+              - listitem [ref=e28]:
+                - link "API" [ref=e29] [cursor=pointer]:
+                  - /url: /api
+          - generic [ref=e30]:
+            - heading "Creators" [level=3] [ref=e31]
+            - list [ref=e32]:
+              - listitem [ref=e33]:
+                - link "Create Tools" [ref=e34] [cursor=pointer]:
+                  - /url: /creators
+              - listitem [ref=e35]:
+                - link "Templates" [ref=e36] [cursor=pointer]:
+                  - /url: /creators/templates
+              - listitem [ref=e37]:
+                - link "Earn Money" [ref=e38] [cursor=pointer]:
+                  - /url: /creators/earn
+          - generic [ref=e39]:
+            - heading "Company" [level=3] [ref=e40]
+            - list [ref=e41]:
+              - listitem [ref=e42]:
+                - link "About" [ref=e43] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=e44]:
+                - link "Blog" [ref=e45] [cursor=pointer]:
+                  - /url: /blog
+              - listitem [ref=e46]:
+                - link "Contact" [ref=e47] [cursor=pointer]:
+                  - /url: /contact
+          - generic [ref=e48]:
+            - heading "Legal" [level=3] [ref=e49]
+            - list [ref=e50]:
+              - listitem [ref=e51]:
+                - link "Terms" [ref=e52] [cursor=pointer]:
+                  - /url: /terms
+              - listitem [ref=e53]:
+                - link "Privacy" [ref=e54] [cursor=pointer]:
+                  - /url: /privacy
+        - generic [ref=e55]: © 2026 Sotally. Your Software Ally.
+  - alert [ref=e56]
+```

@@ -105,7 +105,7 @@ export async function registerUser(
   password: string = TEST_PASSWORD
 ): Promise<void> {
   await page.goto('/register');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 
   await page.fill('#name', name);
   await page.fill('#email', email);
@@ -115,9 +115,9 @@ export async function registerUser(
 
   // Wait for either success message or redirect
   await Promise.race([
-    page.waitForSelector('text=Account created', { timeout: 10_000 }),
-    page.waitForURL('**/tools', { timeout: 10_000 }),
-    page.waitForURL('**/dashboard', { timeout: 10_000 }),
+    page.waitForSelector('text=Account created!', { timeout: 15_000 }),
+    page.waitForURL('**/tools', { timeout: 15_000 }),
+    page.waitForURL('**/dashboard', { timeout: 15_000 }),
   ]);
 }
 
@@ -131,7 +131,7 @@ export async function loginUser(
   password: string = TEST_PASSWORD
 ): Promise<void> {
   await page.goto('/login');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 
   await page.fill('#email', email);
   await page.fill('#password', password);
@@ -139,7 +139,7 @@ export async function loginUser(
   await page.click('button[type="submit"]');
 
   // Wait for redirect to dashboard
-  await page.waitForURL('**/dashboard', { timeout: 10_000 });
+  await page.waitForURL('**/dashboard', { timeout: 15_000 });
 }
 
 /**
@@ -151,34 +151,32 @@ export async function loginUser(
 export async function injectAuthState(
   page: Page,
   token: string,
-  user: { name: string; email: string }
+  _user?: { name: string; email: string }
 ): Promise<void> {
-  await page.goto('/');
-  await page.waitForLoadState('domcontentloaded');
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
 
-  // Inject into localStorage following Zustand's persist format
+  // Inject into localStorage following Zustand's persist format.
+  // Although the store only partializes { token }, Zustand's rehydration
+  // will merge whatever we put into localStorage. We inject the full auth
+  // state so that isAuthenticated is true immediately on page load,
+  // preventing premature redirects to /login on dashboard pages.
+  // The header's loadUser() will then fetch the real user profile.
   await page.evaluate(
-    ({ token, user }) => {
-      const storeKey = 'auth-storage';
+    ({ token }) => {
+      const storeKey = 'sotally-auth';
       const state = {
         state: {
           token,
-          user: {
-            id: 'test-user-id',
-            name: user.name,
-            email: user.email,
-            credits: 50,
-            role: 'user',
-          },
           isAuthenticated: true,
           isLoading: false,
           error: null,
+          user: null,
         },
         version: 0,
       };
       localStorage.setItem(storeKey, JSON.stringify(state));
     },
-    { token, user }
+    { token }
   );
 }
 

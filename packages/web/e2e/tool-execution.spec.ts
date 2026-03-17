@@ -17,23 +17,23 @@ const API_URL = 'https://sotally.com/api';
 
 // Helper to navigate to the run page with auth already injected
 async function navigateToRunPage(page: Page, slug: string = KNOWN_TOOL_SLUG): Promise<void> {
-  const { name, email, token } = await registerViaApi(page);
-  await injectAuthState(page, token, { name, email });
+  const { token } = await registerViaApi(page);
+  await injectAuthState(page, token);
   await page.goto(`/tools/${slug}/run`);
-  await page.waitForLoadState('networkidle');
-  // Wait for tool data to load
-  await page.waitForSelector('.animate-pulse', { state: 'detached', timeout: 10_000 }).catch(() => {});
+  await page.waitForLoadState('domcontentloaded');
+  // Wait for tool data to load (spinner or skeleton)
+  await page.waitForSelector('.animate-spin', { state: 'detached', timeout: 15_000 }).catch(() => {});
 }
 
 test.describe('Tool Run Page - Unauthenticated', () => {
   // Test 28: Unauthenticated user visiting the run page sees sign-in prompt
   test('unauthenticated user sees sign-in-to-run message with login link', async ({ page }) => {
     await page.goto(`/tools/${KNOWN_TOOL_SLUG}/run`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     await expect(
       page.getByRole('heading', { name: /sign in to run tools/i })
-    ).toBeVisible({ timeout: 8_000 });
+    ).toBeVisible({ timeout: 15_000 });
 
     // Should show a Log in link
     await expect(
@@ -53,9 +53,9 @@ test.describe('Tool Run Page - Authenticated', () => {
     await navigateToRunPage(page);
 
     // "Inputs" section heading
-    await expect(page.getByRole('heading', { name: /inputs/i })).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByRole('heading', { name: /inputs/i })).toBeVisible({ timeout: 10_000 });
 
-    // Submit button with credit cost
+    // Submit button with credit cost (text: "Run Tool — X Credits (~$Y.YY)")
     const submitBtn = page.getByRole('button', { name: /run tool/i });
     await expect(submitBtn).toBeVisible();
   });
@@ -65,7 +65,7 @@ test.describe('Tool Run Page - Authenticated', () => {
     await navigateToRunPage(page);
 
     // Fill in the first visible input field (text-type)
-    const inputs = page.locator('input[type="text"], textarea').filter({ visible: true });
+    const inputs = page.locator('input[type="text"], input[type="url"], textarea');
     const inputCount = await inputs.count();
 
     if (inputCount > 0) {
@@ -76,7 +76,7 @@ test.describe('Tool Run Page - Authenticated', () => {
     const submitBtn = page.getByRole('button', { name: /run tool/i });
     await submitBtn.click();
 
-    // Confirmation dialog should appear
+    // Confirmation dialog should appear ("Confirm execution")
     await expect(
       page.getByText(/confirm execution/i)
     ).toBeVisible({ timeout: 8_000 });
@@ -91,7 +91,7 @@ test.describe('Tool Run Page - Authenticated', () => {
   test('cancelling confirmation dialog returns to input form', async ({ page }) => {
     await navigateToRunPage(page);
 
-    const inputs = page.locator('input[type="text"], textarea').filter({ visible: true });
+    const inputs = page.locator('input[type="text"], input[type="url"], textarea');
     if (await inputs.count() > 0) {
       await inputs.first().fill('https://example.com');
     }
@@ -111,6 +111,7 @@ test.describe('Tool Run Page - Authenticated', () => {
   test('POST /api/tools/:slug/execute without auth token returns 401', async ({ page }) => {
     const response = await page.request.post(`${API_URL}/tools/${KNOWN_TOOL_SLUG}/execute`, {
       data: { input: { url: 'https://example.com' } },
+      headers: { 'Content-Type': 'application/json' },
     });
 
     // Must require authentication
@@ -124,12 +125,13 @@ test.describe('Tool Run Page - Authenticated', () => {
     const response = await page.request.post(`${API_URL}/tools/${KNOWN_TOOL_SLUG}/execute`, {
       headers: {
         Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
       data: { input: { url: 'https://example.com' } },
     });
 
     // Should succeed (200 or 202) or fail with a known application error (not 401/403/500)
-    // Accept 200, 202, or 402 (insufficient credits) as valid responses
+    // Accept 200, 202, 402 (insufficient credits), or 422 as valid responses
     expect([200, 202, 402, 422]).toContain(response.status());
 
     if (response.status() === 200 || response.status() === 202) {
@@ -147,40 +149,27 @@ test.describe('Tool Run Page - Authenticated', () => {
     expect(response.status()).toBe(401);
   });
 
-  // Test 35: Execution result panel has Run Again and Copy Result buttons
+  // Test 35: Execution result panel has Run Again and Copy Result buttons after result
   test('execution result area renders Run Again and Copy Result buttons after result', async ({ page }) => {
     // This test verifies the UI elements exist on the run page when a result is shown.
-    // We inject a mock result by checking the DOM elements after a real execution.
-    // Since we cannot guarantee tool execution time or credits, we verify the UI
-    // elements are correctly defined in the component by checking if a successful
-    // execution scenario renders the expected buttons.
-    //
-    // Strategy: Use API to execute, then navigate to see the result.
-    const { name, email, token } = await registerViaApi(page);
+    // Since we cannot guarantee tool execution completes quickly, we verify the run page
+    // loads correctly and shows either the Inputs form or the Result section.
+    const { token } = await registerViaApi(page);
 
     // Attempt execution via API
     const execResponse = await page.request.post(`${API_URL}/tools/${KNOWN_TOOL_SLUG}/execute`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       data: { input: { url: 'https://example.com' } },
     });
 
-    // Only proceed to check UI if execution succeeded
-    if (execResponse.status() === 200 || execResponse.status() === 202) {
-      await injectAuthState(page, token, { name, email });
-      await page.goto(`/tools/${KNOWN_TOOL_SLUG}/run`);
-      await page.waitForLoadState('networkidle');
+    await injectAuthState(page, token);
+    await page.goto(`/tools/${KNOWN_TOOL_SLUG}/run`);
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForSelector('.animate-spin', { state: 'detached', timeout: 15_000 }).catch(() => {});
 
-      // If execution was synchronous, results might already be on the page
-      // or we just verify the Inputs form is shown (the result section is present in code)
-      await expect(
-        page.getByRole('heading', { name: /inputs/i }).or(page.getByRole('heading', { name: /result/i }))
-      ).toBeVisible({ timeout: 8_000 });
-    } else {
-      // If execution failed due to credits, verify the page still loads
-      await injectAuthState(page, token, { name, email });
-      await page.goto(`/tools/${KNOWN_TOOL_SLUG}/run`);
-      await page.waitForLoadState('networkidle');
-      await expect(page.getByRole('heading', { name: /inputs/i })).toBeVisible({ timeout: 8_000 });
-    }
+    // Verify the page loaded: should show Inputs form or Result heading
+    await expect(
+      page.getByRole('heading', { name: /inputs/i }).or(page.getByRole('heading', { name: /result/i }))
+    ).toBeVisible({ timeout: 10_000 });
   });
 });

@@ -1,0 +1,406 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "Sotally" [ref=e5] [cursor=pointer]:
+          - /url: /
+        - navigation [ref=e6]:
+          - link "Tools" [ref=e7] [cursor=pointer]:
+            - /url: /tools
+          - link "Pricing" [ref=e8] [cursor=pointer]:
+            - /url: /pricing
+          - link "For Creators" [ref=e9] [cursor=pointer]:
+            - /url: /creators
+        - generic [ref=e10]:
+          - link "Log in" [ref=e11] [cursor=pointer]:
+            - /url: /login
+          - link "Get Started" [ref=e12] [cursor=pointer]:
+            - /url: /register
+    - main [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]:
+          - heading "Explore Tools" [level=1] [ref=e16]
+          - paragraph [ref=e17]: Browse our marketplace of tools. Pay per use, no subscriptions.
+        - textbox "Search tools..." [ref=e19]
+        - generic [ref=e20]:
+          - button "All" [ref=e21] [cursor=pointer]
+          - button "Design" [ref=e22] [cursor=pointer]
+          - button "Development" [ref=e23] [cursor=pointer]
+          - button "Marketing" [ref=e24] [cursor=pointer]
+          - button "Data" [ref=e25] [cursor=pointer]
+          - button "Writing" [ref=e26] [cursor=pointer]
+        - generic [ref=e27]:
+          - link "Smart Text Classifier by Analyze text and detect if it's a task, note, idea, or question. Get category suggestions. runs 🪙 (~$NaN)" [ref=e28] [cursor=pointer]:
+            - /url: /tools/smart-text-classifier
+            - generic [ref=e31]:
+              - heading "Smart Text Classifier" [level=3] [ref=e32]
+              - paragraph [ref=e33]: by
+            - paragraph [ref=e34]: Analyze text and detect if it's a task, note, idea, or question. Get category suggestions.
+            - generic [ref=e35]:
+              - generic [ref=e36]:
+                - generic [ref=e37]:
+                  - img [ref=e38]
+                  - img [ref=e40]
+                  - img [ref=e42]
+                  - img [ref=e44]
+                  - img [ref=e46]
+                - generic [ref=e48]: runs
+              - generic [ref=e49]: 🪙 (~$NaN)
+          - link "AI Message Refiner by Rewrite any message — emails, Slack, texts — to be clearer, more professional, or match any tone you need. runs 🪙 (~$NaN)" [ref=e50] [cursor=pointer]:
+            - /url: /tools/ai-message-refiner
+            - generic [ref=e53]:
+              - heading "AI Message Refiner" [level=3] [ref=e54]
+              - paragraph [ref=e55]: by
+            - paragraph [ref=e56]: Rewrite any message — emails, Slack, texts — to be clearer, more professional, or match any tone you need.
+            - generic [ref=e57]:
+              - generic [ref=e58]:
+                - generic [ref=e59]:
+                  - img [ref=e60]
+                  - img [ref=e62]
+                  - img [ref=e64]
+                  - img [ref=e66]
+                  - img [ref=e68]
+                - generic [ref=e70]: runs
+              - generic [ref=e71]: 🪙 (~$NaN)
+          - link "Daily Gratitude Prompter by Generate personalized gratitude prompts based on your day. Build a consistent gratitude practice. runs 🪙 (~$NaN)" [ref=e72] [cursor=pointer]:
+            - /url: /tools/daily-gratitude-prompter
+            - generic [ref=e75]:
+              - heading "Daily Gratitude Prompter" [level=3] [ref=e76]
+              - paragraph [ref=e77]: by
+            - paragraph [ref=e78]: Generate personalized gratitude prompts based on your day. Build a consistent gratitude practice.
+            - generic [ref=e79]:
+              - generic [ref=e80]:
+                - generic [ref=e81]:
+                  - img [ref=e82]
+                  - img [ref=e84]
+                  - img [ref=e86]
+                  - img [ref=e88]
+                  - img [ref=e90]
+                - generic [ref=e92]: runs
+              - generic [ref=e93]: 🪙 (~$NaN)
+          - link "Lead Qualifier by Analyze a prospect and get an instant qualification score with recommended next steps. BANT + ICP matching. runs 🪙 (~$NaN)" [ref=e94] [cursor=pointer]:
+            - /url: /tools/lead-qualifier
+            - generic [ref=e97]:
+              - heading "Lead Qualifier" [level=3] [ref=e98]
+              - paragraph [ref=e99]: by
+            - paragraph [ref=e100]: Analyze a prospect and get an instant qualification score with recommended next steps. BANT + ICP matching.
+            - generic [ref=e101]:
+              - generic [ref=e102]:
+                - generic [ref=e103]:
+                  - img [ref=e104]
+                  - img [ref=e106]
+                  - img [ref=e108]
+                  - img [ref=e110]
+                  - img [ref=e112]
+                - generic [ref=e114]: runs
+              - generic [ref=e115]: 🪙 (~$NaN)
+          - link "LinkedIn Cold Message Writer by Write personalized LinkedIn connection requests and cold DMs that actually get replies. Under 300 chars. runs 🪙 (~$NaN)" [ref=e116] [cursor=pointer]:
+            - /url: /tools/linkedin-cold-message-writer
+            - generic [ref=e119]:
+              - heading "LinkedIn Cold Message Writer" [level=3] [ref=e120]
+              - paragraph [ref=e121]: by
+            - paragraph [ref=e122]: Write personalized LinkedIn connection requests and cold DMs that actually get replies. Under 300 chars.
+            - generic [ref=e123]:
+              - generic [ref=e124]:
+                - generic [ref=e125]:
+                  - img [ref=e126]
+                  - img [ref=e128]
+                  - img [ref=e130]
+                  - img [ref=e132]
+                  - img [ref=e134]
+                - generic [ref=e136]: runs
+              - generic [ref=e137]: 🪙 (~$NaN)
+          - link "Quick Note Formatter by Turn messy, unstructured notes into clean, organized documents. Supports bullet points, headers, and summaries. runs 🪙 (~$NaN)" [ref=e138] [cursor=pointer]:
+            - /url: /tools/quick-note-formatter
+            - generic [ref=e141]:
+              - heading "Quick Note Formatter" [level=3] [ref=e142]
+              - paragraph [ref=e143]: by
+            - paragraph [ref=e144]: Turn messy, unstructured notes into clean, organized documents. Supports bullet points, headers, and summaries.
+            - generic [ref=e145]:
+              - generic [ref=e146]:
+                - generic [ref=e147]:
+                  - img [ref=e148]
+                  - img [ref=e150]
+                  - img [ref=e152]
+                  - img [ref=e154]
+                  - img [ref=e156]
+                - generic [ref=e158]: runs
+              - generic [ref=e159]: 🪙 (~$NaN)
+          - link "Task Extractor by Extract actionable tasks from meeting notes, emails, or any text. Get structured to-do items with owners and deadlines. runs 🪙 (~$NaN)" [ref=e160] [cursor=pointer]:
+            - /url: /tools/task-extractor
+            - generic [ref=e163]:
+              - heading "Task Extractor" [level=3] [ref=e164]
+              - paragraph [ref=e165]: by
+            - paragraph [ref=e166]: Extract actionable tasks from meeting notes, emails, or any text. Get structured to-do items with owners and deadlines.
+            - generic [ref=e167]:
+              - generic [ref=e168]:
+                - generic [ref=e169]:
+                  - img [ref=e170]
+                  - img [ref=e172]
+                  - img [ref=e174]
+                  - img [ref=e176]
+                  - img [ref=e178]
+                - generic [ref=e180]: runs
+              - generic [ref=e181]: 🪙 (~$NaN)
+          - link "Task Priority Advisor by Paste your task list and get an AI-powered priority matrix. Know exactly what to tackle first. runs 🪙 (~$NaN)" [ref=e182] [cursor=pointer]:
+            - /url: /tools/task-priority-advisor
+            - generic [ref=e185]:
+              - heading "Task Priority Advisor" [level=3] [ref=e186]
+              - paragraph [ref=e187]: by
+            - paragraph [ref=e188]: Paste your task list and get an AI-powered priority matrix. Know exactly what to tackle first.
+            - generic [ref=e189]:
+              - generic [ref=e190]:
+                - generic [ref=e191]:
+                  - img [ref=e192]
+                  - img [ref=e194]
+                  - img [ref=e196]
+                  - img [ref=e198]
+                  - img [ref=e200]
+                - generic [ref=e202]: runs
+              - generic [ref=e203]: 🪙 (~$NaN)
+          - link "Ad Copy Generator by Generate high-converting Google Ads and Facebook/Meta ad copy variants with headlines, descriptions, and CTAs. runs 🪙 (~$NaN)" [ref=e204] [cursor=pointer]:
+            - /url: /tools/ad-copy-generator
+            - generic [ref=e207]:
+              - heading "Ad Copy Generator" [level=3] [ref=e208]
+              - paragraph [ref=e209]: by
+            - paragraph [ref=e210]: Generate high-converting Google Ads and Facebook/Meta ad copy variants with headlines, descriptions, and CTAs.
+            - generic [ref=e211]:
+              - generic [ref=e212]:
+                - generic [ref=e213]:
+                  - img [ref=e214]
+                  - img [ref=e216]
+                  - img [ref=e218]
+                  - img [ref=e220]
+                  - img [ref=e222]
+                - generic [ref=e224]: runs
+              - generic [ref=e225]: 🪙 (~$NaN)
+          - link "Blog Post Outliner by Generate structured, SEO-friendly blog post outlines with headings, key points, and internal linking opportunities. runs 🪙 (~$NaN)" [ref=e226] [cursor=pointer]:
+            - /url: /tools/blog-post-outliner
+            - generic [ref=e229]:
+              - heading "Blog Post Outliner" [level=3] [ref=e230]
+              - paragraph [ref=e231]: by
+            - paragraph [ref=e232]: Generate structured, SEO-friendly blog post outlines with headings, key points, and internal linking opportunities.
+            - generic [ref=e233]:
+              - generic [ref=e234]:
+                - generic [ref=e235]:
+                  - img [ref=e236]
+                  - img [ref=e238]
+                  - img [ref=e240]
+                  - img [ref=e242]
+                  - img [ref=e244]
+                - generic [ref=e246]: runs
+              - generic [ref=e247]: 🪙 (~$NaN)
+          - link "AI Code Reviewer by Get detailed code reviews with bug detection, performance suggestions, and security checks. Supports any language. runs 🪙 (~$NaN)" [ref=e248] [cursor=pointer]:
+            - /url: /tools/code-reviewer
+            - generic [ref=e251]:
+              - heading "AI Code Reviewer" [level=3] [ref=e252]
+              - paragraph [ref=e253]: by
+            - paragraph [ref=e254]: Get detailed code reviews with bug detection, performance suggestions, and security checks. Supports any language.
+            - generic [ref=e255]:
+              - generic [ref=e256]:
+                - generic [ref=e257]:
+                  - img [ref=e258]
+                  - img [ref=e260]
+                  - img [ref=e262]
+                  - img [ref=e264]
+                  - img [ref=e266]
+                - generic [ref=e268]: runs
+              - generic [ref=e269]: 🪙 (~$NaN)
+          - link "CSV Data Analyzer by Paste CSV data and get instant insights — trends, outliers, summary statistics, and visualization recommendations. runs 🪙 (~$NaN)" [ref=e270] [cursor=pointer]:
+            - /url: /tools/csv-data-analyzer
+            - generic [ref=e273]:
+              - heading "CSV Data Analyzer" [level=3] [ref=e274]
+              - paragraph [ref=e275]: by
+            - paragraph [ref=e276]: Paste CSV data and get instant insights — trends, outliers, summary statistics, and visualization recommendations.
+            - generic [ref=e277]:
+              - generic [ref=e278]:
+                - generic [ref=e279]:
+                  - img [ref=e280]
+                  - img [ref=e282]
+                  - img [ref=e284]
+                  - img [ref=e286]
+                  - img [ref=e288]
+                - generic [ref=e290]: runs
+              - generic [ref=e291]: 🪙 (~$NaN)
+          - link "Customer Persona Builder by Build detailed buyer personas from your product info. Get demographics, psychographics, and messaging angles. runs 🪙 (~$NaN)" [ref=e292] [cursor=pointer]:
+            - /url: /tools/customer-persona-builder
+            - generic [ref=e295]:
+              - heading "Customer Persona Builder" [level=3] [ref=e296]
+              - paragraph [ref=e297]: by
+            - paragraph [ref=e298]: Build detailed buyer personas from your product info. Get demographics, psychographics, and messaging angles.
+            - generic [ref=e299]:
+              - generic [ref=e300]:
+                - generic [ref=e301]:
+                  - img [ref=e302]
+                  - img [ref=e304]
+                  - img [ref=e306]
+                  - img [ref=e308]
+                  - img [ref=e310]
+                - generic [ref=e312]: runs
+              - generic [ref=e313]: 🪙 (~$NaN)
+          - link "Decision Matrix Builder by Build weighted decision matrices to make better choices. Compare options objectively with scored criteria. runs 🪙 (~$NaN)" [ref=e314] [cursor=pointer]:
+            - /url: /tools/decision-matrix-builder
+            - generic [ref=e317]:
+              - heading "Decision Matrix Builder" [level=3] [ref=e318]
+              - paragraph [ref=e319]: by
+            - paragraph [ref=e320]: Build weighted decision matrices to make better choices. Compare options objectively with scored criteria.
+            - generic [ref=e321]:
+              - generic [ref=e322]:
+                - generic [ref=e323]:
+                  - img [ref=e324]
+                  - img [ref=e326]
+                  - img [ref=e328]
+                  - img [ref=e330]
+                  - img [ref=e332]
+                - generic [ref=e334]: runs
+              - generic [ref=e335]: 🪙 (~$NaN)
+          - link "Email Reply Drafter by Draft professional email replies in seconds. Paste the email you received and get a polished response. runs 🪙 (~$NaN)" [ref=e336] [cursor=pointer]:
+            - /url: /tools/email-reply-drafter
+            - generic [ref=e339]:
+              - heading "Email Reply Drafter" [level=3] [ref=e340]
+              - paragraph [ref=e341]: by
+            - paragraph [ref=e342]: Draft professional email replies in seconds. Paste the email you received and get a polished response.
+            - generic [ref=e343]:
+              - generic [ref=e344]:
+                - generic [ref=e345]:
+                  - img [ref=e346]
+                  - img [ref=e348]
+                  - img [ref=e350]
+                  - img [ref=e352]
+                  - img [ref=e354]
+                - generic [ref=e356]: runs
+              - generic [ref=e357]: 🪙 (~$NaN)
+          - link "Email Sequence Writer by Create multi-email sales or nurture sequences with subject lines, body copy, and send timing. runs 🪙 (~$NaN)" [ref=e358] [cursor=pointer]:
+            - /url: /tools/email-sequence-writer
+            - generic [ref=e361]:
+              - heading "Email Sequence Writer" [level=3] [ref=e362]
+              - paragraph [ref=e363]: by
+            - paragraph [ref=e364]: Create multi-email sales or nurture sequences with subject lines, body copy, and send timing.
+            - generic [ref=e365]:
+              - generic [ref=e366]:
+                - generic [ref=e367]:
+                  - img [ref=e368]
+                  - img [ref=e370]
+                  - img [ref=e372]
+                  - img [ref=e374]
+                  - img [ref=e376]
+                - generic [ref=e378]: runs
+              - generic [ref=e379]: 🪙 (~$NaN)
+          - link "Invoice Description Writer by Write clear, professional invoice line item descriptions that justify your value and prevent payment disputes. runs 🪙 (~$NaN)" [ref=e380] [cursor=pointer]:
+            - /url: /tools/invoice-description-writer
+            - generic [ref=e383]:
+              - heading "Invoice Description Writer" [level=3] [ref=e384]
+              - paragraph [ref=e385]: by
+            - paragraph [ref=e386]: Write clear, professional invoice line item descriptions that justify your value and prevent payment disputes.
+            - generic [ref=e387]:
+              - generic [ref=e388]:
+                - generic [ref=e389]:
+                  - img [ref=e390]
+                  - img [ref=e392]
+                  - img [ref=e394]
+                  - img [ref=e396]
+                  - img [ref=e398]
+                - generic [ref=e400]: runs
+              - generic [ref=e401]: 🪙 (~$NaN)
+          - link "JSON Formatter & Validator by Format, validate, and prettify JSON data. Detect errors, fix common issues, and explain the structure. runs 🪙 (~$NaN)" [ref=e402] [cursor=pointer]:
+            - /url: /tools/json-formatter
+            - generic [ref=e405]:
+              - heading "JSON Formatter & Validator" [level=3] [ref=e406]
+              - paragraph [ref=e407]: by
+            - paragraph [ref=e408]: Format, validate, and prettify JSON data. Detect errors, fix common issues, and explain the structure.
+            - generic [ref=e409]:
+              - generic [ref=e410]:
+                - generic [ref=e411]:
+                  - img [ref=e412]
+                  - img [ref=e414]
+                  - img [ref=e416]
+                  - img [ref=e418]
+                  - img [ref=e420]
+                - generic [ref=e422]: runs
+              - generic [ref=e423]: 🪙 (~$NaN)
+          - link "SEO Meta Description Writer by Write click-worthy meta descriptions that improve CTR in search results. Get 5 variants per page. runs 🪙 (~$NaN)" [ref=e424] [cursor=pointer]:
+            - /url: /tools/seo-meta-description-writer
+            - generic [ref=e427]:
+              - heading "SEO Meta Description Writer" [level=3] [ref=e428]
+              - paragraph [ref=e429]: by
+            - paragraph [ref=e430]: Write click-worthy meta descriptions that improve CTR in search results. Get 5 variants per page.
+            - generic [ref=e431]:
+              - generic [ref=e432]:
+                - generic [ref=e433]:
+                  - img [ref=e434]
+                  - img [ref=e436]
+                  - img [ref=e438]
+                  - img [ref=e440]
+                  - img [ref=e442]
+                - generic [ref=e444]: runs
+              - generic [ref=e445]: 🪙 (~$NaN)
+          - link "Landing Page Copy Writer by Generate high-converting landing page copy with hero section, features, social proof, and CTAs. runs 🪙 (~$NaN)" [ref=e446] [cursor=pointer]:
+            - /url: /tools/landing-page-copy-writer
+            - generic [ref=e449]:
+              - heading "Landing Page Copy Writer" [level=3] [ref=e450]
+              - paragraph [ref=e451]: by
+            - paragraph [ref=e452]: Generate high-converting landing page copy with hero section, features, social proof, and CTAs.
+            - generic [ref=e453]:
+              - generic [ref=e454]:
+                - generic [ref=e455]:
+                  - img [ref=e456]
+                  - img [ref=e458]
+                  - img [ref=e460]
+                  - img [ref=e462]
+                  - img [ref=e464]
+                - generic [ref=e466]: runs
+              - generic [ref=e467]: 🪙 (~$NaN)
+    - contentinfo [ref=e468]:
+      - generic [ref=e469]:
+        - generic [ref=e470]:
+          - generic [ref=e471]:
+            - heading "Product" [level=3] [ref=e472]
+            - list [ref=e473]:
+              - listitem [ref=e474]:
+                - link "Tools" [ref=e475] [cursor=pointer]:
+                  - /url: /tools
+              - listitem [ref=e476]:
+                - link "Pricing" [ref=e477] [cursor=pointer]:
+                  - /url: /pricing
+              - listitem [ref=e478]:
+                - link "API" [ref=e479] [cursor=pointer]:
+                  - /url: /api
+          - generic [ref=e480]:
+            - heading "Creators" [level=3] [ref=e481]
+            - list [ref=e482]:
+              - listitem [ref=e483]:
+                - link "Create Tools" [ref=e484] [cursor=pointer]:
+                  - /url: /creators
+              - listitem [ref=e485]:
+                - link "Templates" [ref=e486] [cursor=pointer]:
+                  - /url: /creators/templates
+              - listitem [ref=e487]:
+                - link "Earn Money" [ref=e488] [cursor=pointer]:
+                  - /url: /creators/earn
+          - generic [ref=e489]:
+            - heading "Company" [level=3] [ref=e490]
+            - list [ref=e491]:
+              - listitem [ref=e492]:
+                - link "About" [ref=e493] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=e494]:
+                - link "Blog" [ref=e495] [cursor=pointer]:
+                  - /url: /blog
+              - listitem [ref=e496]:
+                - link "Contact" [ref=e497] [cursor=pointer]:
+                  - /url: /contact
+          - generic [ref=e498]:
+            - heading "Legal" [level=3] [ref=e499]
+            - list [ref=e500]:
+              - listitem [ref=e501]:
+                - link "Terms" [ref=e502] [cursor=pointer]:
+                  - /url: /terms
+              - listitem [ref=e503]:
+                - link "Privacy" [ref=e504] [cursor=pointer]:
+                  - /url: /privacy
+        - generic [ref=e505]: © 2026 Sotally. Your Software Ally.
+  - alert [ref=e506]
+```

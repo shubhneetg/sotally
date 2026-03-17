@@ -7,8 +7,8 @@ import { defineConfig, devices } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './e2e',
-  /* Maximum time one test can run */
-  timeout: 30_000,
+  /* Maximum time one test can run (60s for live site) */
+  timeout: 60_000,
   /* Maximum time for the entire test run */
   globalTimeout: 600_000,
   /* Run tests in files in parallel */
@@ -36,10 +36,8 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
     /* Ignore HTTPS errors for any cert issues */
     ignoreHTTPSErrors: false,
-    /* Extra HTTP headers */
-    extraHTTPHeaders: {
-      'Accept': 'application/json',
-    },
+    /* No extra HTTP headers -- the Accept: application/json header was
+       causing page navigation requests to get JSON instead of HTML. */
   },
 
   /* Configure projects for major browsers */

@@ -1,0 +1,81 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "Sotally" [ref=e5] [cursor=pointer]:
+          - /url: /
+        - navigation [ref=e6]:
+          - link "Tools" [ref=e7] [cursor=pointer]:
+            - /url: /tools
+          - link "Pricing" [ref=e8] [cursor=pointer]:
+            - /url: /pricing
+          - link "For Creators" [ref=e9] [cursor=pointer]:
+            - /url: /creators
+        - generic [ref=e10]:
+          - link "Log in" [ref=e11] [cursor=pointer]:
+            - /url: /login
+          - link "Get Started" [ref=e12] [cursor=pointer]:
+            - /url: /register
+    - main [ref=e13]:
+      - generic [ref=e14]:
+        - heading "Sign in to run tools" [level=1] [ref=e15]
+        - paragraph [ref=e16]: You need an account to run tools and manage credits.
+        - generic [ref=e17]:
+          - link "Log in" [ref=e18] [cursor=pointer]:
+            - /url: /login?redirect=/tools/image-bg-remover/run
+          - link "Create Account" [ref=e19] [cursor=pointer]:
+            - /url: /register
+    - contentinfo [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - heading "Product" [level=3] [ref=e24]
+            - list [ref=e25]:
+              - listitem [ref=e26]:
+                - link "Tools" [ref=e27] [cursor=pointer]:
+                  - /url: /tools
+              - listitem [ref=e28]:
+                - link "Pricing" [ref=e29] [cursor=pointer]:
+                  - /url: /pricing
+              - listitem [ref=e30]:
+                - link "API" [ref=e31] [cursor=pointer]:
+                  - /url: /api
+          - generic [ref=e32]:
+            - heading "Creators" [level=3] [ref=e33]
+            - list [ref=e34]:
+              - listitem [ref=e35]:
+                - link "Create Tools" [ref=e36] [cursor=pointer]:
+                  - /url: /creators
+              - listitem [ref=e37]:
+                - link "Templates" [ref=e38] [cursor=pointer]:
+                  - /url: /creators/templates
+              - listitem [ref=e39]:
+                - link "Earn Money" [ref=e40] [cursor=pointer]:
+                  - /url: /creators/earn
+          - generic [ref=e41]:
+            - heading "Company" [level=3] [ref=e42]
+            - list [ref=e43]:
+              - listitem [ref=e44]:
+                - link "About" [ref=e45] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=e46]:
+                - link "Blog" [ref=e47] [cursor=pointer]:
+                  - /url: /blog
+              - listitem [ref=e48]:
+                - link "Contact" [ref=e49] [cursor=pointer]:
+                  - /url: /contact
+          - generic [ref=e50]:
+            - heading "Legal" [level=3] [ref=e51]
+            - list [ref=e52]:
+              - listitem [ref=e53]:
+                - link "Terms" [ref=e54] [cursor=pointer]:
+                  - /url: /terms
+              - listitem [ref=e55]:
+                - link "Privacy" [ref=e56] [cursor=pointer]:
+                  - /url: /privacy
+        - generic [ref=e57]: © 2026 Sotally. Your Software Ally.
+  - alert [ref=e58]
+```
