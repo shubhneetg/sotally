@@ -13,7 +13,7 @@ const columns = [
     links: [
       { href: '/creator', label: 'Create Tools' },
       { href: '/creator/templates', label: 'Templates' },
-      { href: '/creator/earn', label: 'Earn Money' },
+      { href: '/creator/earnings', label: 'Earn Money' },
     ],
   },
   {

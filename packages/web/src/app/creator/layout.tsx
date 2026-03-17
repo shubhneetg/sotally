@@ -82,11 +82,14 @@ export default function CreatorLayout({ children }: { children: React.ReactNode 
   useEffect(() => {
     // Wait for Zustand to hydrate from localStorage
     setHydrated(true);
-    if (!isAuthenticated && typeof window !== 'undefined') {
-      // Try loading user from stored token
+  }, []);
+
+  // Load user from stored token if needed (matches header pattern)
+  useEffect(() => {
+    if (token && !isAuthenticated) {
       loadUser();
     }
-  }, []);
+  }, [token, isAuthenticated, loadUser]);
 
   useEffect(() => {
     if (isAuthenticated && token) {

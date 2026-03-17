@@ -33,12 +33,33 @@ interface Tool {
   creatorName: string;
 }
 
+const categoryEmojiMap: Record<string, string> = {
+  'marketing': '📈',
+  'development': '💻',
+  'ai-writing': '✍️',
+  'writing': '✍️',
+  'data-tools': '📊',
+  'data': '📊',
+  'productivity': '⚡',
+  'business': '💼',
+  'education': '🎓',
+  'design': '🎨',
+};
+
+function getCategoryEmoji(category?: { name?: string } | string): string {
+  if (!category) return '🛠️';
+  const slug = typeof category === 'string'
+    ? category.toLowerCase().replace(/\s+/g, '-')
+    : (category.name || '').toLowerCase().replace(/\s+/g, '-');
+  return categoryEmojiMap[slug] || '🛠️';
+}
+
 function mapToolFromApi(apiTool: ApiTool): Tool {
   return {
     name: apiTool.name,
     slug: apiTool.slug,
     description: apiTool.description,
-    icon: apiTool.iconUrl || apiTool.icon || '🛠️',
+    icon: apiTool.iconUrl || apiTool.icon || getCategoryEmoji(apiTool.category),
     rating: apiTool.avgRating ?? apiTool.rating ?? 0,
     runCount: apiTool.totalRuns ?? apiTool.runCount ?? 0,
     creditCost: apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0,
@@ -143,19 +164,23 @@ export default function ToolsPage() {
 
         {/* Category Filters */}
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          {categories.map((cat) => (
-            <button
-              key={cat.slug}
-              onClick={() => handleCategoryClick(cat.slug)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
-                cat.slug === activeCategory
-                  ? 'bg-primary text-primary-foreground'
-                  : 'border border-border text-muted-foreground hover:bg-muted'
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
+          {categories.map((cat) => {
+            const isActive = cat.slug === activeCategory;
+            return (
+              <button
+                key={cat.slug}
+                onClick={() => handleCategoryClick(cat.slug)}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'border border-border text-muted-foreground hover:bg-muted'
+                }`}
+                aria-pressed={isActive}
+              >
+                {cat.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Error State */}
