@@ -503,6 +503,63 @@ toolRoutes.post('/:slug/purchase', authMiddleware, async (c) => {
   return c.json({ success: true, data: license, error: null }, 201);
 });
 
+// ─── Favorites ───────────────────────────────────────────────────────────────
+
+// POST /tools/:slug/favorite — toggle favorite
+toolRoutes.post('/:slug/favorite', authMiddleware, async (c) => {
+  const user = c.get('user') as AuthUser;
+  const slug = c.req.param('slug')!;
+
+  const [tool] = await db.select({ id: tools.id }).from(tools).where(eq(tools.slug, slug)).limit(1);
+  if (!tool) return c.json({ success: false, data: null, error: { code: 'NOT_FOUND', message: 'Tool not found' } }, 404);
+
+  const [existing] = await db
+    .select({ id: toolUserData.id, value: toolUserData.value })
+    .from(toolUserData)
+    .where(and(eq(toolUserData.toolId, tool.id), eq(toolUserData.userId, user.id), eq(toolUserData.key, '_favorite')))
+    .limit(1);
+
+  if (existing && existing.value === true) {
+    await db.delete(toolUserData).where(eq(toolUserData.id, existing.id));
+    return c.json({ success: true, data: { favorited: false }, error: null });
+  } else {
+    await db
+      .insert(toolUserData)
+      .values({ toolId: tool.id, userId: user.id, key: '_favorite', value: true, updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: [toolUserData.toolId, toolUserData.userId, toolUserData.key],
+        set: { value: true, updatedAt: new Date() },
+      });
+    return c.json({ success: true, data: { favorited: true }, error: null });
+  }
+});
+
+// GET /tools/favorites — list user's favorited tools
+toolRoutes.get('/favorites/list', authMiddleware, async (c) => {
+  const user = c.get('user') as AuthUser;
+
+  const favorites = await db
+    .select({
+      id: tools.id,
+      slug: tools.slug,
+      name: tools.name,
+      description: tools.description,
+      iconUrl: tools.iconUrl,
+      pricing: tools.pricing,
+      totalRuns: tools.totalRuns,
+      avgRating: tools.avgRating,
+      creatorName: users.name,
+    })
+    .from(toolUserData)
+    .innerJoin(tools, eq(toolUserData.toolId, tools.id))
+    .leftJoin(users, eq(tools.creatorId, users.id))
+    .where(and(eq(toolUserData.userId, user.id), eq(toolUserData.key, '_favorite'), eq(tools.status, 'published')))
+    .orderBy(desc(toolUserData.updatedAt))
+    .limit(20);
+
+  return c.json({ success: true, data: favorites, error: null });
+});
+
 // ─── Tool User Data (Stateful Tools) ──────────────────────────────────────────
 
 // GET /tools/:slug/data/:key — read user's stored data

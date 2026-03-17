@@ -57,6 +57,10 @@ export const api = {
       fetchAPI('/reviews', { method: 'POST', body: JSON.stringify(data), token }),
     deleteReview: (token: string, reviewId: string) =>
       fetchAPI(`/reviews/${reviewId}`, { method: 'DELETE', token }),
+    favorite: (token: string, slug: string) =>
+      fetchAPI(`/tools/${slug}/favorite`, { method: 'POST', token }),
+    favorites: (token: string) =>
+      fetchAPI('/tools/favorites/list', { token }),
     report: (slug: string, data: { reason: string; description?: string }) =>
       fetchAPI(`/tools/${slug}/report`, { method: 'POST', body: JSON.stringify(data) }),
     trending: () => fetchAPI('/tools/trending'),
