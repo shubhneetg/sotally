@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "sotally": {
+      "command": "npx",
+      "args": ["tsx", "packages/mcp/src/index.ts"],
+      "env": {
+        "SOTALLY_API_URL": "https://sotally.com/api",
+        "SOTALLY_API_TOKEN": "YOUR_TOKEN_HERE"
+      }
+    }
+  }
+}

@@ -120,38 +120,86 @@ export async function execute(executionId: string): Promise<ExecutionResult> {
     };
   } catch (error) {
     const durationMs = Date.now() - startTime;
-    const errorMessage = (error as Error).message;
-    const isTimeout = errorMessage.includes('timed out') || errorMessage.includes('timeout');
+    const rawMessage = (error as Error).message;
+
+    // Classify the error for user-friendly messaging
+    const userMessage = classifyError(rawMessage);
+    const isTimeout = rawMessage.includes('timed out') || rawMessage.includes('timeout');
 
     // 10. On failure: update execution, refund credits
     await db
       .update(executions)
       .set({
         status: isTimeout ? 'timeout' : 'failed',
-        error: errorMessage,
+        error: userMessage,
         durationMs,
         creditsRefunded: pricing.credits,
         completedAt: new Date(),
       })
       .where(eq(executions.id, executionId));
 
-    // Refund credits
+    // Always refund credits on failure
     if (pricing.credits > 0) {
       await refundCredits(execution.userId, pricing.credits, executionId);
     }
 
     await publishEvent(executionId, isTimeout ? 'timeout' : 'failed', {
-      error: errorMessage,
+      error: userMessage,
       durationMs,
     });
 
     return {
       status: isTimeout ? 'timeout' : 'failed',
-      error: errorMessage,
+      error: userMessage,
       durationMs,
       creditsCharged: 0,
     };
   }
+}
+
+/**
+ * Classifies raw error messages into user-friendly descriptions.
+ * All classified errors imply that credits have been refunded.
+ */
+function classifyError(rawMessage: string): string {
+  const lower = rawMessage.toLowerCase();
+
+  // AI / LLM service errors
+  if (
+    lower.includes('503') ||
+    lower.includes('502') ||
+    lower.includes('service unavailable') ||
+    lower.includes('econnrefused') ||
+    lower.includes('enotfound') ||
+    lower.includes('deepseek') && (lower.includes('unavailable') || lower.includes('error'))
+  ) {
+    return 'AI service temporarily unavailable. Credits have been refunded. Please try again in a few minutes.';
+  }
+
+  if (lower.includes('429') || lower.includes('rate limit') || lower.includes('too many requests')) {
+    return 'AI service is currently overloaded. Credits have been refunded. Please try again shortly.';
+  }
+
+  if (lower.includes('timeout') || lower.includes('timed out')) {
+    return 'Execution timed out. Credits have been refunded.';
+  }
+
+  // Tool configuration errors
+  if (lower.includes('config missing') || lower.includes('invalid config') || lower.includes('steps array')) {
+    return 'This tool has a configuration error. Credits have been refunded. The creator has been notified.';
+  }
+
+  if (lower.includes('unknown execution type')) {
+    return 'This tool uses an unsupported execution method. Credits have been refunded.';
+  }
+
+  // BYOM key errors
+  if (lower.includes('byom') || lower.includes('no api key found')) {
+    return rawMessage; // Already user-friendly
+  }
+
+  // Generic fallback — don't leak internals
+  return 'Execution failed unexpectedly. Credits have been refunded.';
 }
 
 /**
@@ -163,11 +211,15 @@ async function dispatch(tool: any, execution: any): Promise<any> {
   const input = (execution.input as Record<string, any>) ?? {};
   const useOwnKey = (execution.metadata as any)?.useOwnKey ?? false;
 
+  if (!config || typeof config !== 'object') {
+    throw new Error('Invalid config: tool configuration is missing or malformed');
+  }
+
   switch (executionType) {
     case 'prompt':
     case 'pipeline': {
       if (!config?.steps || !Array.isArray(config.steps)) {
-        throw new Error('Tool config missing steps array');
+        throw new Error('Invalid config: tool config missing steps array');
       }
       const result = await runPipeline(
         { steps: config.steps, timeout: config.timeout },

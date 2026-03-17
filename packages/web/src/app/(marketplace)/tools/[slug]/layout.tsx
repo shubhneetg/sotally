@@ -38,6 +38,34 @@ export async function generateMetadata({
   };
 }
 
-export default async function ToolLayout({ children }: ToolLayoutProps) {
-  return <>{children}</>;
+export default async function ToolLayout({ children, params }: ToolLayoutProps) {
+  const { slug } = await params;
+
+  const title = slug
+    .split('-')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: title,
+    url: `https://sotally.com/tools/${slug}`,
+    applicationCategory: 'UtilitiesApplication',
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+    },
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      {children}
+    </>
+  );
 }

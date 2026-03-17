@@ -195,9 +195,21 @@ export function Header() {
                 >
                   Dashboard
                 </Link>
+                <Link
+                  href="/dashboard/credits"
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  Credits
+                </Link>
+                <Link
+                  href="/creator"
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  Creator Studio
+                </Link>
                 <button
                   onClick={handleLogout}
-                  className="rounded-lg px-3 py-2 text-left text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                  className="rounded-lg px-3 py-2 text-left text-sm font-medium text-destructive hover:bg-muted"
                 >
                   Log out
                 </button>
@@ -209,6 +221,12 @@ export function Header() {
                   className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
                   Log in
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  Register
                 </Link>
                 <Link
                   href="/register"

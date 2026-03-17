@@ -1,0 +1,70 @@
+{
+  "slug": "product-description-writer",
+  "name": "Product Description Writer",
+  "description": "Write conversion-optimized e-commerce product descriptions that highlight benefits and drive purchases.",
+  "longDescription": "Turn boring product specs into descriptions that sell. Paste your product details and this tool generates benefit-driven copy that speaks to your customer's desires, handles objections, and creates urgency. Uses proven copywriting frameworks (PAS, AIDA, FAB) adapted for e-commerce. Works for Amazon, Shopify, Etsy, or any storefront. Get multiple variants so you can A/B test.",
+  "category": "ai-writing",
+  "tags": ["ai", "ecommerce", "product-copy", "copywriting", "sales", "conversion"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 4 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "productName": {
+        "type": "string",
+        "title": "Product name",
+        "description": "Name of the product",
+        "minLength": 2,
+        "maxLength": 200
+      },
+      "productDetails": {
+        "type": "string",
+        "title": "Product details",
+        "description": "Features, specs, materials, dimensions — anything relevant about the product",
+        "minLength": 10,
+        "maxLength": 3000
+      },
+      "targetCustomer": {
+        "type": "string",
+        "title": "Target customer",
+        "description": "Who buys this? e.g., 'busy moms', 'fitness enthusiasts', 'home office workers'",
+        "maxLength": 300
+      },
+      "platform": {
+        "type": "string",
+        "title": "Sales platform",
+        "enum": ["amazon", "shopify", "etsy", "general", "social-commerce"],
+        "default": "general"
+      },
+      "tone": {
+        "type": "string",
+        "title": "Brand voice",
+        "enum": ["premium", "friendly", "minimalist", "bold", "technical"],
+        "default": "friendly"
+      }
+    },
+    "required": ["productName", "productDetails"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "write",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a senior e-commerce copywriter who has written product descriptions for brands generating $10M+ in annual revenue. You understand buyer psychology, platform-specific optimization, and the difference between features and benefits.\n\nCore principles:\n1. **Benefits > Features**: Every feature must be translated into what it MEANS for the customer. \"500ml capacity\" becomes \"Holds enough coffee to power your entire morning commute.\"\n2. **Sensory language**: Help them imagine owning it. Touch, feel, experience.\n3. **Objection handling**: Address the unspoken \"but what if...\" in the copy itself.\n4. **Scannable format**: Bullet points for skimmers, prose for readers.\n5. **Platform awareness**: Amazon needs keyword-rich bullets. Shopify wants brand storytelling. Etsy needs handcraft personality.\n\nOutput format:\n\n## Headline Options\n1. [Benefit-led headline]\n2. [Curiosity-driven headline]\n3. [Social proof angle headline]\n\n## Short Description (50-80 words)\n[Punchy paragraph for product cards and previews]\n\n## Full Description\n[2-3 paragraphs of benefit-driven copy with sensory language]\n\n## Key Benefits (Bullet Points)\n- [Benefit 1 — with feature backing it up]\n- [Benefit 2]\n- [Benefit 3]\n- [Benefit 4]\n- [Benefit 5]\n\n## Trust Builders\n[1-2 lines addressing common objections or adding credibility]\n\n## SEO Keywords\n[5-8 relevant keywords to include in listings]",
+        "prompt": "Product: {{input.productName}}\nDetails: {{input.productDetails}}\nTarget customer: {{input.targetCustomer}}\nPlatform: {{input.platform}}\nBrand voice: {{input.tone}}",
+        "temperature": 0.7,
+        "maxTokens": 1200
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.write}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Headline Options\n1. Wake Up to Coffee That's Actually Hot When You Drink It\n2. The Travel Mug Engineers Spent 2 Years Perfecting\n3. Join 50,000+ Commuters Who Ditched Lukewarm Coffee Forever\n\n## Short Description\nDouble-wall vacuum insulated travel mug that keeps your coffee screaming hot for 8 hours (or ice-cold for 12). Leak-proof lid, one-hand operation, fits every car cup holder. Because life's too short for lukewarm anything.\n\n## Full Description\nYou know that moment when you finally get to sip your coffee and it's already room temperature? That ends today. Our ThermoCore travel mug uses double-wall vacuum insulation — the same tech used in laboratory equipment — to lock in heat for a full 8 hours.\n\nThe leak-proof lid means you can toss it in your bag without that familiar anxiety. One-handed flip-top opening means you never take your eyes off the road. And at 16oz, it holds exactly enough to get you from front door to first meeting.\n\n## Key Benefits\n- **8 hours hot, 12 hours cold** — double-wall vacuum insulation that actually works\n- **Truly leak-proof** — tested upside-down for 24 hours (we're serious)\n- **One-hand operation** — flip, sip, flip. No unscrewing while driving.\n- **Fits all cup holders** — slim-base design tested across 50 car models\n- **BPA-free stainless steel** — no metallic taste, no chemical concerns\n\n## Trust Builders\n30-day no-questions-asked return policy. If it doesn't keep your coffee hot enough, we'll refund it AND let you keep the mug.\n\n## SEO Keywords\ntravel mug, insulated coffee mug, leak proof travel mug, vacuum insulated mug, commuter coffee mug, hot coffee travel, stainless steel travel mug"
+  }
+}

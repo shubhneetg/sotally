@@ -1,0 +1,63 @@
+{
+  "slug": "social-media-caption-generator",
+  "name": "Social Media Caption Generator",
+  "description": "Generate scroll-stopping captions for Instagram, TikTok, Twitter/X, and LinkedIn with hashtag suggestions.",
+  "longDescription": "Great content with a bad caption is invisible. This tool generates platform-optimized captions that hook attention in the first line, drive engagement, and include strategic hashtag suggestions. Whether you need a witty Instagram caption, a viral TikTok hook, a punchy tweet, or a thought-leadership LinkedIn post — get 3 variants per platform so you can pick the winner.",
+  "category": "ai-writing",
+  "tags": ["ai", "social-media", "instagram", "tiktok", "twitter", "captions", "content"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 3 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "content": {
+        "type": "string",
+        "title": "What's the post about?",
+        "description": "Describe the content of your post — what's in the image/video, what message you want to share",
+        "minLength": 10,
+        "maxLength": 2000
+      },
+      "platform": {
+        "type": "string",
+        "title": "Platform",
+        "enum": ["instagram", "tiktok", "twitter", "linkedin", "all-platforms"],
+        "default": "instagram"
+      },
+      "goal": {
+        "type": "string",
+        "title": "Post goal",
+        "enum": ["engagement", "brand-awareness", "drive-traffic", "educate", "entertain"],
+        "default": "engagement"
+      },
+      "tone": {
+        "type": "string",
+        "title": "Tone",
+        "enum": ["witty", "inspirational", "professional", "casual", "bold"],
+        "default": "casual"
+      }
+    },
+    "required": ["content", "platform"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "generate",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a social media strategist who manages accounts with 500K+ followers. You know what stops the scroll and what gets shared.\n\nPlatform-specific rules:\n\n**Instagram:**\n- First line is EVERYTHING (it's what shows before 'more')\n- Use line breaks for readability\n- 3-5 relevant hashtags at the end (not 30 — the algorithm penalizes hashtag stuffing now)\n- Include a CTA (save, share, comment, tag)\n- Optimal length: 150-300 words for carousel/educational, 1-2 lines for reels\n\n**TikTok:**\n- Caption is secondary to hook but still matters\n- Keep it under 150 characters for visibility\n- Use 3-4 hashtags max\n- Pattern interrupt in first 3 words\n\n**Twitter/X:**\n- Under 280 characters (obviously)\n- Hot takes outperform lukewarm wisdom\n- Thread hooks > single tweets for depth\n- No hashtags in the main tweet (put them in reply)\n\n**LinkedIn:**\n- First line hook (shows before 'see more')\n- Short paragraphs (1-2 sentences each)\n- Personal story > corporate speak\n- End with a question to drive comments\n- 3-5 hashtags\n\nOutput format:\n\n## Caption Option 1 (Recommended)\n[Full caption with formatting]\n\n**Hashtags:** [if applicable]\n\n## Caption Option 2 (Alternative Angle)\n[Full caption]\n\n**Hashtags:** [if applicable]\n\n## Caption Option 3 (Bold Take)\n[Full caption]\n\n**Hashtags:** [if applicable]\n\n## Posting Tips\n- Best time to post: [suggestion]\n- Engagement booster: [one tip specific to this content]",
+        "prompt": "Platform: {{input.platform}}\nContent: {{input.content}}\nGoal: {{input.goal}}\nTone: {{input.tone}}",
+        "temperature": 0.85,
+        "maxTokens": 1000
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.generate}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Caption Option 1 (Recommended)\nI spent $0 on marketing last month.\n\nMade $14,200.\n\nHere's the exact system (steal it):\n\n1. Created 3 pieces of long-form content\n2. Repurposed each into 12 short-form posts\n3. Engaged in 10 comments/day on target accounts\n4. Let the algorithm do the rest\n\nThe best marketing doesn't feel like marketing.\nIt feels like value.\n\nSave this for when you're planning next month's content.\n\n**Hashtags:** #contentmarketing #organicgrowth #marketingtips #socialmediatips #creatoreconomy\n\n## Caption Option 2 (Alternative Angle)\nStop paying for ads before you've maxed out free distribution.\n\nI know founders spending $5K/mo on Meta ads who haven't posted on their own Instagram in 3 weeks.\n\nThat's like buying a gym membership and never going.\n\nHere's what free distribution looks like when done right (swipe)\n\n**Hashtags:** #marketingstrategy #startuptips #contentcreation #organicreach #foundertips\n\n## Caption Option 3 (Bold Take)\nUnpopular opinion: Most businesses don't have a marketing problem.\n\nThey have a consistency problem.\n\nPosting once, seeing no results, and concluding \"social media doesn't work for us\" is like going to the gym once and wondering why you're not jacked.\n\nThe compound effect is real. But it requires showing up when nobody's watching.\n\n**Hashtags:** #marketingtruth #consistency #entrepreneurmindset #socialmediamarketing\n\n## Posting Tips\n- Best time to post: Tuesday-Thursday, 8-10 AM in your audience's timezone\n- Engagement booster: Reply to every comment in the first 30 minutes to trigger the algorithm"
+  }
+}

@@ -10,6 +10,24 @@ import { rateLimit } from '../middleware/rate-limit';
 
 const toolRoutes = new Hono();
 
+// GET /tools/categories — list all categories
+toolRoutes.get('/categories', async (c) => {
+  const allCategories = await db
+    .select({
+      id: categories.id,
+      name: categories.name,
+      slug: categories.slug,
+    })
+    .from(categories)
+    .orderBy(asc(categories.name));
+
+  return c.json({
+    success: true,
+    data: allCategories,
+    error: null,
+  });
+});
+
 // GET /tools/trending — trending tools (most executions in last 7 days)
 toolRoutes.get('/trending', async (c) => {
   const trendingTools = await db

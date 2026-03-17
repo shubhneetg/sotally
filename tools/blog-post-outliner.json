@@ -1,0 +1,69 @@
+{
+  "slug": "blog-post-outliner",
+  "name": "Blog Post Outliner",
+  "description": "Generate structured, SEO-friendly blog post outlines with headings, key points, and internal linking opportunities.",
+  "longDescription": "Stop staring at a blank page. Give this tool your topic and target audience, and it will generate a comprehensive blog post outline complete with H2/H3 headings, key talking points under each section, suggested word counts, internal linking opportunities, and a compelling intro/conclusion framework. Built on content strategy principles used by top-performing blogs that consistently rank on page one.",
+  "category": "ai-writing",
+  "tags": ["ai", "blog", "content-strategy", "seo", "writing", "outline"],
+  "executionType": "prompt",
+  "pricing": { "model": "per_run", "creditsPerRun": 5 },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "topic": {
+        "type": "string",
+        "title": "Blog topic",
+        "description": "What is the blog post about? Be as specific as possible.",
+        "minLength": 5,
+        "maxLength": 500
+      },
+      "targetAudience": {
+        "type": "string",
+        "title": "Target audience",
+        "description": "Who is this post for? e.g., 'SaaS founders', 'beginner photographers'",
+        "maxLength": 300
+      },
+      "targetKeyword": {
+        "type": "string",
+        "title": "Target keyword (optional)",
+        "description": "Primary SEO keyword you want to rank for",
+        "maxLength": 100
+      },
+      "postLength": {
+        "type": "string",
+        "title": "Target length",
+        "enum": ["short (800-1200 words)", "medium (1500-2500 words)", "long-form (3000+ words)"],
+        "default": "medium (1500-2500 words)"
+      },
+      "tone": {
+        "type": "string",
+        "title": "Writing tone",
+        "enum": ["professional", "conversational", "authoritative", "playful"],
+        "default": "conversational"
+      }
+    },
+    "required": ["topic"]
+  },
+  "config": {
+    "steps": [
+      {
+        "type": "llm",
+        "id": "outline",
+        "model": "deepseek-chat",
+        "systemPrompt": "You are a senior content strategist with 10+ years of experience creating blog content that ranks and converts. You understand information architecture, search intent, and reader psychology.\n\nYour job is to create blog post outlines that are:\n1. **Search-intent aligned** — match what the reader actually wants to know\n2. **Scannable** — clear hierarchy with H2s and H3s that work as standalone statements\n3. **Comprehensive** — cover the topic thoroughly without fluff\n4. **Actionable** — every section should give the reader something useful\n\nOutline structure rules:\n- Start with a hook framework for the intro (not the intro itself — the STRUCTURE of what makes a good intro for this topic)\n- Each H2 section gets 2-4 H3 subsections\n- Under each heading, include 2-3 bullet points of what to cover\n- Suggest word count allocation per section\n- Include a 'Key takeaway' note for each major section\n- End with a CTA framework\n- If a target keyword is provided, note where to naturally place it\n\nOutput format:\n\n## Blog Post Outline: [Working Title]\n**Target keyword:** [keyword or 'not specified']\n**Estimated word count:** [total]\n**Search intent:** [informational/commercial/transactional]\n\n---\n\n### Intro Framework (~X words)\n- Hook type: [statistic/question/story/contrarian take]\n- Hook idea: [specific suggestion]\n- Promise: [what the reader will learn]\n- Credibility signal: [why they should trust this]\n\n### H2: [Section Title]\n*~X words | Key takeaway: [one sentence]*\n\n#### H3: [Subsection]\n- Point 1\n- Point 2\n- Point 3\n\n[...repeat for all sections...]\n\n### Conclusion Framework (~X words)\n- Summary approach: [recap style]\n- CTA: [what action to drive]\n- Final thought: [leave them with...]\n\n---\n\n### SEO Notes\n- Keyword placement opportunities\n- Suggested internal links\n- Related topics to link to\n- Meta title suggestion (under 60 chars)\n- Meta description suggestion (under 155 chars)",
+        "prompt": "Topic: {{input.topic}}\nTarget audience: {{input.targetAudience}}\nTarget keyword: {{input.targetKeyword}}\nTarget length: {{input.postLength}}\nTone: {{input.tone}}",
+        "temperature": 0.6,
+        "maxTokens": 1500
+      },
+      {
+        "type": "output",
+        "id": "result",
+        "template": "{{steps.outline}}",
+        "format": "markdown"
+      }
+    ]
+  },
+  "demoOutput": {
+    "result": "## Blog Post Outline: How to Build a Second Brain (Without Overcomplicating It)\n**Target keyword:** second brain method\n**Estimated word count:** 2,200\n**Search intent:** informational\n\n---\n\n### Intro Framework (~200 words)\n- Hook type: Statistic\n- Hook idea: \"The average knowledge worker spends 9.3 hours per week just searching for information they already have.\"\n- Promise: A simple, no-nonsense system for organizing your knowledge that takes 30 minutes to set up\n- Credibility signal: Reference Tiago Forte's methodology + your adaptation\n\n### H2: What a Second Brain Actually Is (And Isn't)\n*~300 words | Key takeaway: It's a personal knowledge management system, not another productivity trap.*\n\n#### H3: The Problem It Solves\n- Information overload leads to decision fatigue\n- We consume 10x more than we create\n- Most note-taking is write-once, read-never\n\n#### H3: What It's NOT\n- Not a filing cabinet for everything\n- Not another app to maintain\n- Not about being organized for organization's sake\n\n### H2: The 4-Folder System That Actually Works\n*~500 words | Key takeaway: PARA (Projects, Areas, Resources, Archive) is the only structure you need.*\n\n#### H3: Projects — Active Work\n- Defined end date, specific outcome\n- Examples for different roles\n\n#### H3: Areas — Ongoing Responsibilities  \n- No end date, maintained over time\n- How to distinguish from Projects\n\n#### H3: Resources — Topics of Interest\n- Reference material you might need\n- The \"someday\" folder done right\n\n### Conclusion Framework (~150 words)\n- Summary: Recap the 4-folder system\n- CTA: \"Set up your folders today — it takes 10 minutes\"\n- Final thought: \"The best system is the one you actually use\"\n\n---\n\n### SEO Notes\n- Place \"second brain method\" in H1, first paragraph, one H2, and conclusion\n- Meta title: How to Build a Second Brain — Simple 4-Folder System\n- Meta description: Learn the simplest second brain method that actually sticks. Set up a 4-folder system in 30 minutes and stop losing ideas forever."
+  }
+}

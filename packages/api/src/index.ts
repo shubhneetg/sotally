@@ -11,6 +11,7 @@ import adminRoutes from './routes/admin';
 import settingsRoutes from './routes/settings';
 import streamRoutes from './routes/stream';
 import affiliateRoutes from './routes/affiliates';
+import healthRoutes from './routes/health';
 import { handleWebhook } from './services/stripe.service';
 import { rateLimit } from './middleware/rate-limit';
 
@@ -23,8 +24,8 @@ app.use('*', cors({
 }));
 app.use('*', rateLimit({ windowMs: 60_000, maxRequests: 120 }));
 
-// Health check
-app.get('/health', (c) => c.json({ status: 'healthy', version: '0.1.0' }));
+// Health check — detailed service status
+app.route('/health', healthRoutes);
 
 // Mount route modules
 app.route('/auth', auth);
