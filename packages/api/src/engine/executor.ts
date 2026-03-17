@@ -229,6 +229,7 @@ async function dispatch(tool: any, execution: any): Promise<any> {
         {
           userId: execution.userId,
           useOwnKey,
+          toolId: tool.id,
           onChunk: (stepId: string, chunk: string) => {
             publishEvent(executionId, 'streaming', { stepId, chunk }).catch(() => {});
           },

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { eq, desc, asc, sql, and, ilike } from 'drizzle-orm';
 import { db } from '../db/client';
-import { tools, users, categories, reviews, executions, toolReports, toolSubscriptions, toolLicenses } from '../db/schema/index';
+import { tools, users, categories, reviews, executions, toolReports, toolSubscriptions, toolLicenses, toolUserData } from '../db/schema/index';
 import { authMiddleware, optionalAuthMiddleware, type AuthUser } from '../middleware/auth';
 import { holdCredits } from '../services/credit.service';
 import { executionQueue } from '../lib/queue';
@@ -501,6 +501,65 @@ toolRoutes.post('/:slug/purchase', authMiddleware, async (c) => {
     .returning();
 
   return c.json({ success: true, data: license, error: null }, 201);
+});
+
+// ─── Tool User Data (Stateful Tools) ──────────────────────────────────────────
+
+// GET /tools/:slug/data/:key — read user's stored data
+toolRoutes.get('/:slug/data/:key', authMiddleware, async (c) => {
+  const user = c.get('user') as AuthUser;
+  const slug = c.req.param('slug')!;
+  const key = c.req.param('key')!;
+
+  const [tool] = await db.select({ id: tools.id }).from(tools).where(eq(tools.slug, slug)).limit(1);
+  if (!tool) return c.json({ success: false, data: null, error: { code: 'NOT_FOUND', message: 'Tool not found' } }, 404);
+
+  const [data] = await db
+    .select({ value: toolUserData.value, updatedAt: toolUserData.updatedAt })
+    .from(toolUserData)
+    .where(and(eq(toolUserData.toolId, tool.id), eq(toolUserData.userId, user.id), eq(toolUserData.key, key)))
+    .limit(1);
+
+  return c.json({ success: true, data: data || { value: null, updatedAt: null }, error: null });
+});
+
+// PUT /tools/:slug/data/:key — save/update data (upsert)
+toolRoutes.put('/:slug/data/:key', authMiddleware, async (c) => {
+  const user = c.get('user') as AuthUser;
+  const slug = c.req.param('slug')!;
+  const key = c.req.param('key')!;
+  const body = await c.req.json();
+
+  const [tool] = await db.select({ id: tools.id }).from(tools).where(eq(tools.slug, slug)).limit(1);
+  if (!tool) return c.json({ success: false, data: null, error: { code: 'NOT_FOUND', message: 'Tool not found' } }, 404);
+
+  // Upsert: insert or update on conflict
+  const [result] = await db
+    .insert(toolUserData)
+    .values({ toolId: tool.id, userId: user.id, key, value: body.value, updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: [toolUserData.toolId, toolUserData.userId, toolUserData.key],
+      set: { value: body.value, updatedAt: new Date() },
+    })
+    .returning();
+
+  return c.json({ success: true, data: result, error: null });
+});
+
+// DELETE /tools/:slug/data/:key — delete stored data
+toolRoutes.delete('/:slug/data/:key', authMiddleware, async (c) => {
+  const user = c.get('user') as AuthUser;
+  const slug = c.req.param('slug')!;
+  const key = c.req.param('key')!;
+
+  const [tool] = await db.select({ id: tools.id }).from(tools).where(eq(tools.slug, slug)).limit(1);
+  if (!tool) return c.json({ success: false, data: null, error: { code: 'NOT_FOUND', message: 'Tool not found' } }, 404);
+
+  await db
+    .delete(toolUserData)
+    .where(and(eq(toolUserData.toolId, tool.id), eq(toolUserData.userId, user.id), eq(toolUserData.key, key)));
+
+  return c.json({ success: true, data: null, error: null });
 });
 
 // GET /tools/:slug/reviews — paginated reviews

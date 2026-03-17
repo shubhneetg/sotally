@@ -3,11 +3,12 @@ import { executeLlmStep } from './steps/llm';
 import { executeHttpStep } from './steps/http';
 import { executeTransformStep } from './steps/transform';
 import { executeConnectorStep } from './steps/connector';
+import { executeDataStoreStep } from './steps/data-store';
 
 const MAX_EXECUTION_TIMEOUT_MS = 60_000;
 
 export interface PipelineStep {
-  type: 'llm' | 'http' | 'transform' | 'output' | 'connector';
+  type: 'llm' | 'http' | 'transform' | 'output' | 'connector' | 'data_store';
   id: string;
   [key: string]: any;
 }
@@ -21,6 +22,7 @@ export interface PipelineRunOptions {
   userId?: string;
   useOwnKey?: boolean;
   onChunk?: (stepId: string, chunk: string) => void;
+  toolId?: string;
 }
 
 export interface PipelineResult {
@@ -104,6 +106,9 @@ async function executeStep(
     case 'output':
       return executeOutputStep(step, context);
 
+    case 'data_store':
+      return executeDataStoreStepWithContext(step, context, options);
+
     default:
       throw new Error(`Unknown step type: ${step.type}`);
   }
@@ -180,6 +185,27 @@ function executeTransformStepWithContext(step: PipelineStep, context: TemplateCo
     templateStr,
     vars: step.vars ? resolveValue(step.vars, context) : undefined,
     path: step.path,
+  });
+}
+
+async function executeDataStoreStepWithContext(
+  step: PipelineStep,
+  context: TemplateContext,
+  options: PipelineRunOptions = {}
+): Promise<any> {
+  if (!options.userId || !options.toolId) {
+    throw new Error('data_store steps require an authenticated user and toolId');
+  }
+
+  const key = resolveTemplate(step.key ?? '', context);
+  const value = step.value !== undefined ? resolveValue(step.value, context) : undefined;
+
+  return executeDataStoreStep({
+    operation: step.operation ?? 'read',
+    key,
+    value,
+    toolId: options.toolId,
+    userId: options.userId,
   });
 }
 
