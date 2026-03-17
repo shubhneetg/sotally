@@ -22,6 +22,7 @@ interface ToolData {
   icon: string;
   description: string;
   creditCost: number;
+  pricingModel: string;
   inputSchema: {
     type: 'object';
     properties: Record<string, {
@@ -45,6 +46,7 @@ function mapToolDataFromApi(apiTool: any): ToolData {
     icon: apiTool.iconUrl || apiTool.icon || '🛠️',
     description: apiTool.description,
     creditCost: apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0,
+    pricingModel: apiTool.pricing?.model || 'per_run',
     inputSchema: apiTool.inputSchema,
   };
 }
@@ -89,12 +91,15 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
     }
   }, [isAuthenticated, token, fetchBalance]);
 
-  if (!isAuthenticated) {
+  const isFreePlayground = !isAuthenticated && tool && (tool.pricingModel === 'free' || tool.creditCost === 0);
+
+  // Block unauthenticated users from paid tools only
+  if (!isAuthenticated && tool && !isFreePlayground) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold text-primary">Sign in to run tools</h1>
+        <h1 className="text-2xl font-bold text-primary">Sign in to run this tool</h1>
         <p className="mt-2 text-muted-foreground">
-          You need an account to run tools and manage credits.
+          This tool costs credits. Sign in or create a free account to get started.
         </p>
         <div className="mt-6 flex items-center justify-center gap-3">
           <Link
@@ -107,7 +112,7 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
             href="/register"
             className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
-            Create Account
+            Create Account (50 free credits)
           </Link>
         </div>
       </div>
@@ -136,6 +141,11 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
   }
 
   const handleFormSubmit = (data: Record<string, unknown>) => {
+    // Free tools: skip confirmation, run directly
+    if (isFreePlayground || tool.creditCost === 0) {
+      execute(tool.slug, data, { allowGuest: !isAuthenticated });
+      return;
+    }
     setPendingInput(data);
     setShowConfirm(true);
   };
@@ -194,9 +204,15 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
           <h1 className="text-2xl font-bold text-primary">{tool.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{tool.description}</p>
         </div>
-        <span className="inline-flex items-center rounded-md bg-accent/10 px-2.5 py-1 text-sm font-semibold text-accent">
-          🪙 {tool.creditCost} (~{creditsToDollars(tool.creditCost)})
-        </span>
+        {tool.creditCost === 0 || tool.pricingModel === 'free' ? (
+          <span className="inline-flex items-center rounded-md bg-emerald-100 px-2.5 py-1 text-sm font-semibold text-emerald-700">
+            Free
+          </span>
+        ) : (
+          <span className="inline-flex items-center rounded-md bg-accent/10 px-2.5 py-1 text-sm font-semibold text-accent">
+            🪙 {tool.creditCost} (~{creditsToDollars(tool.creditCost)})
+          </span>
+        )}
       </div>
 
       {/* Execution Result */}
@@ -265,6 +281,30 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
               Execution failed. Credits have been refunded.
             </p>
           )}
+        </div>
+      )}
+
+      {/* Guest Signup CTA after result */}
+      {result && !isAuthenticated && (
+        <div className="mt-6 rounded-xl border border-accent/20 bg-accent/5 p-5 text-center">
+          <p className="text-sm font-medium text-foreground">Like what you see?</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Create a free account to access 50+ premium tools and get 50 credits.
+          </p>
+          <div className="mt-3 flex items-center justify-center gap-3">
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90 shadow-sm transition-colors"
+            >
+              Sign up free
+            </Link>
+            <Link
+              href={`/login?redirect=/tools/${slug}/run`}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Already have an account?
+            </Link>
+          </div>
         </div>
       )}
 
@@ -339,15 +379,26 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
             <DynamicForm
               schema={tool.inputSchema}
               onSubmit={handleFormSubmit}
-              submitLabel={`Run Tool — ${tool.creditCost} Credits (~${creditsToDollars(tool.creditCost)})`}
-              disabled={insufficientCredits}
+              submitLabel={
+                isFreePlayground
+                  ? 'Try Free (no signup required)'
+                  : tool.creditCost === 0
+                    ? 'Run Free Tool'
+                    : `Run Tool — ${tool.creditCost} Credits (~${creditsToDollars(tool.creditCost)})`
+              }
+              disabled={isAuthenticated ? insufficientCredits : false}
             />
-            {insufficientCredits && (
+            {isAuthenticated && insufficientCredits && (
               <p className="mt-3 text-center text-sm text-destructive">
                 Insufficient credits.{' '}
                 <Link href="/dashboard/credits" className="font-medium text-accent hover:text-accent/80">
                   Buy more credits
                 </Link>
+              </p>
+            )}
+            {isFreePlayground && (
+              <p className="mt-3 text-center text-xs text-muted-foreground">
+                3 free runs per day. <Link href="/register" className="font-medium text-accent hover:text-accent/80">Create an account</Link> for unlimited access + 50 free credits.
               </p>
             )}
           </div>

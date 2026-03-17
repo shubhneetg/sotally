@@ -22,7 +22,7 @@ interface ProgressEvent {
 }
 
 interface UseToolExecutionReturn {
-  execute: (slug: string, input: Record<string, unknown>, options?: { useOwnKey?: boolean }) => Promise<void>;
+  execute: (slug: string, input: Record<string, unknown>, options?: { useOwnKey?: boolean; allowGuest?: boolean }) => Promise<void>;
   isExecuting: boolean;
   result: ExecutionResult | null;
   error: string | null;
@@ -203,8 +203,8 @@ export function useToolExecution(): UseToolExecutionReturn {
   );
 
   const execute = useCallback(
-    async (slug: string, input: Record<string, unknown>, options?: { useOwnKey?: boolean }) => {
-      if (!token) {
+    async (slug: string, input: Record<string, unknown>, options?: { useOwnKey?: boolean; allowGuest?: boolean }) => {
+      if (!token && !options?.allowGuest) {
         setError('You must be logged in to run tools.');
         return;
       }
@@ -220,7 +220,7 @@ export function useToolExecution(): UseToolExecutionReturn {
           executeBody.useOwnKey = true;
         }
 
-        const res = (await api.tools.execute(token, slug, input, options)) as {
+        const res = (await api.tools.execute(token || '', slug, input, options)) as {
           success: boolean;
           data: { executionId: string; creditsCost: number };
         };
@@ -230,8 +230,9 @@ export function useToolExecution(): UseToolExecutionReturn {
           deductCredits(response.creditsCost);
         }
 
-        // Try SSE first
-        const sse = trySSEStream(response.executionId, token, {
+        // Try SSE first (skip SSE for guests — no token for auth)
+        const authToken = token || '';
+        const sse = trySSEStream(response.executionId, authToken, {
           onProgress: (evt) => setProgress(evt),
           onComplete: (executionResult) => {
             setResult(executionResult);
@@ -249,7 +250,7 @@ export function useToolExecution(): UseToolExecutionReturn {
 
         // Always poll in parallel — SSE may miss events due to race conditions
         // (execution can complete before SSE subscription is active)
-        const pollPromise = pollExecution(response.executionId, token);
+        const pollPromise = pollExecution(response.executionId, authToken);
 
         const sseConnected = await sse.connected;
 

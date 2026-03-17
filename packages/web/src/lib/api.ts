@@ -53,6 +53,10 @@ export const api = {
     execute: (token: string, slug: string, input: Record<string, unknown>, options?: { useOwnKey?: boolean }) =>
       fetchAPI(`/tools/${slug}/execute`, { method: 'POST', body: JSON.stringify({ input, ...(options?.useOwnKey && { useOwnKey: true }) }), token }),
     reviews: (slug: string, page = 1) => fetchAPI(`/tools/${slug}/reviews?page=${page}`),
+    submitReview: (token: string, data: { toolId: string; rating: number; comment?: string }) =>
+      fetchAPI('/reviews', { method: 'POST', body: JSON.stringify(data), token }),
+    deleteReview: (token: string, reviewId: string) =>
+      fetchAPI(`/reviews/${reviewId}`, { method: 'DELETE', token }),
     report: (slug: string, data: { reason: string; description?: string }) =>
       fetchAPI(`/tools/${slug}/report`, { method: 'POST', body: JSON.stringify(data) }),
     trending: () => fetchAPI('/tools/trending'),

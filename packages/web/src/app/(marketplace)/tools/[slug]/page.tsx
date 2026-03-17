@@ -13,6 +13,7 @@ function creditsToDollars(credits: number): string {
 }
 
 interface Tool {
+  id: string;
   name: string;
   slug: string;
   icon: string;
@@ -21,12 +22,15 @@ interface Tool {
   rating: number;
   runCount: number;
   creditCost: number;
+  pricingModel: string;
   creatorName: string;
+  creatorId: string;
   creatorAvatar: string | null;
 }
 
 function mapToolFromApi(apiTool: any): Tool {
   return {
+    id: apiTool.id,
     name: apiTool.name,
     slug: apiTool.slug,
     icon: apiTool.iconUrl || apiTool.icon || '🛠️',
@@ -35,7 +39,9 @@ function mapToolFromApi(apiTool: any): Tool {
     rating: apiTool.avgRating ?? apiTool.rating ?? 0,
     runCount: apiTool.totalRuns ?? apiTool.runCount ?? 0,
     creditCost: apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0,
+    pricingModel: apiTool.pricing?.model || 'per_run',
     creatorName: apiTool.creator?.name || apiTool.creatorName || 'Sotally',
+    creatorId: apiTool.creatorId || apiTool.creator?.id || '',
     creatorAvatar: apiTool.creator?.avatarUrl || apiTool.creatorAvatar || null,
   };
 }
@@ -78,7 +84,7 @@ const REPORT_REASONS = [
 
 export default function ToolDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, token } = useAuthStore();
   const { addToast } = useToast();
   const [tool, setTool] = useState<Tool | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -89,6 +95,10 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
   const [reportReason, setReportReason] = useState('spam');
   const [reportDescription, setReportDescription] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
 
   useEffect(() => {
     async function fetchTool() {
@@ -158,6 +168,33 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
     }
   };
 
+  const handleReviewSubmit = async () => {
+    if (!token || !tool) return;
+    setReviewSubmitting(true);
+    try {
+      await api.tools.submitReview(token, {
+        toolId: tool.id,
+        rating: reviewRating,
+        comment: reviewComment || undefined,
+      });
+      addToast('Review submitted!', 'success');
+      setShowReviewForm(false);
+      setReviewComment('');
+      setReviewRating(5);
+      // Refresh reviews
+      const res = (await api.tools.reviews(slug)) as {
+        success: boolean;
+        data: { items: Review[] } | Review[];
+      };
+      const items = Array.isArray(res.data) ? res.data : (res.data as { items: Review[] }).items || [];
+      setReviews(items);
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to submit review', 'error');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
@@ -219,7 +256,10 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  by <span className="font-medium text-foreground">{tool.creatorName}</span>
+                  by{' '}
+                  <Link href={`/creators/${encodeURIComponent(tool.creatorName)}`} className="font-medium text-foreground hover:text-accent transition-colors">
+                    {tool.creatorName}
+                  </Link>
                 </p>
               </div>
             </div>
@@ -231,58 +271,119 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
             </div>
 
             {/* Reviews */}
-            {reviews.length > 0 && (
-              <div>
-                <h2 className="text-lg font-semibold text-primary">Reviews</h2>
+            <div>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-primary">
+                  Reviews {reviews.length > 0 && `(${reviews.length})`}
+                </h2>
+                {isAuthenticated && !showReviewForm && (
+                  <Button variant="outline" size="sm" onClick={() => setShowReviewForm(true)}>
+                    Write a Review
+                  </Button>
+                )}
+              </div>
+
+              {/* Review Form */}
+              {showReviewForm && isAuthenticated && (
+                <div className="mt-4 rounded-xl border border-accent/20 bg-accent/5 p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground">Rating:</span>
+                    <div className="flex gap-1">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          onClick={() => setReviewRating(star)}
+                          className="focus:outline-none"
+                        >
+                          <svg
+                            className={`h-6 w-6 transition-colors ${star <= reviewRating ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-200'}`}
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="Share your experience (optional)..."
+                    rows={3}
+                    className="mt-3 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-ring/20 resize-none"
+                  />
+                  <div className="mt-3 flex items-center gap-2">
+                    <Button variant="accent" size="sm" onClick={handleReviewSubmit} disabled={reviewSubmitting}>
+                      {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setShowReviewForm(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {reviews.length > 0 ? (
                 <div className="mt-4 space-y-4">
-                  {reviews.map((review) => (
+                  {reviews.map((review: any) => (
                     <div key={review.id} className="rounded-xl border border-border bg-card p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-foreground">{review.user}</span>
+                          <span className="text-sm font-medium text-foreground">{review.user?.name || review.user || 'Anonymous'}</span>
                           <StarRating rating={review.rating} />
                         </div>
-                        <span className="text-xs text-muted-foreground">{review.date}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : review.date}
+                        </span>
                       </div>
-                      <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>
+                      {review.comment && (
+                        <p className="mt-2 text-sm text-muted-foreground">{review.comment}</p>
+                      )}
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              ) : !showReviewForm && (
+                <p className="mt-4 text-sm text-muted-foreground">No reviews yet. Be the first!</p>
+              )}
+            </div>
           </div>
 
           {/* Right Column -- Pricing & Action */}
           <div>
             <div className="sticky top-6 rounded-xl border border-border bg-card p-6 shadow-sm">
               <div className="text-center">
-                <div className="text-3xl font-bold text-primary">
-                  <span className="text-accent">🪙</span> {tool.creditCost}
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">credits per run (~{creditsToDollars(tool.creditCost)})</p>
+                {tool.creditCost === 0 || tool.pricingModel === 'free' ? (
+                  <>
+                    <div className="text-3xl font-bold text-emerald-600">Free</div>
+                    <p className="mt-1 text-sm text-muted-foreground">No credits required</p>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-3xl font-bold text-primary">
+                      <span className="text-accent">🪙</span> {tool.creditCost}
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">credits per run (~{creditsToDollars(tool.creditCost)})</p>
+                  </>
+                )}
               </div>
-              {isAuthenticated ? (
-                <Link
-                  href={`/tools/${tool.slug}/run`}
-                  className="mt-6 block w-full rounded-lg bg-accent px-4 py-3 text-center text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
-                >
-                  Run Tool — {tool.creditCost} Credits (~{creditsToDollars(tool.creditCost)})
-                </Link>
-              ) : (
-                <div className="mt-6 space-y-3">
-                  <Link
-                    href={`/login?redirect=/tools/${tool.slug}/run`}
-                    className="block w-full rounded-lg bg-accent px-4 py-3 text-center text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
-                  >
-                    Log in to Run
+              <Link
+                href={`/tools/${tool.slug}/run`}
+                className="mt-6 block w-full rounded-lg bg-accent px-4 py-3 text-center text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
+              >
+                {tool.creditCost === 0 || tool.pricingModel === 'free'
+                  ? (isAuthenticated ? 'Run Free Tool' : 'Try Free — No Signup Required')
+                  : isAuthenticated
+                    ? `Run Tool — ${tool.creditCost} Credits (~${creditsToDollars(tool.creditCost)})`
+                    : 'Log in to Run'}
+              </Link>
+              {!isAuthenticated && tool.creditCost > 0 && (
+                <p className="mt-3 text-center text-xs text-muted-foreground">
+                  Don&apos;t have an account?{' '}
+                  <Link href="/register" className="text-accent hover:text-accent/80">
+                    Sign up for 50 free credits
                   </Link>
-                  <p className="text-center text-xs text-muted-foreground">
-                    Don&apos;t have an account?{' '}
-                    <Link href="/register" className="text-accent hover:text-accent/80">
-                      Sign up for 50 free
-                    </Link>
-                  </p>
-                </div>
+                </p>
               )}
               <div className="mt-6 border-t border-border pt-4">
                 <div className="space-y-2 text-sm">
