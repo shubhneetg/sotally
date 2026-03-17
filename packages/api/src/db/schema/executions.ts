@@ -37,7 +37,6 @@ export const executions = pgTable(
       .notNull()
       .references(() => tools.id),
     userId: uuid('user_id')
-      .notNull()
       .references(() => users.id),
     toolVersionId: uuid('tool_version_id').references(() => toolVersions.id),
     status: executionStatusEnum('status').default('queued').notNull(),

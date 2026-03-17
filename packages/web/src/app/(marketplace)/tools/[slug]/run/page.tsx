@@ -9,6 +9,10 @@ import { useCreditStore } from '@/stores/credit.store';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 
+function creditsToDollars(credits: number): string {
+  return `$${(credits * 0.03).toFixed(2)}`;
+}
+
 interface ToolData {
   name: string;
   slug: string;
@@ -157,7 +161,7 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
           <p className="mt-1 text-sm text-muted-foreground">{tool.description}</p>
         </div>
         <span className="inline-flex items-center rounded-md bg-accent/10 px-2.5 py-1 text-sm font-semibold text-accent">
-          🪙 {tool.creditCost}
+          🪙 {tool.creditCost} (~{creditsToDollars(tool.creditCost)})
         </span>
       </div>
 
@@ -192,7 +196,7 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
           {result.status === 'completed' && result.creditsCost > 0 && (
             <p className="mt-3 text-xs text-muted-foreground">
               {result.duration > 0 && `Completed in ${(result.duration / 1000).toFixed(1)}s | `}
-              {result.creditsCost} credits used
+              {result.creditsCost} credits (~{creditsToDollars(result.creditsCost)}) used
             </p>
           )}
           {result.status === 'failed' && (
@@ -231,7 +235,7 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
         <div className="mt-8 rounded-xl border border-accent/30 bg-accent/5 p-6">
           <h3 className="text-sm font-semibold text-foreground">Confirm execution</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            This will deduct <span className="font-semibold text-accent">🪙 {tool.creditCost}</span> from
+            This will deduct <span className="font-semibold text-accent">🪙 {tool.creditCost} (~{creditsToDollars(tool.creditCost)})</span> from
             your balance (currently 🪙 {balance}).
           </p>
           <div className="mt-4 flex items-center gap-3">
@@ -258,7 +262,7 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
             <DynamicForm
               schema={tool.inputSchema}
               onSubmit={handleFormSubmit}
-              submitLabel={`Run Tool — ${tool.creditCost} Credits`}
+              submitLabel={`Run Tool — ${tool.creditCost} Credits (~${creditsToDollars(tool.creditCost)})`}
               disabled={insufficientCredits}
             />
             {insufficientCredits && (

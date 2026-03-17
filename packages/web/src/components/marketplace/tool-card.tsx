@@ -1,5 +1,9 @@
 import Link from 'next/link';
 
+function creditsToDollars(credits: number): string {
+  return `$${(credits * 0.03).toFixed(2)}`;
+}
+
 interface ToolCardProps {
   name: string;
   slug: string;
@@ -73,7 +77,7 @@ export function ToolCard({
           </span>
         </div>
         <span className="inline-flex items-center rounded-md bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">
-          🪙 {creditCost}
+          🪙 {creditCost} (~{creditsToDollars(creditCost)})
         </span>
       </div>
     </Link>

@@ -1,9 +1,10 @@
 import { eq, sql } from 'drizzle-orm';
 import { db } from '../db/client';
-import { executions, tools, users, creditTransactions } from '../db/schema/index';
+import { executions, tools, users, creditTransactions, creatorProfiles } from '../db/schema/index';
 import { redis } from '../lib/redis';
 import { runPipeline } from './nocode/runner';
 import { resolveCredits, validateBalance, type ToolPricing, type UserContext } from './pricing';
+import { REVENUE_SHARE } from '@sotally/shared';
 
 export interface ExecutionResult {
   status: 'completed' | 'failed' | 'timeout';
@@ -257,14 +258,24 @@ async function refundCredits(
 
 /**
  * Credits the tool creator's earnings balance after a successful execution.
- * Creator gets 70% of the credits charged (platform takes 30%).
+ * Revenue share is determined by the creator's level from creator_profiles.
  */
 async function creditCreator(
   creatorId: string,
   creditsCharged: number,
   executionId: string
 ): Promise<void> {
-  const creatorShare = Math.floor(creditsCharged * 0.7);
+  // Look up creator's level
+  const creatorProfile = await db
+    .select({ level: creatorProfiles.level })
+    .from(creatorProfiles)
+    .where(eq(creatorProfiles.userId, creatorId))
+    .limit(1);
+
+  const level = creatorProfile[0]?.level || 'bronze';
+  const tier = REVENUE_SHARE.find((t) => t.level === level);
+  const shareRate = tier ? tier.revenueSharePercent / 100 : 0.70;
+  const creatorShare = Math.floor(creditsCharged * shareRate);
   if (creatorShare <= 0) return;
 
   await db

@@ -19,19 +19,19 @@ export async function generateMetadata({
     .join(' ');
 
   return {
-    title: `${title} — Sotally`,
-    description: `Use ${title} on Sotally. Pay per use with credits, no subscription required.`,
+    title: `${title} | Sotally`,
+    description: `Run ${title} on Sotally. Pay only for what you use.`,
     openGraph: {
-      title: `${title} — Sotally`,
-      description: `Use ${title} on Sotally. Pay per use with credits, no subscription required.`,
+      title: `${title} | Sotally`,
+      description: `Run ${title} on Sotally. Software without subscriptions.`,
       type: 'website',
       siteName: 'Sotally',
       url: `https://sotally.com/tools/${slug}`,
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${title} — Sotally`,
-      description: `Use ${title} on Sotally. Pay per use with credits, no subscription required.`,
+      title: `${title} | Sotally`,
+      description: `Run ${title} on Sotally. Pay only for what you use.`,
     },
   };
 }

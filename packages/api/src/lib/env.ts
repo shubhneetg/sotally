@@ -10,6 +10,7 @@ const envSchema = z.object({
   NEXTAUTH_SECRET: z.string(),
   OPENAI_API_KEY: z.string(),
   API_KEY_ENCRYPTION_KEY: z.string(),
+  FRONTEND_URL: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
 });

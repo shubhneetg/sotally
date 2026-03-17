@@ -194,6 +194,55 @@ creatorRoutes.post('/tools/:id/publish', async (c) => {
     );
   }
 
+  // ─── Pre-publish validation ──────────────────────────────────────────────
+  const [fullTool] = await db
+    .select()
+    .from(tools)
+    .where(eq(tools.id, toolId))
+    .limit(1);
+
+  const errors: string[] = [];
+
+  if (!fullTool.name?.trim()) errors.push('Tool name is required');
+  if (!fullTool.description?.trim()) errors.push('Tool description is required');
+
+  // Validate inputSchema: must be parseable JSON with at least one property
+  const inputSchema = fullTool.inputSchema as Record<string, any> | null;
+  if (!inputSchema || typeof inputSchema !== 'object') {
+    errors.push('Tool must have a valid input schema');
+  } else {
+    const props = inputSchema.properties ?? inputSchema;
+    if (!props || typeof props !== 'object' || Object.keys(props).length === 0) {
+      errors.push('Input schema must have at least one property');
+    }
+  }
+
+  // Validate config has at least one step
+  const config = fullTool.config as Record<string, any> | null;
+  if (!config || typeof config !== 'object' || Object.keys(config).length === 0) {
+    errors.push('Tool must have execution config');
+  } else if (Array.isArray(config.steps) && config.steps.length === 0) {
+    errors.push('Tool config must have at least one step');
+  }
+
+  // Blocked words check
+  const blockedWords = ['hack', 'crack', 'exploit', 'malware', 'phishing', 'ddos'];
+  const nameAndDesc = `${fullTool.name} ${fullTool.description}`.toLowerCase();
+  if (blockedWords.some((w) => nameAndDesc.includes(w))) {
+    errors.push('Tool name or description contains prohibited content');
+  }
+
+  if (errors.length > 0) {
+    return c.json(
+      {
+        success: false,
+        data: null,
+        error: { code: 'VALIDATION_FAILED', message: errors.join('; ') },
+      },
+      400,
+    );
+  }
+
   const [updated] = await db
     .update(tools)
     .set({ status: 'published', updatedAt: new Date() })

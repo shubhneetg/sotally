@@ -9,13 +9,17 @@ import creatorRoutes from './routes/creator';
 import reviewRoutes from './routes/reviews';
 import adminRoutes from './routes/admin';
 import settingsRoutes from './routes/settings';
+import streamRoutes from './routes/stream';
 import { handleWebhook } from './services/stripe.service';
 import { rateLimit } from './middleware/rate-limit';
 
 const app = new Hono();
 
 // Global middleware
-app.use('*', cors());
+app.use('*', cors({
+  origin: env.FRONTEND_URL || 'https://sotally.com',
+  credentials: true,
+}));
 app.use('*', rateLimit({ windowMs: 60_000, maxRequests: 120 }));
 
 // Health check
@@ -30,6 +34,7 @@ app.route('/creator', creatorRoutes);
 app.route('/reviews', reviewRoutes);
 app.route('/admin', adminRoutes);
 app.route('/settings', settingsRoutes);
+app.route('/stream', streamRoutes);
 
 // Stripe webhook — raw body, no auth
 app.post('/webhooks/stripe', async (c) => {

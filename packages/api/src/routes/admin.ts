@@ -8,6 +8,7 @@ import {
   reviews,
   creditTransactions,
   creditPurchases,
+  toolReports,
 } from '../db/schema/index';
 import { authMiddleware, type AuthUser } from '../middleware/auth';
 import { grantCredits } from '../services/credit.service';
@@ -372,23 +373,55 @@ adminRoutes.patch('/tools/:id', async (c) => {
 });
 
 // GET /admin/reports — List tool reports (paginated by status)
-// Note: reports table does not exist in schema yet; this uses a simple
-// query pattern so it can be wired up once the table is created.
-// For now we return reviews flagged for moderation (placeholder).
 adminRoutes.get('/reports', async (c) => {
   const page = Math.max(1, parseInt(c.req.query('page') || '1', 10));
   const perPage = Math.min(100, Math.max(1, parseInt(c.req.query('per_page') || '20', 10)));
+  const offset = (page - 1) * perPage;
   const status = c.req.query('status') || 'open';
 
-  // Placeholder: return empty until tool_reports table is created
+  const conditions: any[] = [];
+  if (status) {
+    conditions.push(eq(toolReports.status, status as any));
+  }
+
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const [items, countResult] = await Promise.all([
+    db
+      .select({
+        id: toolReports.id,
+        toolId: toolReports.toolId,
+        reporterId: toolReports.reporterId,
+        reason: toolReports.reason,
+        description: toolReports.description,
+        status: toolReports.status,
+        reviewedBy: toolReports.reviewedBy,
+        resolvedAt: toolReports.resolvedAt,
+        createdAt: toolReports.createdAt,
+        toolName: sql<string>`(select name from tools where tools.id = ${toolReports.toolId})`,
+        reporterName: sql<string>`(select name from users where users.id = ${toolReports.reporterId})`,
+      })
+      .from(toolReports)
+      .where(where)
+      .orderBy(desc(toolReports.createdAt))
+      .limit(perPage)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(toolReports)
+      .where(where),
+  ]);
+
+  const total = countResult[0]?.count ?? 0;
+
   return c.json({
     success: true,
     data: {
-      items: [],
-      total: 0,
+      items,
+      total,
       page,
       pageSize: perPage,
-      totalPages: 0,
+      totalPages: Math.ceil(total / perPage),
     },
     error: null,
   });
@@ -397,18 +430,64 @@ adminRoutes.get('/reports', async (c) => {
 // PATCH /admin/reports/:id — Resolve report
 adminRoutes.patch('/reports/:id', async (c) => {
   const id = c.req.param('id')!;
+  const user = c.get('user') as AuthUser;
   const body = await c.req.json();
-  const { action } = body; // 'dismiss' | 'suspend_tool'
+  const { action } = body; // 'dismiss' | 'investigate' | 'resolve' | 'suspend_tool'
 
-  // Placeholder: return not found until tool_reports table is created
-  return c.json(
-    {
-      success: false,
-      data: null,
-      error: { code: 'NOT_FOUND', message: 'Report not found' },
-    },
-    404,
-  );
+  const [report] = await db
+    .select({ id: toolReports.id, toolId: toolReports.toolId, status: toolReports.status })
+    .from(toolReports)
+    .where(eq(toolReports.id, id))
+    .limit(1);
+
+  if (!report) {
+    return c.json(
+      { success: false, data: null, error: { code: 'NOT_FOUND', message: 'Report not found' } },
+      404,
+    );
+  }
+
+  const updates: Record<string, any> = { reviewedBy: user.id };
+
+  switch (action) {
+    case 'dismiss':
+      updates.status = 'dismissed';
+      updates.resolvedAt = new Date();
+      break;
+    case 'investigate':
+      updates.status = 'investigating';
+      break;
+    case 'resolve':
+      updates.status = 'resolved';
+      updates.resolvedAt = new Date();
+      break;
+    case 'suspend_tool':
+      updates.status = 'resolved';
+      updates.resolvedAt = new Date();
+      // Also suspend the reported tool
+      await db
+        .update(tools)
+        .set({ status: 'suspended', updatedAt: new Date() })
+        .where(eq(tools.id, report.toolId));
+      break;
+    default:
+      return c.json(
+        {
+          success: false,
+          data: null,
+          error: { code: 'VALIDATION_ERROR', message: 'Invalid action. Use: dismiss, investigate, resolve, suspend_tool' },
+        },
+        400,
+      );
+  }
+
+  const [updated] = await db
+    .update(toolReports)
+    .set(updates)
+    .where(eq(toolReports.id, id))
+    .returning();
+
+  return c.json({ success: true, data: updated, error: null });
 });
 
 export default adminRoutes;

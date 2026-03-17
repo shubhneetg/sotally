@@ -6,6 +6,10 @@ import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
 
+function creditsToDollars(credits: number): string {
+  return `$${(credits * 0.03).toFixed(2)}`;
+}
+
 interface Tool {
   name: string;
   slug: string;
@@ -188,14 +192,14 @@ export default function ToolDetailPage({ params }: { params: Promise<{ slug: str
                 <div className="text-3xl font-bold text-primary">
                   <span className="text-accent">🪙</span> {tool.creditCost}
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">credits per run</p>
+                <p className="mt-1 text-sm text-muted-foreground">credits per run (~{creditsToDollars(tool.creditCost)})</p>
               </div>
               {isAuthenticated ? (
                 <Link
                   href={`/tools/${tool.slug}/run`}
                   className="mt-6 block w-full rounded-lg bg-accent px-4 py-3 text-center text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
                 >
-                  Run Tool — {tool.creditCost} Credits
+                  Run Tool — {tool.creditCost} Credits (~{creditsToDollars(tool.creditCost)})
                 </Link>
               ) : (
                 <div className="mt-6 space-y-3">

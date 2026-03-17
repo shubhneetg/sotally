@@ -8,33 +8,35 @@ export async function holdCredits(
   referenceId: string,
   referenceType: string,
 ): Promise<{ success: boolean; balanceAfter: number }> {
-  // Atomic deduct: only succeeds if balance is sufficient
-  const result = await db
-    .update(users)
-    .set({
-      creditBalance: sql`${users.creditBalance} - ${amount}`,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(users.id, userId), sql`${users.creditBalance} >= ${amount}`))
-    .returning({ creditBalance: users.creditBalance });
+  return await db.transaction(async (tx) => {
+    // Atomic deduct: only succeeds if balance is sufficient
+    const result = await tx
+      .update(users)
+      .set({
+        creditBalance: sql`${users.creditBalance} - ${amount}`,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(users.id, userId), sql`${users.creditBalance} >= ${amount}`))
+      .returning({ creditBalance: users.creditBalance });
 
-  if (result.length === 0) {
-    return { success: false, balanceAfter: -1 };
-  }
+    if (result.length === 0) {
+      return { success: false, balanceAfter: -1 };
+    }
 
-  const balanceAfter = result[0].creditBalance;
+    const balanceAfter = result[0].creditBalance;
 
-  await db.insert(creditTransactions).values({
-    userId,
-    type: 'debit_execution',
-    amount: -amount,
-    balanceAfter,
-    referenceId,
-    referenceType,
-    description: `Credit hold for ${referenceType}`,
+    await tx.insert(creditTransactions).values({
+      userId,
+      type: 'debit_execution',
+      amount: -amount,
+      balanceAfter,
+      referenceId,
+      referenceType,
+      description: `Credit hold for ${referenceType}`,
+    });
+
+    return { success: true, balanceAfter };
   });
-
-  return { success: true, balanceAfter };
 }
 
 export async function commitCredits(
@@ -43,27 +45,29 @@ export async function commitCredits(
   platformShare: number,
   creatorShare: number,
 ): Promise<void> {
-  // Credit creator's earnings balance
-  const result = await db
-    .update(users)
-    .set({
-      earningsBalance: sql`${users.earningsBalance} + ${creatorShare}`,
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, creatorId))
-    .returning({ earningsBalance: users.earningsBalance });
+  await db.transaction(async (tx) => {
+    // Credit creator's earnings balance
+    const result = await tx
+      .update(users)
+      .set({
+        earningsBalance: sql`${users.earningsBalance} + ${creatorShare}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, creatorId))
+      .returning({ earningsBalance: users.earningsBalance });
 
-  if (result.length > 0) {
-    await db.insert(creditTransactions).values({
-      userId: creatorId,
-      type: 'purchase', // creator earning
-      amount: creatorShare,
-      balanceAfter: result[0].earningsBalance,
-      referenceId: executionId,
-      referenceType: 'execution',
-      description: `Creator earnings from execution`,
-    });
-  }
+    if (result.length > 0) {
+      await tx.insert(creditTransactions).values({
+        userId: creatorId,
+        type: 'purchase', // creator earning
+        amount: creatorShare,
+        balanceAfter: result[0].earningsBalance,
+        referenceId: executionId,
+        referenceType: 'execution',
+        description: `Creator earnings from execution`,
+      });
+    }
+  });
 }
 
 export async function refundCredits(
@@ -71,26 +75,28 @@ export async function refundCredits(
   amount: number,
   executionId: string,
 ): Promise<void> {
-  const result = await db
-    .update(users)
-    .set({
-      creditBalance: sql`${users.creditBalance} + ${amount}`,
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, userId))
-    .returning({ creditBalance: users.creditBalance });
+  await db.transaction(async (tx) => {
+    const result = await tx
+      .update(users)
+      .set({
+        creditBalance: sql`${users.creditBalance} + ${amount}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning({ creditBalance: users.creditBalance });
 
-  if (result.length > 0) {
-    await db.insert(creditTransactions).values({
-      userId,
-      type: 'refund',
-      amount,
-      balanceAfter: result[0].creditBalance,
-      referenceId: executionId,
-      referenceType: 'execution',
-      description: `Refund for failed execution`,
-    });
-  }
+    if (result.length > 0) {
+      await tx.insert(creditTransactions).values({
+        userId,
+        type: 'refund',
+        amount,
+        balanceAfter: result[0].creditBalance,
+        referenceId: executionId,
+        referenceType: 'execution',
+        description: `Refund for failed execution`,
+      });
+    }
+  });
 }
 
 export async function grantCredits(
@@ -101,28 +107,30 @@ export async function grantCredits(
   referenceId?: string,
   referenceType?: string,
 ): Promise<{ balanceAfter: number }> {
-  const result = await db
-    .update(users)
-    .set({
-      creditBalance: sql`${users.creditBalance} + ${amount}`,
-      updatedAt: new Date(),
-    })
-    .where(eq(users.id, userId))
-    .returning({ creditBalance: users.creditBalance });
+  return await db.transaction(async (tx) => {
+    const result = await tx
+      .update(users)
+      .set({
+        creditBalance: sql`${users.creditBalance} + ${amount}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
+      .returning({ creditBalance: users.creditBalance });
 
-  const balanceAfter = result[0].creditBalance;
+    const balanceAfter = result[0].creditBalance;
 
-  await db.insert(creditTransactions).values({
-    userId,
-    type,
-    amount,
-    balanceAfter,
-    referenceId: referenceId ?? null,
-    referenceType: referenceType ?? null,
-    description,
+    await tx.insert(creditTransactions).values({
+      userId,
+      type,
+      amount,
+      balanceAfter,
+      referenceId: referenceId ?? null,
+      referenceType: referenceType ?? null,
+      description,
+    });
+
+    return { balanceAfter };
   });
-
-  return { balanceAfter };
 }
 
 export async function getBalance(userId: string): Promise<{ creditBalance: number; earningsBalance: number }> {

@@ -1,10 +1,12 @@
 import { Hono } from 'hono';
 import { eq, desc, asc, sql, and, ilike } from 'drizzle-orm';
 import { db } from '../db/client';
-import { tools, users, categories, reviews, executions } from '../db/schema/index';
-import { authMiddleware, type AuthUser } from '../middleware/auth';
+import { tools, users, categories, reviews, executions, toolReports } from '../db/schema/index';
+import { authMiddleware, optionalAuthMiddleware, type AuthUser } from '../middleware/auth';
 import { holdCredits } from '../services/credit.service';
 import { executionQueue } from '../lib/queue';
+import { redis } from '../lib/redis';
+import { rateLimit } from '../middleware/rate-limit';
 
 const toolRoutes = new Hono();
 
@@ -168,8 +170,8 @@ toolRoutes.get('/:slug', async (c) => {
 });
 
 // POST /tools/:slug/execute — execute a tool
-toolRoutes.post('/:slug/execute', authMiddleware, async (c) => {
-  const user = c.get('user') as AuthUser;
+toolRoutes.post('/:slug/execute', rateLimit({ windowMs: 60_000, maxRequests: 30, keyPrefix: 'rl:execute' }), optionalAuthMiddleware, async (c) => {
+  const user = c.get('user') as AuthUser | undefined;
   const slug = c.req.param('slug')!;
   const body = await c.req.json();
 
@@ -186,9 +188,6 @@ toolRoutes.post('/:slug/execute', authMiddleware, async (c) => {
       404,
     );
   }
-
-  // Validate input against tool's inputSchema if present
-  const input = body.input ?? {};
 
   // Determine credits to charge
   const pricing = tool.pricing as any;
@@ -215,20 +214,55 @@ toolRoutes.post('/:slug/execute', authMiddleware, async (c) => {
       creditsToCharge = 5; // fallback
   }
 
-  // Create execution record
+  // Paid tools require authentication
+  if (pricing.model !== 'free' && !user) {
+    return c.json(
+      { success: false, data: null, error: { code: 'UNAUTHORIZED', message: 'Authentication required for paid tools' } },
+      401,
+    );
+  }
+
+  // Guest rate limiting for free tools (3 executions per IP per day)
+  if (!user) {
+    const forwarded = c.req.header('x-forwarded-for');
+    const ip = forwarded?.split(',')[0]?.trim() || 'unknown';
+    const rateLimitKey = `guest_exec:${ip}:${new Date().toISOString().slice(0, 10)}`;
+    const currentCount = await redis.incr(rateLimitKey);
+
+    // Set expiry on first increment (24 hours)
+    if (currentCount === 1) {
+      await redis.expire(rateLimitKey, 86400);
+    }
+
+    if (currentCount > 3) {
+      return c.json(
+        {
+          success: false,
+          data: null,
+          error: { code: 'RATE_LIMITED', message: 'Guest execution limit reached (3/day). Please sign in for unlimited access.' },
+        },
+        429,
+      );
+    }
+  }
+
+  // Validate input against tool's inputSchema if present
+  const input = body.input ?? {};
+
+  // Create execution record (userId is null for guests)
   const [execution] = await db
     .insert(executions)
     .values({
       toolId: tool.id,
-      userId: user.id,
+      userId: user?.id ?? null,
       status: 'queued',
       input,
       creditsCharged: creditsToCharge,
     })
     .returning();
 
-  // Hold credits (atomic check + deduct)
-  if (creditsToCharge > 0) {
+  // Hold credits (atomic check + deduct) — only for authenticated users with charges
+  if (creditsToCharge > 0 && user) {
     const hold = await holdCredits(user.id, creditsToCharge, execution.id, 'execution');
 
     if (!hold.success) {
@@ -348,6 +382,61 @@ toolRoutes.get('/:slug/reviews', async (c) => {
     },
     error: null,
   });
+});
+
+// POST /tools/:slug/report — report a tool
+toolRoutes.post('/:slug/report', authMiddleware, async (c) => {
+  const slug = c.req.param('slug')!;
+  const user = c.get('user') as AuthUser;
+  const { reason, description } = await c.req.json();
+
+  // Validate reason
+  const validReasons = ['spam', 'misleading', 'broken', 'inappropriate', 'copyright', 'malicious', 'other'];
+  if (!reason || !validReasons.includes(reason)) {
+    return c.json(
+      {
+        success: false,
+        data: null,
+        error: { code: 'VALIDATION_ERROR', message: `Invalid reason. Use: ${validReasons.join(', ')}` },
+      },
+      400,
+    );
+  }
+
+  // Find tool by slug
+  const [tool] = await db
+    .select({ id: tools.id, creatorId: tools.creatorId })
+    .from(tools)
+    .where(eq(tools.slug, slug))
+    .limit(1);
+
+  if (!tool) {
+    return c.json(
+      { success: false, data: null, error: { code: 'NOT_FOUND', message: 'Tool not found' } },
+      404,
+    );
+  }
+
+  // Can't report your own tool
+  if (tool.creatorId === user.id) {
+    return c.json(
+      { success: false, data: null, error: { code: 'FORBIDDEN', message: 'Cannot report your own tool' } },
+      403,
+    );
+  }
+
+  // Insert report
+  const [report] = await db
+    .insert(toolReports)
+    .values({
+      toolId: tool.id,
+      reporterId: user.id,
+      reason: reason as any,
+      description: description || null,
+    })
+    .returning();
+
+  return c.json({ success: true, data: report, error: null });
 });
 
 export default toolRoutes;

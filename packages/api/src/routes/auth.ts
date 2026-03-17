@@ -9,6 +9,7 @@ import { users } from '../db/schema/index';
 import { env } from '../lib/env';
 import { authMiddleware, type AuthUser } from '../middleware/auth';
 import { grantCredits } from '../services/credit.service';
+import { rateLimit } from '../middleware/rate-limit';
 
 const scryptAsync = promisify(scrypt);
 const secret = new TextEncoder().encode(env.NEXTAUTH_SECRET);
@@ -42,7 +43,7 @@ async function createJwt(user: { id: string; email: string; role: string }): Pro
 const auth = new Hono();
 
 // POST /auth/register
-auth.post('/register', async (c) => {
+auth.post('/register', rateLimit({ windowMs: 60_000, maxRequests: 5, keyPrefix: 'rl:register' }), async (c) => {
   const body = await c.req.json();
   const parsed = registerSchema.safeParse(body);
 
@@ -61,7 +62,7 @@ auth.post('/register', async (c) => {
     );
   }
 
-  const { email, password, name } = parsed.data;
+  const { email, password, name, referralCode: incomingReferralCode } = parsed.data;
 
   // Check for existing user
   const existing = await db
@@ -81,6 +82,19 @@ auth.post('/register', async (c) => {
     );
   }
 
+  // Look up referring user if referral code provided
+  let referrerId: string | null = null;
+  if (incomingReferralCode) {
+    const [referrer] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.referralCode, incomingReferralCode))
+      .limit(1);
+    if (referrer) {
+      referrerId = referrer.id;
+    }
+  }
+
   const passwordHash = await hashPassword(password);
   const referralCode = generateReferralCode();
 
@@ -91,6 +105,7 @@ auth.post('/register', async (c) => {
       name,
       passwordHash,
       referralCode,
+      referredBy: referrerId,
       role: 'buyer',
       creditBalance: 0,
       earningsBalance: 0,
@@ -99,6 +114,11 @@ auth.post('/register', async (c) => {
 
   // Grant signup bonus credits
   await grantCredits(user.id, SIGNUP_BONUS, 'signup_bonus', `Welcome bonus: ${SIGNUP_BONUS} credits`);
+
+  // Grant referral bonus to the referring user
+  if (referrerId) {
+    await grantCredits(referrerId, 50, 'referral_bonus', `Referral bonus: ${user.email} signed up`, user.id, 'referral');
+  }
 
   const token = await createJwt({ id: user.id, email: user.email, role: user.role });
 
@@ -122,7 +142,7 @@ auth.post('/register', async (c) => {
 });
 
 // POST /auth/login
-auth.post('/login', async (c) => {
+auth.post('/login', rateLimit({ windowMs: 60_000, maxRequests: 10, keyPrefix: 'rl:login' }), async (c) => {
   const body = await c.req.json();
   const parsed = loginSchema.safeParse(body);
 
@@ -218,6 +238,13 @@ auth.get('/me', authMiddleware, async (c) => {
   }
 
   return c.json({ success: true, data: { user }, error: null });
+});
+
+// POST /auth/logout
+auth.post('/logout', authMiddleware, async (c) => {
+  // JWT is stateless — client just deletes the token
+  // But we can log the event for analytics
+  return c.json({ success: true, data: { message: 'Logged out successfully' }, error: null });
 });
 
 export default auth;
