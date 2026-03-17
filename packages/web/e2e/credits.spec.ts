@@ -64,9 +64,10 @@ test.describe('Credit System', () => {
     expect(packages.length).toBeGreaterThanOrEqual(1);
 
     // Each package should have price and credits fields
+    // API uses priceCents and credits
     const first = packages[0];
     expect(
-      first.price !== undefined || first.priceUsd !== undefined || first.priceInCents !== undefined
+      first.price !== undefined || first.priceUsd !== undefined || first.priceCents !== undefined || first.priceInCents !== undefined
     ).toBe(true);
     expect(
       first.credits !== undefined || first.amount !== undefined || first.creditAmount !== undefined

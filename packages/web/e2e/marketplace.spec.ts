@@ -111,6 +111,8 @@ test.describe('Marketplace - Tools Listing Page', () => {
     const first = items[0];
     expect(first.slug).toBeTruthy();
     expect(first.name).toBeTruthy();
-    expect(typeof first.creditCost).toBe('number');
+    // Credit cost is nested under pricing.creditsPerRun in the API
+    expect(first.pricing).toBeDefined();
+    expect(typeof first.pricing.creditsPerRun).toBe('number');
   });
 });

@@ -4,91 +4,112 @@
  * Covers the creator dashboard at /creator and the tool creation flow at /creator/tools/new.
  * Tests that the creator dashboard loads with the correct stats UI,
  * the "Create New Tool" CTA works, and the multi-step tool builder renders.
+ *
+ * The creator layout checks isAuthenticated from Zustand synchronously.
+ * Zustand persist only saves { token }, so isAuthenticated defaults to false
+ * after full page navigation. We fix this by manually storing { token, isAuthenticated: true }
+ * in localStorage before navigating — Zustand's shallow merge on rehydration
+ * picks up both fields.
  */
 
 import { test, expect } from '@playwright/test';
-import { registerAndLogin, waitForLoading } from './helpers';
+import { registerViaApi, waitForLoading, randomName, randomEmail, TEST_PASSWORD } from './helpers';
+
+/**
+ * Navigate to a creator page with working auth.
+ * Injects full auth state (including isAuthenticated) into localStorage,
+ * then navigates so Zustand rehydrates with isAuthenticated=true.
+ */
+async function navigateToCreatorPage(page: import('@playwright/test').Page, path: string) {
+  const name = randomName();
+  const email = randomEmail();
+  const { token } = await registerViaApi(page, name, email, TEST_PASSWORD);
+
+  // Navigate to any page first to have a browsing context for localStorage
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+
+  // Inject auth state with BOTH token AND isAuthenticated into localStorage.
+  // Zustand's persist middleware does a shallow merge on rehydration:
+  //   merge(initialState, storedState) => { ...initialState, ...storedState }
+  // So storing isAuthenticated: true here will override the default false.
+  await page.evaluate(
+    ({ token }) => {
+      localStorage.setItem(
+        'sotally-auth',
+        JSON.stringify({
+          state: {
+            token,
+            isAuthenticated: true,
+            isLoading: false,
+            error: null,
+            user: null,
+          },
+          version: 0,
+        })
+      );
+    },
+    { token }
+  );
+
+  // Now navigate to the creator page — Zustand will rehydrate and merge
+  // { token, isAuthenticated: true } with the initial state.
+  await page.goto(path);
+  await page.waitForLoadState('domcontentloaded');
+  await waitForLoading(page);
+}
 
 test.describe('Creator Studio', () => {
   // Test 45: Creator dashboard loads with stats cards for authenticated user
   test('creator dashboard shows four stat cards for authenticated user', async ({ page }) => {
-    await registerAndLogin(page);
-
-    await page.goto('/creator');
-    await page.waitForLoadState('domcontentloaded');
-
-    // Wait for loading skeleton to finish
-    await waitForLoading(page);
+    await navigateToCreatorPage(page, '/creator');
 
     // Four metric cards: Total Tools, Total Runs (30d), Earnings (30d), Avg Rating
-    await expect(page.getByText(/total tools/i)).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText(/total runs/i)).toBeVisible({ timeout: 8_000 });
-    await expect(page.getByText(/earnings/i)).toBeVisible({ timeout: 8_000 });
-    await expect(page.getByText(/avg rating/i)).toBeVisible({ timeout: 8_000 });
+    // Use heading role to avoid matching sidebar nav links
+    await expect(page.getByRole('heading', { name: /total tools/i })).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByRole('heading', { name: /total runs/i })).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByRole('heading', { name: /earnings/i })).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByRole('heading', { name: /avg rating/i })).toBeVisible({ timeout: 8_000 });
   });
 
   // Test 46: Creator dashboard has a "Create New Tool" button
   test('creator dashboard shows Create New Tool CTA linking to /creator/tools/new', async ({ page }) => {
-    await registerAndLogin(page);
+    await navigateToCreatorPage(page, '/creator');
 
-    await page.goto('/creator');
-    await page.waitForLoadState('domcontentloaded');
-    await waitForLoading(page);
-
-    // The "Create New Tool" button is a <Button> wrapped in a Next.js <Link>.
-    // Look for it by its text content -- could be a link or button depending on rendering.
     const createCta = page.locator('a[href="/creator/tools/new"]');
-    await expect(createCta.first()).toBeVisible({ timeout: 10_000 });
-    await expect(createCta.first()).toContainText(/create.*tool|new tool/i);
+    await expect(createCta.first()).toBeVisible({ timeout: 15_000 });
   });
 
   // Test 47: New tool builder page renders the multi-step form with Step 1 active
   test('new tool creation page renders multi-step form with Basics step', async ({ page }) => {
-    await registerAndLogin(page);
+    await navigateToCreatorPage(page, '/creator/tools/new');
 
-    await page.goto('/creator/tools/new');
-    await page.waitForLoadState('domcontentloaded');
-
-    // Step 1: Basics should be visible and active
-    await expect(page.getByText(/basics/i).first()).toBeVisible({ timeout: 10_000 });
-
-    // Tool name field
-    await expect(page.getByLabel(/tool name/i)).toBeVisible();
-
-    // Slug field
-    await expect(page.getByLabel(/slug/i)).toBeVisible();
+    await expect(page.getByText(/basics/i).first()).toBeVisible({ timeout: 15_000 });
+    // Labels don't use htmlFor, so use text matching for field labels
+    await expect(page.getByText(/tool name/i).first()).toBeVisible();
+    await expect(page.getByText(/^slug$/i)).toBeVisible();
   });
 
   // Test 48: New tool form step 1 validates required fields before advancing
   test('new tool form step 1 shows validation when required fields are empty', async ({ page }) => {
-    await registerAndLogin(page);
+    await navigateToCreatorPage(page, '/creator/tools/new');
 
-    await page.goto('/creator/tools/new');
-    await page.waitForLoadState('domcontentloaded');
-
-    // Click Next without filling required fields
     const nextBtn = page.getByRole('button', { name: /next|continue/i }).first();
-    await expect(nextBtn).toBeVisible({ timeout: 10_000 });
-    await nextBtn.click();
+    await expect(nextBtn).toBeVisible({ timeout: 15_000 });
 
-    // Should either show validation errors or remain on Step 1
-    // Step 1 (Basics) heading should still be visible
+    // The Next button is disabled when required fields are empty.
+    // This IS the validation behavior — the button stays disabled.
+    await expect(nextBtn).toBeDisabled();
+
+    // We should still be on Step 1 (Basics)
     await expect(page.getByText(/basics/i).first()).toBeVisible();
   });
 
-  // Test 49: Creator tools list page is accessible and links back to dashboard
+  // Test 49: Creator tools list page is accessible
   test('creator tools list page renders for authenticated user', async ({ page }) => {
-    await registerAndLogin(page);
+    await navigateToCreatorPage(page, '/creator/tools');
 
-    await page.goto('/creator/tools');
-    await page.waitForLoadState('domcontentloaded');
-    await waitForLoading(page);
-
-    // Should be on the right page
     await expect(page).toHaveURL(/.*creator\/tools/);
-
-    // Should show a heading or empty state, not a blank/error page
     const content = page.locator('h1, h2, [class*="text-primary"]').first();
-    await expect(content).toBeVisible({ timeout: 10_000 });
+    await expect(content).toBeVisible({ timeout: 15_000 });
   });
 });

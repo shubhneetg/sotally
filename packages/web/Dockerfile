@@ -13,6 +13,8 @@ COPY packages/shared ./packages/shared
 COPY packages/web ./packages/web
 COPY package.json package-lock.json tsconfig.json ./
 ENV NEXT_TELEMETRY_DISABLED=1
+ARG NEXT_PUBLIC_API_URL=https://sotally.com/api
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build -w @sotally/web
 
 FROM base AS runner

@@ -17,7 +17,7 @@ test.describe('Tool Detail Page', () => {
     await page.goto(`/tools/${KNOWN_TOOL_SLUG}`);
     await page.waitForLoadState('domcontentloaded');
 
-    // Wait for loading skeleton to disappear
+    // Wait for loading skeleton to disappear (client-side data fetch)
     await waitForLoading(page);
 
     // Tool name heading
@@ -26,7 +26,7 @@ test.describe('Tool Detail Page', () => {
     ).toBeVisible({ timeout: 15_000 });
 
     // About this tool section
-    await expect(page.getByText(/about this tool/i)).toBeVisible();
+    await expect(page.getByText(/about this tool/i)).toBeVisible({ timeout: 10_000 });
 
     // Credit cost display (right sidebar) - text is "credits per run (~$X.XX)"
     await expect(page.getByText(/credits per run/i)).toBeVisible();
@@ -69,18 +69,19 @@ test.describe('Tool Detail Page', () => {
     await page.waitForLoadState('domcontentloaded');
     await waitForLoading(page);
 
+    // "Tool not found" appears as both h1 and description p — use heading
     await expect(
-      page.getByText(/tool not found/i)
+      page.getByRole('heading', { name: /tool not found/i })
     ).toBeVisible({ timeout: 15_000 });
 
-    // Should have a back link to marketplace
+    // Should have a back link to marketplace (text: "Back to marketplace")
     await expect(
       page.getByRole('link', { name: /back to marketplace/i })
     ).toBeVisible();
   });
 
   // Test 27: GET /api/tools/:slug returns tool data with correct schema
-  test('GET /api/tools/:slug returns tool with name, creditCost, and inputSchema', async ({ page }) => {
+  test('GET /api/tools/:slug returns tool with name, pricing, and inputSchema', async ({ page }) => {
     const response = await page.request.get(`${API_URL}/tools/${KNOWN_TOOL_SLUG}`);
     expect(response.status()).toBe(200);
 
@@ -90,8 +91,10 @@ test.describe('Tool Detail Page', () => {
     const tool = body.data;
     expect(tool.slug).toBe(KNOWN_TOOL_SLUG);
     expect(tool.name).toBeTruthy();
-    expect(typeof tool.creditCost).toBe('number');
-    expect(tool.creditCost).toBeGreaterThan(0);
+    // Credit cost is under pricing.creditsPerRun in the API
+    expect(tool.pricing).toBeDefined();
+    expect(typeof tool.pricing.creditsPerRun).toBe('number');
+    expect(tool.pricing.creditsPerRun).toBeGreaterThan(0);
     // inputSchema should be present for the run form
     if (tool.inputSchema) {
       expect(tool.inputSchema.type).toBe('object');

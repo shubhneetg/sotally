@@ -9,8 +9,8 @@ export default defineConfig({
   testDir: './e2e',
   /* Maximum time one test can run (60s for live site) */
   timeout: 60_000,
-  /* Maximum time for the entire test run */
-  globalTimeout: 600_000,
+  /* Maximum time for the entire test run (15 min for serial + retries) */
+  globalTimeout: 900_000,
   /* Run tests serially to avoid rate limit issues against live site */
   fullyParallel: false,
   workers: 1,

@@ -261,15 +261,14 @@ export async function waitForLoading(page: Page, timeout = 15_000): Promise<void
 
 /**
  * A known tool slug that is expected to exist in the live marketplace.
- * Used across multiple tests as a stable fixture.
+ * Must match a real tool in the database.
  */
-export const KNOWN_TOOL_SLUG = 'image-bg-remover';
+export const KNOWN_TOOL_SLUG = 'smart-text-classifier';
 
 /**
- * Known tool slugs to use in tests. These match the 9 seeded tools.
+ * Known tool slugs to use in tests. These match the seeded tools.
  */
 export const TOOL_SLUGS = [
-  'image-bg-remover',
-  'pdf-invoice-generator',
-  'seo-meta-analyzer',
+  'smart-text-classifier',
+  'ai-message-refiner',
 ];

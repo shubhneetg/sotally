@@ -36,9 +36,9 @@ test.describe('Tool Run Page - Unauthenticated', () => {
       page.getByRole('heading', { name: /sign in to run tools/i })
     ).toBeVisible({ timeout: 15_000 });
 
-    // Should show a Log in link
+    // Should show a Log in link in the main content area (not the header nav)
     await expect(
-      page.getByRole('link', { name: /log in/i })
+      page.getByRole('main').getByRole('link', { name: /log in/i })
     ).toBeVisible();
 
     // Should show a Create Account link
@@ -65,12 +65,12 @@ test.describe('Tool Run Page - Authenticated', () => {
   test('form submission triggers credit confirmation dialog', async ({ page }) => {
     await navigateToRunPage(page);
 
-    // Fill in the first visible input field (text-type)
+    // Fill in the first visible input field -- smart-text-classifier expects a text input
     const inputs = page.locator('input[type="text"], input[type="url"], textarea');
     const inputCount = await inputs.count();
 
     if (inputCount > 0) {
-      await inputs.first().fill('https://example.com');
+      await inputs.first().fill('This is a test message to classify. Can you help me organize my tasks?');
     }
 
     // Submit the form
@@ -94,7 +94,7 @@ test.describe('Tool Run Page - Authenticated', () => {
 
     const inputs = page.locator('input[type="text"], input[type="url"], textarea');
     if (await inputs.count() > 0) {
-      await inputs.first().fill('https://example.com');
+      await inputs.first().fill('This is a test message to classify.');
     }
 
     await page.getByRole('button', { name: /run tool/i }).click();
@@ -111,7 +111,7 @@ test.describe('Tool Run Page - Authenticated', () => {
   // Test 32: POST /api/tools/:slug/execute without auth returns 401
   test('POST /api/tools/:slug/execute without auth token returns 401', async ({ page }) => {
     const response = await page.request.post(`${API_URL}/tools/${KNOWN_TOOL_SLUG}/execute`, {
-      data: { input: { url: 'https://example.com' } },
+      data: { input: { text: 'test message' } },
       headers: { 'Content-Type': 'application/json' },
     });
 
@@ -128,7 +128,7 @@ test.describe('Tool Run Page - Authenticated', () => {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      data: { input: { url: 'https://example.com' } },
+      data: { input: { text: 'This is a test message to classify.' } },
     });
 
     // Should succeed (200 or 202) or fail with a known application error (not 401/403/500)

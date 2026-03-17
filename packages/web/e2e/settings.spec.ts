@@ -50,8 +50,9 @@ test.describe('Settings Page', () => {
     await expect(page.getByText(/are you sure/i)).toBeVisible({ timeout: 5_000 });
 
     // Modal should explain the consequences
+    // Use .first() as similar text appears in both the danger zone card and the modal
     await expect(
-      page.getByText(/permanently delete your account/i)
+      page.getByText(/this will permanently delete/i).first()
     ).toBeVisible();
 
     // Cancel button should close the modal
