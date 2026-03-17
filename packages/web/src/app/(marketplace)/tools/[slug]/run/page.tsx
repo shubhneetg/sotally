@@ -168,7 +168,8 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
       const text = typeof result.output === 'string'
         ? result.output
         : JSON.stringify(result.output, null, 2);
-      navigator.clipboard.writeText(text);
+      const branded = `${text}\n\n— Generated with Sotally (https://sotally.com/tools/${slug})`;
+      navigator.clipboard.writeText(branded);
       addToast('Result copied to clipboard', 'success');
     }
   };
@@ -279,6 +280,11 @@ export default function ToolRunPage({ params }: { params: Promise<{ slug: string
           {result.status === 'failed' && (
             <p className="mt-3 text-xs text-destructive">
               Execution failed. Credits have been refunded.
+            </p>
+          )}
+          {result.status === 'completed' && (
+            <p className="mt-3 text-[10px] text-muted-foreground/50 text-center">
+              Generated with <a href={`https://sotally.com/tools/${slug}`} className="text-accent/50 hover:text-accent">Sotally</a>
             </p>
           )}
         </div>
