@@ -237,12 +237,12 @@ export function useToolExecution(): UseToolExecutionReturn {
           onComplete: (executionResult) => {
             setResult(executionResult);
             setIsExecuting(false);
-            fetchBalance(token);
+            if (token) fetchBalance(token);
           },
           onError: (errMsg) => {
             setError(errMsg);
             setIsExecuting(false);
-            fetchBalance(token);
+            if (token) fetchBalance(token);
           },
         });
 
@@ -260,7 +260,7 @@ export function useToolExecution(): UseToolExecutionReturn {
           const executionResult = await pollPromise;
           setResult(executionResult);
           setIsExecuting(false);
-          fetchBalance(token);
+          if (token) fetchBalance(token);
         } else {
           // SSE connected — but also race with polling as a safety net
           // If SSE delivers the result first, the callbacks handle it
@@ -269,7 +269,7 @@ export function useToolExecution(): UseToolExecutionReturn {
             if (executionResult.status === 'completed' || executionResult.status === 'failed') {
               setResult(executionResult);
               setIsExecuting(false);
-              fetchBalance(token);
+              if (token) fetchBalance(token);
               if (cleanupRef.current) cleanupRef.current();
             }
           }).catch(() => {
@@ -280,7 +280,7 @@ export function useToolExecution(): UseToolExecutionReturn {
         setError(err instanceof Error ? err.message : 'Execution failed');
         setIsExecuting(false);
         // Refresh balance in case of failure (credits may be refunded)
-        fetchBalance(token);
+        if (token) fetchBalance(token);
       }
     },
     [token, deductCredits, pollExecution, fetchBalance]
