@@ -536,6 +536,86 @@ appRoutes.get('/featured', async (c) => {
   return c.json({ success: true, data: enriched, error: null });
 });
 
+// ─── GET /apps/search — Full-text search across published apps ──────────────
+
+appRoutes.get('/search', async (c) => {
+  const q = c.req.query('q')?.trim();
+  const niche = c.req.query('niche');
+  const limit = Math.min(parseInt(c.req.query('limit') || '20', 10), 50);
+  const offset = parseInt(c.req.query('offset') || '0', 10);
+
+  if (!q) {
+    return c.json(
+      { success: false, data: null, error: { code: 'BAD_REQUEST', message: 'q query parameter is required' } },
+      400,
+    );
+  }
+
+  // Full-text search using tsvector against name, description, and prompt
+  const nicheFilter = niche ? sql`AND ${apps.niche} = ${niche}` : sql``;
+
+  const items = await db.execute(sql`
+    SELECT
+      a.id, a.slug, a.name, a.description, a.icon_url, a.niche,
+      a.pricing_model, a.total_sessions, a.total_users, a.like_count,
+      a.avg_rating, a.is_featured, a.published_at, a.creator_id,
+      ts_rank(
+        setweight(to_tsvector('english', coalesce(a.name, '')), 'A') ||
+        setweight(to_tsvector('english', coalesce(a.description, '')), 'B') ||
+        setweight(to_tsvector('english', coalesce(a.original_prompt, '')), 'C'),
+        plainto_tsquery('english', ${q})
+      ) AS rank
+    FROM apps a
+    WHERE a.status = 'published'
+      AND (
+        setweight(to_tsvector('english', coalesce(a.name, '')), 'A') ||
+        setweight(to_tsvector('english', coalesce(a.description, '')), 'B') ||
+        setweight(to_tsvector('english', coalesce(a.original_prompt, '')), 'C')
+      ) @@ plainto_tsquery('english', ${q})
+      ${nicheFilter}
+    ORDER BY rank DESC
+    LIMIT ${limit} OFFSET ${offset}
+  `);
+
+  const rows = items.rows as any[];
+
+  // Fetch creator info
+  const creatorIds = [...new Set(rows.map((r) => r.creator_id))];
+  const creators =
+    creatorIds.length > 0
+      ? await db
+          .select({
+            id: users.id,
+            name: users.name,
+            avatarUrl: users.avatarUrl,
+            storefrontSlug: users.storefrontSlug,
+          })
+          .from(users)
+          .where(sql`${users.id} IN ${creatorIds}`)
+      : [];
+
+  const creatorMap = new Map(creators.map((cr) => [cr.id, cr]));
+
+  const enriched = rows.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    description: row.description,
+    iconUrl: row.icon_url,
+    niche: row.niche,
+    pricingModel: row.pricing_model,
+    totalSessions: row.total_sessions,
+    totalUsers: row.total_users,
+    likeCount: row.like_count,
+    avgRating: row.avg_rating,
+    isFeatured: row.is_featured,
+    publishedAt: row.published_at,
+    creator: creatorMap.get(row.creator_id) || null,
+  }));
+
+  return c.json({ success: true, data: enriched, error: null });
+});
+
 // ─── GET /apps/:id — Get app details ────────────────────────────────────────
 
 appRoutes.get('/:id', optionalAuthMiddleware, async (c) => {
