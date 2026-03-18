@@ -1,172 +1,166 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ToolCard } from '@/components/marketplace/tool-card';
-import { api } from '@/lib/api';
+import { Sparkles, ArrowRight, Users, Heart } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 
-interface Tool {
-  name: string;
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sotally.com/api';
+
+const NICHES = [
+  { slug: 'wellness', shortName: 'Wellness', icon: '🧘', color: '#6EE7B7' },
+  { slug: 'astrology', shortName: 'Astrology', icon: '🔮', color: '#A78BFA' },
+  { slug: 'fitness', shortName: 'Fitness', icon: '💪', color: '#60A5FA' },
+  { slug: 'education', shortName: 'Education', icon: '📚', color: '#FBBF24' },
+  { slug: 'finance', shortName: 'Finance', icon: '💰', color: '#34D399' },
+  { slug: 'nutrition', shortName: 'Nutrition', icon: '🥗', color: '#4ADE80' },
+  { slug: 'parenting', shortName: 'Parenting', icon: '👶', color: '#F9A8D4' },
+  { slug: 'language', shortName: 'Language', icon: '🌍', color: '#38BDF8' },
+  { slug: 'business', shortName: 'Business', icon: '💼', color: '#FB923C' },
+  { slug: 'real-estate', shortName: 'Real Estate', icon: '🏠', color: '#818CF8' },
+  { slug: 'content', shortName: 'Content', icon: '🎬', color: '#F472B6' },
+  { slug: 'design', shortName: 'Design', icon: '🎨', color: '#E879F9' },
+];
+
+interface AppCard {
+  id: string;
   slug: string;
-  description: string;
-  icon: string;
-  rating: number;
-  runCount: number;
-  creditCost: number;
-  creatorName: string;
+  name: string;
+  description: string | null;
+  iconUrl: string | null;
+  niche: string | null;
+  pricingModel: string;
+  totalUsers: number;
+  likeCount: number;
+  creator: {
+    name: string;
+    storefrontSlug: string | null;
+  } | null;
 }
-
-function mapToolFromApi(apiTool: any): Tool {
-  return {
-    name: apiTool.name,
-    slug: apiTool.slug,
-    description: apiTool.description,
-    icon: apiTool.iconUrl || apiTool.icon || '🛠️',
-    rating: apiTool.avgRating ?? apiTool.rating ?? 0,
-    runCount: apiTool.totalRuns ?? apiTool.runCount ?? 0,
-    creditCost: apiTool.creditCost ?? apiTool.pricing?.creditsPerRun ?? apiTool.pricing?.credits ?? 0,
-    creatorName: apiTool.creatorName || apiTool.creator?.name || 'Sotally',
-  };
-}
-
-const categories = [
-  { icon: '💻', name: 'Development', slug: 'development' },
-  { icon: '📈', name: 'Marketing', slug: 'marketing' },
-  { icon: '✍️', name: 'Writing', slug: 'ai-writing' },
-  { icon: '📊', name: 'Data Tools', slug: 'data-tools' },
-  { icon: '⚡', name: 'Productivity', slug: 'productivity' },
-  { icon: '💼', name: 'Business', slug: 'business' },
-  { icon: '🎓', name: 'Education', slug: 'education' },
-  { icon: '🎨', name: 'Design', slug: 'design' },
-];
-
-const integrationLogos = [
-  { name: 'GitHub', icon: '🐙' },
-  { name: 'Slack', icon: '💬' },
-  { name: 'Notion', icon: '📝' },
-  { name: 'HubSpot', icon: '🧲' },
-  { name: 'Discord', icon: '🎮' },
-  { name: 'Stripe', icon: '💳' },
-  { name: 'Jira', icon: '🎫' },
-  { name: 'Airtable', icon: '📋' },
-  { name: 'Mailchimp', icon: '📧' },
-  { name: 'Linear', icon: '📐' },
-];
 
 export default function HomePage() {
-  const [featuredTools, setFeaturedTools] = useState<Tool[]>([]);
-  const [toolsLoading, setToolsLoading] = useState(true);
+  const router = useRouter();
+  const [prompt, setPrompt] = useState('');
+  const [trendingApps, setTrendingApps] = useState<AppCard[]>([]);
+  const [appsLoading, setAppsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchFeatured() {
+    async function fetchTrending() {
       try {
-        const res = (await api.tools.list({ sort: 'popular', page: 1, per_page: 6 })) as {
-          success: boolean;
-          data: { items: any[] } | any[];
-        };
-        const rawItems = Array.isArray(res.data) ? res.data : (res.data as { items: any[] }).items || [];
-        setFeaturedTools(rawItems.slice(0, 6).map(mapToolFromApi));
+        const res = await fetch(`${API_URL}/apps/explore?limit=6`);
+        if (res.ok) {
+          const data = await res.json();
+          setTrendingApps(data.data || []);
+        }
       } catch {
         // Non-critical
       } finally {
-        setToolsLoading(false);
+        setAppsLoading(false);
       }
     }
-    fetchFeatured();
+    fetchTrending();
   }, []);
+
+  const handlePromptSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (prompt.trim()) {
+      router.push(`/create?prompt=${encodeURIComponent(prompt.trim())}`);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
+      {/* Hero with Prompt Input */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-accent/5 via-background to-background">
         <div className="mx-auto max-w-7xl px-4 py-20 text-center sm:px-6 sm:py-28 lg:px-8 lg:py-32">
           <div className="inline-flex items-center rounded-full border border-accent/20 bg-accent/5 px-4 py-1.5 text-sm font-medium text-accent mb-6">
-            50 free credits on signup — no credit card needed
+            Describe it. We build it. Under 5 minutes.
           </div>
           <h1 className="text-4xl font-bold tracking-tight text-primary sm:text-5xl lg:text-6xl">
-            AI-powered software.
+            Turn words into
             <br />
-            <span className="text-accent">No subscriptions.</span>
+            <span className="text-accent">working software.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground sm:text-xl">
-            Access 50+ AI tools for development, marketing, writing, and more. Pay only for what you use with credits. Build your own tools and earn from every run.
+            Type what you want in plain English. Get a fully working app on your personal storefront. No coding needed.
           </p>
-          <div className="mt-10 flex items-center justify-center gap-4">
+
+          {/* Prompt Input CTA */}
+          <form onSubmit={handlePromptSubmit} className="mx-auto mt-10 max-w-2xl">
+            <div className="relative">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="Describe the app you want to create... e.g., 'A calorie tracker with meal logging and weekly trend charts'"
+                rows={3}
+                className="w-full rounded-xl border border-border bg-card px-5 py-4 pr-28 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 resize-none shadow-lg"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handlePromptSubmit(e);
+                  }
+                }}
+              />
+              <button
+                type="submit"
+                disabled={!prompt.trim()}
+                className="absolute bottom-3 right-3 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Sparkles className="h-4 w-4" />
+                Create
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-4 flex items-center justify-center gap-4">
             <Link
-              href="/tools"
-              className="inline-flex items-center rounded-lg bg-accent px-6 py-3 text-base font-semibold text-accent-foreground shadow-sm hover:bg-accent/90 transition-colors"
+              href="/explore"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Browse Tools
-            </Link>
-            <Link
-              href="/register"
-              className="inline-flex items-center rounded-lg border border-border px-6 py-3 text-base font-semibold text-foreground hover:bg-muted transition-colors"
-            >
-              Start Free
+              or browse existing apps
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Stats Bar */}
+      {/* How it Works */}
       <section className="border-y border-border bg-muted/30">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-primary">56+</div>
-              <div className="text-xs text-muted-foreground">AI Tools</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-primary">100+</div>
-              <div className="text-xs text-muted-foreground">Integrations</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-primary">15</div>
-              <div className="text-xs text-muted-foreground">Active Connectors</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-primary">8</div>
-              <div className="text-xs text-muted-foreground">Categories</div>
-            </div>
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+            {[
+              { num: '1', title: 'Describe', desc: 'Type what your app should do in plain English. Be as specific or vague as you want.' },
+              { num: '2', title: 'Generate', desc: 'AI builds a working React app in seconds. Refine it with conversation — "add dark mode", "change the chart".' },
+              { num: '3', title: 'Publish', desc: 'Deploy to your storefront (you.sotally.com). Share with your audience. Set pricing if you want.' },
+            ].map((step) => (
+              <div key={step.num} className="text-center">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-lg font-bold text-accent-foreground">
+                  {step.num}
+                </div>
+                <h3 className="mt-4 text-base font-semibold text-primary">{step.title}</h3>
+                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Category Quick Links */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="text-center text-2xl font-bold text-primary sm:text-3xl">Find tools for your role</h2>
-        <p className="text-center mt-2 text-muted-foreground">AI tools organized by what you do.</p>
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {categories.map((cat) => (
-            <Link
-              key={cat.slug}
-              href={`/tools?category=${cat.slug}`}
-              className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5"
-            >
-              <span className="text-2xl">{cat.icon}</span>
-              <span className="text-sm font-semibold text-primary">{cat.name}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      {/* Featured Tools */}
-      <section className="bg-muted/20 py-16">
+      {/* Trending Apps */}
+      <section className="py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-primary sm:text-3xl">Popular Tools</h2>
-              <p className="mt-2 text-muted-foreground">Most-used tools by our community.</p>
+              <h2 className="text-2xl font-bold text-primary sm:text-3xl">Trending Apps</h2>
+              <p className="mt-2 text-muted-foreground">Recently published apps by our creators.</p>
             </div>
-            <Link href="/tools" className="text-sm font-medium text-accent hover:text-accent/80">
-              View all
+            <Link href="/explore" className="text-sm font-medium text-accent hover:text-accent/80 flex items-center gap-1">
+              View all <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-          {toolsLoading ? (
+          {appsLoading ? (
             <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="rounded-xl border border-border bg-card p-5 shadow-sm animate-pulse">
@@ -180,53 +174,102 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-          ) : featuredTools.length > 0 ? (
+          ) : trendingApps.length > 0 ? (
             <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredTools.map((tool) => (
-                <ToolCard key={tool.slug} {...tool} />
+              {trendingApps.map((app) => (
+                <Link
+                  key={app.id}
+                  href={`/apps/${app.id}`}
+                  className="group rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-accent/10 text-xl">
+                      {app.iconUrl ? (
+                        <img src={app.iconUrl} alt={app.name} className="h-12 w-12 rounded-lg object-cover" />
+                      ) : (
+                        '🚀'
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-semibold text-primary group-hover:text-accent transition-colors truncate">
+                        {app.name}
+                      </h3>
+                      {app.creator && (
+                        <p className="text-xs text-muted-foreground">by {app.creator.name}</p>
+                      )}
+                      {app.description && (
+                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{app.description}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+                    {app.totalUsers > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        {app.totalUsers.toLocaleString()}
+                      </span>
+                    )}
+                    {app.likeCount > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Heart className="h-3 w-3" />
+                        {app.likeCount.toLocaleString()}
+                      </span>
+                    )}
+                    {app.pricingModel === 'free' && (
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-600 font-medium">
+                        Free
+                      </span>
+                    )}
+                  </div>
+                </Link>
               ))}
             </div>
-          ) : null}
-        </div>
-      </section>
-
-      {/* How it Works */}
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <h2 className="text-center text-2xl font-bold text-primary sm:text-3xl">How it works</h2>
-        <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3">
-          {[
-            { num: '1', title: 'Browse', desc: 'Explore 50+ tools across development, marketing, writing, design, and more. Filter by category or search by problem.' },
-            { num: '2', title: 'Run', desc: 'Fill in the inputs and click Run. AI processes your request in seconds. No installs, no configuration, no commitments.' },
-            { num: '3', title: 'Pay per use', desc: 'Each tool costs a few credits. No monthly fees, ever. Get 50 free credits on signup. Buy more when you need them.' },
-          ].map((step) => (
-            <div key={step.num} className="text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-xl font-bold text-accent-foreground">
-                {step.num}
-              </div>
-              <h3 className="mt-4 text-lg font-semibold text-primary">{step.title}</h3>
-              <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Integrations Strip */}
-      <section className="border-y border-border bg-muted/30 py-10">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Works with your favorite tools</p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-6">
-            {integrationLogos.map((i) => (
+          ) : (
+            <div className="mt-8 rounded-xl border border-border bg-card px-6 py-12 text-center">
+              <p className="text-muted-foreground">No apps published yet. Be the first to create one!</p>
               <Link
-                key={i.name}
-                href={`/integrations/${i.name.toLowerCase()}`}
-                className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                href="/create"
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
               >
-                <span className="text-lg">{i.icon}</span>
-                {i.name}
+                <Sparkles className="h-4 w-4" />
+                Create an App
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Niche Category Grid */}
+      <section className="bg-muted/20 py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-primary sm:text-3xl">Apps for every niche</h2>
+            <p className="mt-2 text-muted-foreground">
+              {NICHES.length} niches. Thousands of possibilities. Find your audience.
+            </p>
+          </div>
+          <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {NICHES.map((niche) => (
+              <Link
+                key={niche.slug}
+                href={`/explore/${niche.slug}`}
+                className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5"
+              >
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xl"
+                  style={{ backgroundColor: `${niche.color}20` }}
+                >
+                  {niche.icon}
+                </div>
+                <span className="text-sm font-semibold text-primary group-hover:text-accent transition-colors">
+                  {niche.shortName}
+                </span>
               </Link>
             ))}
-            <Link href="/integrations" className="text-sm font-medium text-accent hover:text-accent/80">
-              +90 more
+          </div>
+          <div className="mt-8 text-center">
+            <Link href="/explore" className="text-sm font-medium text-accent hover:text-accent/80 flex items-center justify-center gap-1">
+              Explore all niches <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
         </div>
@@ -235,18 +278,18 @@ export default function HomePage() {
       {/* For Creators */}
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="rounded-2xl bg-gradient-to-br from-accent/5 via-background to-accent/10 border border-border p-10 sm:p-14 text-center">
-          <h2 className="text-2xl font-bold text-primary sm:text-3xl">Build tools. Earn from every run.</h2>
+          <h2 className="text-2xl font-bold text-primary sm:text-3xl">Build apps. Grow your audience.</h2>
           <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-            Turn your expertise into AI-powered software with our no-code builder. Set your price in credits. Earn 70-85% revenue share from every run. No coding required.
+            Turn your expertise into software your audience actually uses. Describe it in words, publish to your storefront, set your pricing. Keep 85% of revenue.
           </p>
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3 max-w-2xl mx-auto">
             <div className="rounded-xl bg-card border border-border p-4">
-              <div className="text-2xl font-bold text-accent">70-85%</div>
+              <div className="text-2xl font-bold text-accent">85%</div>
               <div className="text-xs text-muted-foreground mt-1">Revenue share</div>
             </div>
             <div className="rounded-xl bg-card border border-border p-4">
-              <div className="text-2xl font-bold text-accent">15 min</div>
-              <div className="text-xs text-muted-foreground mt-1">To build a tool</div>
+              <div className="text-2xl font-bold text-accent">&lt; 5 min</div>
+              <div className="text-xs text-muted-foreground mt-1">To first published app</div>
             </div>
             <div className="rounded-xl bg-card border border-border p-4">
               <div className="text-2xl font-bold text-accent">$0</div>
@@ -254,47 +297,25 @@ export default function HomePage() {
             </div>
           </div>
           <div className="mt-8 flex items-center justify-center gap-4">
-            <Link href="/creator" className="inline-flex items-center rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors">
+            <Link href="/create" className="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors">
+              <Sparkles className="h-4 w-4" />
               Start Creating
             </Link>
-            <Link href="/guides/creators" className="inline-flex items-center rounded-lg border border-border px-6 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors">
-              Creator Guide
+            <Link href="/onboarding" className="inline-flex items-center rounded-lg border border-border px-6 py-3 text-sm font-medium text-foreground hover:bg-muted transition-colors">
+              Claim your storefront
             </Link>
           </div>
-        </div>
-      </section>
-
-      {/* Guides CTA */}
-      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-primary">Learn by role</h2>
-            <p className="mt-1 text-muted-foreground">Step-by-step guides for developers, marketers, writers, and more.</p>
-          </div>
-          <Link href="/guides" className="text-sm font-medium text-accent hover:text-accent/80">View all guides</Link>
-        </div>
-        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { icon: '💻', name: 'Developers', slug: 'development' },
-            { icon: '📈', name: 'Marketers', slug: 'marketing' },
-            { icon: '✍️', name: 'Writers', slug: 'writing' },
-            { icon: '🚀', name: 'Getting Started', slug: 'getting-started' },
-          ].map((g) => (
-            <Link key={g.slug} href={`/guides/${g.slug}`} className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/50 transition-colors">
-              <span className="text-xl">{g.icon}</span>
-              <span className="text-sm font-semibold text-primary">{g.name}</span>
-            </Link>
-          ))}
         </div>
       </section>
 
       {/* Final CTA */}
       <section className="bg-accent/5 border-t border-accent/20 py-16 text-center">
-        <h2 className="text-3xl font-bold text-primary">Ready to try AI tools without subscriptions?</h2>
-        <p className="mt-3 text-muted-foreground">Sign up free. Get 50 credits. No credit card required.</p>
+        <h2 className="text-3xl font-bold text-primary">What will you build?</h2>
+        <p className="mt-3 text-muted-foreground">Describe it. We&apos;ll build it. Free to start.</p>
         <div className="mt-8">
-          <Link href="/register" className="inline-flex items-center rounded-lg bg-accent px-8 py-4 text-base font-semibold text-accent-foreground shadow-sm hover:bg-accent/90 transition-colors">
-            Get Started Free — 50 Credits
+          <Link href="/create" className="inline-flex items-center gap-2 rounded-lg bg-accent px-8 py-4 text-base font-semibold text-accent-foreground shadow-sm hover:bg-accent/90 transition-colors">
+            <Sparkles className="h-5 w-5" />
+            Create Your First App
           </Link>
         </div>
       </section>
