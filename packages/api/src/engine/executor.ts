@@ -41,7 +41,7 @@ export async function execute(executionId: string): Promise<ExecutionResult> {
 
   // 3. Load user
   const user = await db.query.users.findFirst({
-    where: eq(users.id, execution.userId),
+    where: eq(users.id, execution.userId!),
   });
 
   if (!user) {
@@ -49,7 +49,7 @@ export async function execute(executionId: string): Promise<ExecutionResult> {
   }
 
   // 4. Resolve pricing
-  const useOwnKey = (execution.metadata as any)?.useOwnKey ?? false;
+  const useOwnKey = (execution as any).metadata?.useOwnKey ?? false;
   const pricing = await resolveCredits(
     tool.pricing as ToolPricing,
     user as UserContext,
@@ -81,7 +81,7 @@ export async function execute(executionId: string): Promise<ExecutionResult> {
 
   // 7. Debit credits from user (hold)
   if (pricing.credits > 0) {
-    await debitCredits(execution.userId, pricing.credits, executionId);
+    await debitCredits(execution.userId!, pricing.credits, executionId);
   }
 
   try {
@@ -141,7 +141,7 @@ export async function execute(executionId: string): Promise<ExecutionResult> {
 
     // Always refund credits on failure
     if (pricing.credits > 0) {
-      await refundCredits(execution.userId, pricing.credits, executionId);
+      await refundCredits(execution.userId!, pricing.credits, executionId);
     }
 
     await publishEvent(executionId, isTimeout ? 'timeout' : 'failed', {
@@ -210,7 +210,7 @@ async function dispatch(tool: any, execution: any): Promise<any> {
   const executionType = tool.executionType;
   const config = tool.config as any;
   const input = (execution.input as Record<string, any>) ?? {};
-  const useOwnKey = (execution.metadata as any)?.useOwnKey ?? false;
+  const useOwnKey = (execution as any).metadata?.useOwnKey ?? false;
 
   if (!config || typeof config !== 'object') {
     throw new Error('Invalid config: tool configuration is missing or malformed');
@@ -231,7 +231,7 @@ async function dispatch(tool: any, execution: any): Promise<any> {
           useOwnKey,
           toolId: tool.id,
           onChunk: (stepId: string, chunk: string) => {
-            publishEvent(executionId, 'streaming', { stepId, chunk }).catch(() => {});
+            publishEvent(execution.id, 'streaming', { stepId, chunk }).catch(() => {});
           },
         }
       );

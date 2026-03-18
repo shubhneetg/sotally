@@ -90,7 +90,7 @@ appRoutes.post(
         type: 'initial',
         prompt,
         status: 'queued',
-        model: env.GENERATION_MODEL,
+        model: env.GENERATION_MODEL ?? 'default',
       })
       .returning();
 
@@ -203,7 +203,7 @@ appRoutes.post(
         type: 'iterate',
         prompt,
         status: 'queued',
-        model: env.GENERATION_MODEL,
+        model: env.GENERATION_MODEL ?? 'default',
         systemContext: { previousSource: existingSource },
       })
       .returning();
@@ -577,7 +577,7 @@ appRoutes.get('/search', async (c) => {
     LIMIT ${limit} OFFSET ${offset}
   `);
 
-  const rows = items.rows as any[];
+  const rows = items as any[];
 
   // Fetch creator info
   const creatorIds = [...new Set(rows.map((r) => r.creator_id))];

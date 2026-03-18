@@ -140,7 +140,7 @@ describe('App Routes', () => {
         body: JSON.stringify({ prompt: 'Build a counter app' }),
       });
       expect(res.status).toBe(401);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.success).toBe(false);
       expect(body.error.code).toBe('UNAUTHORIZED');
     });
@@ -157,7 +157,7 @@ describe('App Routes', () => {
         body: JSON.stringify({ prompt: '' }),
       });
       expect(res.status).toBe(400);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.error.code).toBe('VALIDATION_ERROR');
     });
 
@@ -174,7 +174,7 @@ describe('App Routes', () => {
         body: JSON.stringify({ prompt: longPrompt }),
       });
       expect(res.status).toBe(400);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.error.code).toBe('VALIDATION_ERROR');
     });
 
@@ -198,7 +198,7 @@ describe('App Routes', () => {
         body: JSON.stringify({ prompt: 'Build a counter app' }),
       });
       expect(res.status).toBe(202);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.success).toBe(true);
       expect(body.data).toHaveProperty('appId');
       expect(body.data).toHaveProperty('generationId');
@@ -245,7 +245,7 @@ describe('App Routes', () => {
       const app = createApp();
       const res = await app.request('/apps/by-creator');
       expect(res.status).toBe(400);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.error.code).toBe('BAD_REQUEST');
     });
 
@@ -256,7 +256,7 @@ describe('App Routes', () => {
 
       const res = await app.request('/apps/by-creator?slug=unknown-creator');
       expect(res.status).toBe(404);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.error.code).toBe('NOT_FOUND');
     });
 
@@ -274,7 +274,7 @@ describe('App Routes', () => {
 
       const res = await app.request('/apps/by-creator?slug=john');
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.success).toBe(true);
       expect(body.data).toHaveLength(2);
       expect(body.data[0].slug).toBe('counter');
@@ -345,7 +345,7 @@ describe('App Routes', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.success).toBe(true);
       expect(body.data.appStatus).toBe('generating');
       expect(body.data.generation).toBeTruthy();
@@ -362,7 +362,7 @@ describe('App Routes', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.data.generation).toBeNull();
     });
   });
@@ -413,7 +413,7 @@ describe('App Routes', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(400);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.error.message).toContain('already published');
     });
 
@@ -433,7 +433,7 @@ describe('App Routes', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.success).toBe(true);
       expect(body.data.status).toBe('published');
     });
@@ -451,7 +451,7 @@ describe('App Routes', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(400);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.error.message).toContain('at least one built version');
     });
 

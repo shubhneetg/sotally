@@ -184,7 +184,7 @@ apiV1Routes.post(
         type: 'initial',
         prompt,
         status: 'queued',
-        model: env.GENERATION_MODEL,
+        model: env.GENERATION_MODEL ?? 'default',
       })
       .returning();
 
@@ -367,7 +367,7 @@ apiV1Routes.patch(
           type: 'iterate',
           prompt: body.prompt,
           status: 'queued',
-          model: env.GENERATION_MODEL,
+          model: env.GENERATION_MODEL ?? 'default',
           systemContext: { previousSource: existingSource },
         })
         .returning();

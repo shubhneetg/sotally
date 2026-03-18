@@ -175,7 +175,7 @@ async function callOpenAICompatible(config: ProviderConfig, req: LLMRequest): Pr
     throw new Error(`LLM API error (${response.status}): ${errorText.slice(0, 500)}`);
   }
 
-  const data = await response.json();
+  const data: any = await response.json();
   const choice = data.choices?.[0];
   const text = choice?.message?.content || '';
   const usage = data.usage || {};

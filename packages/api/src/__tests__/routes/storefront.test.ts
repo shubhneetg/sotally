@@ -116,7 +116,7 @@ describe('Storefront Routes', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(400);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.error.code).toBe('BAD_REQUEST');
     });
 
@@ -130,7 +130,7 @@ describe('Storefront Routes', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.success).toBe(true);
       expect(body.data.available).toBe(true);
     });
@@ -143,7 +143,7 @@ describe('Storefront Routes', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.data.available).toBe(false);
     });
 
@@ -155,7 +155,7 @@ describe('Storefront Routes', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.data.available).toBe(false);
     });
 
@@ -167,7 +167,7 @@ describe('Storefront Routes', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.data.available).toBe(false);
     });
 
@@ -182,7 +182,7 @@ describe('Storefront Routes', () => {
         const res = await app.request(`/storefront/check-slug?slug=${slug}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const body = await res.json();
+        const body: any = await res.json();
         expect(body.data.available).toBe(false);
       }
     });
@@ -197,7 +197,7 @@ describe('Storefront Routes', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.data.available).toBe(false);
     });
 
@@ -209,7 +209,7 @@ describe('Storefront Routes', () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.data.available).toBe(false);
     });
   });
@@ -239,7 +239,7 @@ describe('Storefront Routes', () => {
         body: JSON.stringify({ slug: '-invalid' }),
       });
       expect(res.status).toBe(400);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.error.code).toBe('VALIDATION_ERROR');
     });
 
@@ -325,7 +325,7 @@ describe('Storefront Routes', () => {
         body: JSON.stringify({ slug: 'admin' }),
       });
       expect(res.status).toBe(409);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.error.code).toBe('CONFLICT');
     });
 
@@ -344,7 +344,7 @@ describe('Storefront Routes', () => {
         body: JSON.stringify({ slug: 'takenslug' }),
       });
       expect(res.status).toBe(409);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.error.code).toBe('CONFLICT');
       expect(body.error.message).toContain('already taken');
     });
@@ -376,7 +376,7 @@ describe('Storefront Routes', () => {
         body: JSON.stringify({ slug: 'mystore', bio: 'Hello world', niche: 'fitness' }),
       });
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.success).toBe(true);
       expect(body.data.storefrontSlug).toBe('mystore');
     });
@@ -424,7 +424,7 @@ describe('Storefront Routes', () => {
       const app = createApp();
       const res = await app.request('/storefront/profile');
       expect(res.status).toBe(400);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.error.code).toBe('BAD_REQUEST');
     });
 
@@ -435,7 +435,7 @@ describe('Storefront Routes', () => {
 
       const res = await app.request('/storefront/profile?slug=nonexistent');
       expect(res.status).toBe(404);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.error.code).toBe('NOT_FOUND');
       expect(body.error.message).toContain('Creator not found');
     });
@@ -457,7 +457,7 @@ describe('Storefront Routes', () => {
 
       const res = await app.request('/storefront/profile?slug=johndoe');
       expect(res.status).toBe(200);
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.success).toBe(true);
       expect(body.data.name).toBe('John Doe');
       expect(body.data.bio).toBe('I build apps');
@@ -488,7 +488,7 @@ describe('Storefront Routes', () => {
       queryResults.push([mockUser]);
 
       const res = await app.request('/storefront/profile?slug=jane');
-      const body = await res.json();
+      const body: any = await res.json();
       expect(body.data).toHaveProperty('id');
       expect(body.data).toHaveProperty('name');
       expect(body.data).toHaveProperty('bio');

@@ -44,7 +44,7 @@ export async function chatCompletion(
   messages: ChatMessage[],
   options: ChatCompletionOptions = {}
 ): Promise<string> {
-  return chatCompletionWithKey(model, messages, options, env.OPENAI_API_KEY);
+  return chatCompletionWithKey(model, messages, options, env.OPENAI_API_KEY ?? '');
 }
 
 /**

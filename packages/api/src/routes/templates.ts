@@ -87,22 +87,20 @@ templateRoutes.post(
     }
 
     // Insert template via raw SQL (table managed inline)
-    const [template] = (
-      await db.execute(sql`
-        CREATE TABLE IF NOT EXISTS templates (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          app_id UUID REFERENCES apps(id),
-          creator_id UUID NOT NULL REFERENCES users(id),
-          title TEXT NOT NULL,
-          description TEXT,
-          niche TEXT,
-          price_cents INTEGER DEFAULT 0,
-          use_count INTEGER DEFAULT 0,
-          prompt_chain JSONB NOT NULL,
-          created_at TIMESTAMPTZ DEFAULT NOW()
-        )
-      `)
-    ).rows as any[];
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS templates (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        app_id UUID REFERENCES apps(id),
+        creator_id UUID NOT NULL REFERENCES users(id),
+        title TEXT NOT NULL,
+        description TEXT,
+        niche TEXT,
+        price_cents INTEGER DEFAULT 0,
+        use_count INTEGER DEFAULT 0,
+        prompt_chain JSONB NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
 
     const result = await db.execute(sql`
       INSERT INTO templates (app_id, creator_id, title, description, niche, price_cents, prompt_chain)
@@ -110,7 +108,7 @@ templateRoutes.post(
       RETURNING *
     `);
 
-    return c.json({ success: true, data: result.rows[0], error: null }, 201);
+    return c.json({ success: true, data: (result as any[])[0], error: null }, 201);
   },
 );
 
@@ -135,7 +133,7 @@ templateRoutes.get('/', async (c) => {
     LIMIT ${limit} OFFSET ${offset}
   `);
 
-  return c.json({ success: true, data: result.rows, error: null });
+  return c.json({ success: true, data: result as any[], error: null });
 });
 
 // ─── GET /templates/:id — Template detail ───────────────────────────────────
@@ -154,14 +152,15 @@ templateRoutes.get('/:id', async (c) => {
     LIMIT 1
   `);
 
-  if (result.rows.length === 0) {
+  const rows = result as any[];
+  if (rows.length === 0) {
     return c.json(
       { success: false, data: null, error: { code: 'NOT_FOUND', message: 'Template not found' } },
       404,
     );
   }
 
-  return c.json({ success: true, data: result.rows[0], error: null });
+  return c.json({ success: true, data: rows[0], error: null });
 });
 
 // ─── POST /templates/:id/use — Clone template to create a new app ───────────
@@ -178,14 +177,15 @@ templateRoutes.post('/:id/use', authMiddleware, async (c) => {
     LIMIT 1
   `);
 
-  if (result.rows.length === 0) {
+  const templateRows = result as any[];
+  if (templateRows.length === 0) {
     return c.json(
       { success: false, data: null, error: { code: 'NOT_FOUND', message: 'Template not found' } },
       404,
     );
   }
 
-  const template = result.rows[0] as {
+  const template = templateRows[0] as {
     id: string;
     app_id: string;
     prompt_chain: Array<{ type: string; prompt: string }>;
@@ -246,7 +246,7 @@ templateRoutes.post('/:id/use', authMiddleware, async (c) => {
       type: 'initial',
       prompt: initialPrompt,
       status: 'queued',
-      model: env.GENERATION_MODEL,
+      model: env.GENERATION_MODEL ?? 'default',
       systemContext: { fromTemplate: templateId, promptChain },
     })
     .returning();
