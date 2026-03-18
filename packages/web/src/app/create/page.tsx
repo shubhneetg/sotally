@@ -1,27 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Sparkles, ChevronDown } from 'lucide-react';
+import { Sparkles, ChevronDown, Shuffle } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useToast } from '@/components/ui/toast';
 import { Header } from '@/components/layout/header';
+import { NICHES } from '@sotally/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sotally.com/api';
 
-const NICHES = [
+const NICHE_OPTIONS = [
   { value: '', label: 'Select a niche (optional)' },
-  { value: 'wellness', label: 'Wellness' },
-  { value: 'fitness', label: 'Fitness' },
-  { value: 'education', label: 'Education' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'nutrition', label: 'Nutrition' },
-  { value: 'parenting', label: 'Parenting' },
-  { value: 'language', label: 'Language' },
-  { value: 'business', label: 'Business' },
-  { value: 'real-estate', label: 'Real Estate' },
-  { value: 'content', label: 'Content' },
-  { value: 'design', label: 'Design' },
+  ...NICHES.map((n) => ({ value: n.slug, label: n.shortName })),
 ];
 
 export default function CreatePage() {
@@ -32,12 +23,33 @@ export default function CreatePage() {
   const [prompt, setPrompt] = useState('');
   const [niche, setNiche] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [inspirationSeed, setInspirationSeed] = useState(0);
 
   useEffect(() => {
     if (!isAuthenticated || !token) {
       router.push('/login?redirect=/create');
     }
   }, [isAuthenticated, token, router]);
+
+  // Pick 6 example prompts (one per niche, rotated by seed)
+  const inspirationPrompts = useMemo(() => {
+    const shuffled = [...NICHES].sort(
+      () => Math.sin(inspirationSeed * 9301 + NICHES.length) - 0.5
+    );
+    return shuffled.slice(0, 6).map((n) => ({
+      niche: n,
+      prompt: n.examplePrompts[inspirationSeed % n.examplePrompts.length],
+    }));
+  }, [inspirationSeed]);
+
+  const handleSurpriseMe = () => {
+    const allPrompts = NICHES.flatMap((n) =>
+      n.examplePrompts.map((p) => ({ prompt: p, nicheSlug: n.slug }))
+    );
+    const pick = allPrompts[Math.floor(Math.random() * allPrompts.length)];
+    setPrompt(pick.prompt);
+    setNiche(pick.nicheSlug);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,6 +124,51 @@ export default function CreatePage() {
               />
             </div>
 
+            {/* Prompt Inspiration */}
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-foreground">Need inspiration?</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInspirationSeed((s) => s + 1);
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium text-accent hover:bg-accent/10 transition-colors"
+                >
+                  <Shuffle className="h-3.5 w-3.5" />
+                  Shuffle
+                </button>
+              </div>
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {inspirationPrompts.map(({ niche: n, prompt: p }) => (
+                  <button
+                    key={`${n.slug}-${p}`}
+                    type="button"
+                    onClick={() => {
+                      setPrompt(p);
+                      setNiche(n.slug);
+                    }}
+                    className="group flex items-start gap-2.5 rounded-lg border border-border bg-card/50 px-3 py-2.5 text-left text-xs transition-all hover:border-accent/50 hover:bg-accent/5"
+                  >
+                    <span className="shrink-0 text-base leading-none mt-0.5">{n.icon}</span>
+                    <span className="text-muted-foreground group-hover:text-foreground transition-colors line-clamp-2">
+                      {p}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className="mt-3 flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleSurpriseMe}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent hover:bg-accent/20 transition-colors"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Surprise Me
+                </button>
+              </div>
+            </div>
+
             <div>
               <label
                 htmlFor="niche"
@@ -127,7 +184,7 @@ export default function CreatePage() {
                   className="w-full appearance-none rounded-xl border border-border bg-card px-4 py-3 pr-10 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                   disabled={submitting}
                 >
-                  {NICHES.map((n) => (
+                  {NICHE_OPTIONS.map((n) => (
                     <option key={n.value} value={n.value}>
                       {n.label}
                     </option>
