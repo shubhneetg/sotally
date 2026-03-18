@@ -2,6 +2,7 @@ import {
   pgTable,
   pgEnum,
   uuid,
+  varchar,
   text,
   integer,
   jsonb,

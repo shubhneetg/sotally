@@ -36,6 +36,5 @@ export const generationQueue = new Queue('app-generation', {
     removeOnFail: {
       age: 7 * 24 * 3600,
     },
-    timeout: 120_000, // 2 minute timeout per generation
   },
 });
