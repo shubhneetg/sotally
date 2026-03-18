@@ -3,96 +3,94 @@ import Link from 'next/link';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { buttonVariants } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'Pricing — Sotally',
-  description: 'Simple, transparent pricing. Buy credits and use them across 1000+ software tools. No subscriptions required.',
+  description: 'Simple, transparent pricing for creators. Build and sell apps with Sotally. Free to start, upgrade when you grow.',
 };
 
-const creditPackages = [
+const tiers = [
   {
-    id: 'starter',
-    name: 'Starter',
-    price: 10,
-    credits: 100,
-    bonus: null,
-    description: 'Perfect for trying out the platform',
+    id: 'free',
+    name: 'Free',
+    price: 0,
+    description: 'Perfect for getting started',
+    features: [
+      '3 apps',
+      '20 generations/month',
+      '100 end users/month',
+      'Basic analytics',
+      'Sotally branding',
+      '20% transaction fee',
+    ],
+    cta: 'Get Started',
+    href: '/register',
     popular: false,
-  },
-  {
-    id: 'popular',
-    name: 'Popular',
-    price: 25,
-    credits: 275,
-    bonus: '+10%',
-    description: 'Best value for regular users',
-    popular: true,
   },
   {
     id: 'pro',
     name: 'Pro',
-    price: 50,
-    credits: 600,
-    bonus: '+20%',
-    description: 'For power users and professionals',
-    popular: false,
+    price: 19,
+    description: 'For growing creators',
+    features: [
+      '25 apps',
+      '200 generations/month',
+      '10,000 end users/month',
+      'Custom domain',
+      'Remove Sotally badge',
+      '15% transaction fee',
+    ],
+    cta: 'Upgrade to Pro',
+    href: '/dashboard?subscribe=pro',
+    popular: true,
   },
   {
     id: 'business',
     name: 'Business',
-    price: 100,
-    credits: 1300,
-    bonus: '+30%',
-    description: 'Heavy usage and team accounts',
+    price: 49,
+    description: 'For professionals and teams',
+    features: [
+      'Unlimited apps',
+      'Unlimited generations',
+      'Unlimited end users',
+      'Custom domain',
+      'Remove Sotally badge',
+      '12% transaction fee',
+      'API access',
+    ],
+    cta: 'Upgrade to Business',
+    href: '/dashboard?subscribe=business',
     popular: false,
   },
 ];
 
-const features = [
-  { feature: 'Access to all tools', included: true },
-  { feature: 'Credits never expire', included: true },
-  { feature: 'Bring Your Own Model (BYOM)', included: true },
-  { feature: 'API access', included: true },
-  { feature: 'Execution history (90 days)', included: true },
-  { feature: 'Bookmark & subscribe to tools', included: true },
-  { feature: 'Creator dashboard', included: true },
-  { feature: 'Priority support', included: false, note: 'Business only' },
-];
-
 const faqs = [
   {
-    question: 'Do credits expire?',
-    answer: 'No. Once you purchase credits, they stay in your account forever. Use them whenever you need.',
+    question: 'Can I start for free?',
+    answer: 'Yes. The free tier lets you build up to 3 apps with 20 generations per month. No credit card required.',
   },
   {
-    question: 'What if a tool fails or produces no output?',
-    answer: 'You get a full credit refund automatically. We only charge for successful executions.',
+    question: 'What counts as a generation?',
+    answer: 'Every time you create or iterate on an app using AI, that counts as one generation. Viewing and sharing published apps does not use generations.',
   },
   {
-    question: 'Can I earn money on Sotally?',
-    answer: 'Yes! Become a creator and publish your own tools. You earn 65-80% of the credits spent on your tools, which you can convert to real money via Stripe.',
+    question: 'Can I earn money selling apps?',
+    answer: 'Yes! Set a price on your apps and earn revenue from every purchase. Connect Stripe to receive payouts directly to your bank.',
   },
   {
-    question: 'Can I get a refund on purchased credits?',
-    answer: 'Yes, unused credits can be refunded within 30 days of purchase. After 30 days, credits are non-refundable but they never expire, so you can use them anytime.',
+    question: 'What is the transaction fee?',
+    answer: 'When users purchase your paid apps, Sotally takes a percentage of the sale. The fee decreases with higher plans: 20% on Free, 15% on Pro, and 12% on Business.',
   },
   {
-    question: 'Is there a free tier?',
-    answer: 'Every new account gets 50 free credits on signup — enough to try 5-10 tools and see if Sotally is right for you.',
+    question: 'Can I cancel anytime?',
+    answer: 'Yes, there are no long-term contracts. Cancel your subscription at any time and keep access until the end of your billing period.',
   },
   {
-    question: 'What is BYOM?',
-    answer: 'Bring Your Own Model lets you connect your own AI provider API keys (OpenAI, Anthropic, etc.). When you use BYOM, tool executions cost fewer credits because the AI cost is on your own key.',
+    question: 'What happens to my apps if I downgrade?',
+    answer: 'Your existing apps remain published. You just cannot create new ones beyond the lower plan limit or use features exclusive to the higher tier.',
   },
-];
-
-const competitors = [
-  { name: 'Sotally', price: 'From $5 (100 credits)', model: 'Pay per use', tools: '56+ tools', lock: 'No lock-in', highlight: true },
-  { name: 'ChatGPT Plus', price: '$20/month', model: 'Monthly subscription', tools: '1 chatbot', lock: 'Locked in', highlight: false },
-  { name: 'Jasper', price: '$49/month', model: 'Monthly subscription', tools: 'Writing only', lock: 'Annual contract', highlight: false },
-  { name: 'Copy.ai', price: '$49/month', model: 'Monthly subscription', tools: 'Marketing only', lock: 'Locked in', highlight: false },
 ];
 
 export default function PricingPage() {
@@ -115,60 +113,77 @@ export default function PricingPage() {
         <section className="bg-background px-4 py-16 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-              Pay for what you use. Nothing more.
+              Build. Publish. Earn.
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              No subscriptions. No monthly fees. Buy credits once, use them across 56+ AI tools. Credits never expire.
+              Start free. Upgrade when your apps take off. No credit card needed to get started.
             </p>
-            <div className="mt-6 inline-flex items-center rounded-full bg-emerald-100 px-4 py-1.5 text-sm font-medium text-emerald-700">
-              50 free credits on signup — no credit card needed
-            </div>
           </div>
         </section>
 
-        {/* Credit Packages */}
+        {/* Tier Cards */}
         <section className="bg-muted/30 px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {creditPackages.map((pkg) => (
+          <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {tiers.map((tier) => (
               <Card
-                key={pkg.id}
+                key={tier.id}
                 className={`relative flex flex-col ${
-                  pkg.popular ? 'border-accent ring-2 ring-accent/20' : ''
+                  tier.popular ? 'border-accent ring-2 ring-accent/20' : ''
                 }`}
               >
-                {pkg.popular && (
+                {tier.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge variant="accent">Popular</Badge>
+                    <Badge variant="accent">Most Popular</Badge>
                   </div>
                 )}
                 <CardHeader className="text-center">
-                  <CardTitle className="text-lg">{pkg.name}</CardTitle>
+                  <CardTitle className="text-lg">{tier.name}</CardTitle>
                   <div className="mt-2">
-                    <span className="text-4xl font-bold text-foreground">${pkg.price}</span>
+                    {tier.price === 0 ? (
+                      <span className="text-4xl font-bold text-foreground">Free</span>
+                    ) : (
+                      <>
+                        <span className="text-4xl font-bold text-foreground">${tier.price}</span>
+                        <span className="text-sm text-muted-foreground">/month</span>
+                      </>
+                    )}
                   </div>
+                  <p className="mt-2 text-sm text-muted-foreground">{tier.description}</p>
                 </CardHeader>
-                <CardContent className="flex-1 text-center">
-                  <p className="text-2xl font-semibold text-primary">
-                    {pkg.credits.toLocaleString()} credits
-                  </p>
-                  {pkg.bonus && (
-                    <p className="mt-1 text-sm font-medium text-accent">{pkg.bonus} bonus</p>
-                  )}
-                  <p className="mt-3 text-sm text-muted-foreground">{pkg.description}</p>
+                <CardContent className="flex-1">
+                  <ul className="space-y-3">
+                    {tier.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2 text-sm text-foreground">
+                        <svg
+                          className="mt-0.5 h-4 w-4 shrink-0 text-accent"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
                 </CardContent>
                 <CardFooter className="justify-center">
-                  <Button
-                    variant={pkg.popular ? 'accent' : 'outline'}
-                    className="w-full"
+                  <Link
+                    href={tier.href}
+                    className={buttonVariants({
+                      variant: tier.popular ? 'accent' : 'outline',
+                      className: 'w-full',
+                    })}
                   >
-                    Buy {pkg.name}
-                  </Button>
+                    {tier.cta}
+                  </Link>
                 </CardFooter>
               </Card>
             ))}
           </div>
           <p className="mx-auto mt-8 max-w-xl text-center text-sm text-muted-foreground">
-            Need more? <strong>Enterprise</strong> packages with custom pricing, 35%+ bonus, invoicing,
+            Need a custom plan? <strong>Enterprise</strong> packages with dedicated support, custom fees,
             and team management are available.{' '}
             <a href="mailto:sales@sotally.com" className="text-accent hover:underline">
               Contact sales
@@ -176,105 +191,8 @@ export default function PricingPage() {
           </p>
         </section>
 
-        {/* Feature Comparison */}
-        <section className="bg-background px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-2xl">
-            <h2 className="text-center text-2xl font-bold text-foreground">
-              What you get with every package
-            </h2>
-            <div className="mt-8 space-y-3">
-              {features.map((item) => (
-                <div
-                  key={item.feature}
-                  className="flex items-center justify-between rounded-lg border border-border px-4 py-3"
-                >
-                  <span className="text-sm text-foreground">{item.feature}</span>
-                  {item.included ? (
-                    <svg
-                      className="h-5 w-5 text-accent"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">{item.note}</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Competitor Comparison */}
-        <section className="bg-muted/30 px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-4xl">
-            <h2 className="text-center text-2xl font-bold text-foreground">
-              How Sotally compares
-            </h2>
-            <p className="mt-2 text-center text-muted-foreground">
-              Stop paying monthly for tools you use occasionally.
-            </p>
-            <div className="mt-8 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="pb-3 text-left font-semibold text-foreground">Platform</th>
-                    <th className="pb-3 text-left font-semibold text-foreground">Price</th>
-                    <th className="pb-3 text-left font-semibold text-foreground">Model</th>
-                    <th className="pb-3 text-left font-semibold text-foreground">Tools</th>
-                    <th className="pb-3 text-left font-semibold text-foreground">Lock-in</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {competitors.map((c) => (
-                    <tr key={c.name} className={`border-b border-border ${c.highlight ? 'bg-accent/5' : ''}`}>
-                      <td className={`py-3 font-medium ${c.highlight ? 'text-accent' : 'text-foreground'}`}>
-                        {c.name} {c.highlight && <span className="ml-1 text-[10px] rounded-full bg-accent/10 px-1.5 py-0.5">You are here</span>}
-                      </td>
-                      <td className="py-3 text-muted-foreground">{c.price}</td>
-                      <td className="py-3 text-muted-foreground">{c.model}</td>
-                      <td className="py-3 text-muted-foreground">{c.tools}</td>
-                      <td className={`py-3 ${c.highlight ? 'text-emerald-600 font-medium' : 'text-muted-foreground'}`}>{c.lock}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="mt-4 text-center text-xs text-muted-foreground">
-              A user running 10 tools/day at 5 credits each spends ~$4.50/month on Sotally vs $20-49/month on subscription platforms.
-            </p>
-          </div>
-        </section>
-
-        {/* How Credits Work */}
-        <section className="bg-background px-4 py-16 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-2xl font-bold text-foreground">How credits work</h2>
-            <div className="mt-8 grid gap-6 sm:grid-cols-3">
-              <div className="rounded-xl border border-border bg-card p-5">
-                <div className="text-2xl font-bold text-accent">1 credit</div>
-                <div className="mt-1 text-sm text-muted-foreground">≈ $0.03-$0.05</div>
-                <p className="mt-2 text-xs text-muted-foreground">Depending on package</p>
-              </div>
-              <div className="rounded-xl border border-border bg-card p-5">
-                <div className="text-2xl font-bold text-accent">3-10 credits</div>
-                <div className="mt-1 text-sm text-muted-foreground">= typical tool run</div>
-                <p className="mt-2 text-xs text-muted-foreground">Most tools cost 3-10 credits</p>
-              </div>
-              <div className="rounded-xl border border-border bg-card p-5">
-                <div className="text-2xl font-bold text-accent">50 free</div>
-                <div className="mt-1 text-sm text-muted-foreground">on signup</div>
-                <p className="mt-2 text-xs text-muted-foreground">Try 5-15 tools free</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* FAQ */}
-        <section className="bg-muted/30 px-4 py-16 sm:px-6 lg:px-8">
+        <section className="bg-background px-4 py-16 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-2xl">
             <h2 className="text-center text-2xl font-bold text-foreground">
               Frequently Asked Questions
@@ -291,18 +209,18 @@ export default function PricingPage() {
         </section>
 
         {/* CTA */}
-        <section className="bg-background px-4 py-16 sm:px-6 lg:px-8">
+        <section className="bg-muted/30 px-4 py-16 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-xl text-center">
-            <h2 className="text-2xl font-bold text-foreground">Ready to get started?</h2>
+            <h2 className="text-2xl font-bold text-foreground">Ready to build?</h2>
             <p className="mt-2 text-muted-foreground">
-              Sign up free and get 50 credits to explore the platform.
+              Sign up free and create your first app in minutes.
             </p>
             <div className="mt-6">
               <Link
                 href="/register"
                 className={buttonVariants({ variant: 'accent', size: 'lg' })}
               >
-                Get Started Free — 50 Credits
+                Get Started Free
               </Link>
             </div>
           </div>

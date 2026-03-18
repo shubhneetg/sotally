@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Heart, Share2, Flag, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Heart, Share2, Flag, ExternalLink, Lock, ShoppingCart } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useToast } from '@/components/ui/toast';
 
@@ -18,6 +18,12 @@ interface AppDetail {
   creatorSlug: string;
   published: boolean;
   iconUrl: string | null;
+  pricingModel?: string;
+  priceAmountCents?: number;
+  creator?: {
+    name: string;
+    storefrontSlug: string;
+  };
 }
 
 export default function AppRunnerPage() {
@@ -31,6 +37,9 @@ export default function AppRunnerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [liked, setLiked] = useState(false);
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const [purchaseChecked, setPurchaseChecked] = useState(false);
+  const [buyLoading, setBuyLoading] = useState(false);
 
   useEffect(() => {
     async function fetchApp() {
@@ -60,6 +69,68 @@ export default function AppRunnerPage() {
 
     fetchApp();
   }, [username, appSlug]);
+
+  // Check if user has purchased this app (for paid apps)
+  useEffect(() => {
+    if (!app || !isAuthenticated || !token) {
+      setPurchaseChecked(true);
+      return;
+    }
+
+    if (app.pricingModel === 'free' || !app.pricingModel) {
+      setHasPurchased(true);
+      setPurchaseChecked(true);
+      return;
+    }
+
+    async function checkPurchase() {
+      try {
+        const res = await fetch(`${API_URL}/billing/purchases`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const purchases = Array.isArray(data.data) ? data.data : [];
+          const owned = purchases.some((p: { appId: string }) => p.appId === app!.id);
+          setHasPurchased(owned);
+        }
+      } catch {
+        // On error, assume not purchased — paywall stays
+      } finally {
+        setPurchaseChecked(true);
+      }
+    }
+
+    checkPurchase();
+  }, [app, isAuthenticated, token]);
+
+  const handleBuy = async () => {
+    if (!isAuthenticated || !token || !app) {
+      addToast('Log in to purchase this app', 'info');
+      return;
+    }
+    setBuyLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/billing/checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ appId: app.id }),
+      });
+      const data = await res.json();
+      if (data.success && data.data?.url) {
+        window.location.href = data.data.url;
+      } else {
+        addToast(data.error?.message || 'Failed to start checkout', 'error');
+      }
+    } catch {
+      addToast('Failed to start checkout', 'error');
+    } finally {
+      setBuyLoading(false);
+    }
+  };
 
   const handleLike = async () => {
     if (!isAuthenticated || !token || !app) {
@@ -144,6 +215,12 @@ export default function AppRunnerPage() {
 
   if (!app) return null;
 
+  const isPaid = app.pricingModel && app.pricingModel !== 'free';
+  const showPaywall = isPaid && purchaseChecked && !hasPurchased;
+  const priceDisplay = app.priceAmountCents
+    ? `$${(app.priceAmountCents / 100).toFixed(2)}`
+    : 'Paid';
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Header */}
@@ -161,15 +238,44 @@ export default function AppRunnerPage() {
         </div>
       </div>
 
-      {/* Iframe */}
-      <div className="mt-6 overflow-hidden rounded-xl border border-border bg-white shadow-sm">
-        <iframe
-          src={`${API_URL}/apps/${app.id}/bundle`}
-          sandbox="allow-scripts allow-forms allow-popups"
-          className="h-[70vh] w-full border-0"
-          title={app.name}
-        />
-      </div>
+      {/* Paywall or Iframe */}
+      {showPaywall ? (
+        <div className="mt-6 flex flex-col items-center justify-center rounded-xl border border-border bg-card px-6 py-16 shadow-sm">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
+            <Lock className="h-8 w-8 text-accent" />
+          </div>
+          <h2 className="mt-6 text-xl font-bold text-foreground">This is a premium app</h2>
+          <p className="mt-2 max-w-md text-center text-muted-foreground">
+            Purchase this app to get full access. One-time payment, no recurring fees.
+          </p>
+          <div className="mt-4 text-3xl font-bold text-primary">{priceDisplay}</div>
+          <button
+            onClick={handleBuy}
+            disabled={buyLoading}
+            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-8 py-3 text-sm font-semibold text-accent-foreground shadow-sm hover:bg-accent/90 transition-colors disabled:opacity-50"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {buyLoading ? 'Redirecting to checkout...' : `Buy for ${priceDisplay}`}
+          </button>
+          {!isAuthenticated && (
+            <p className="mt-4 text-sm text-muted-foreground">
+              <Link href="/login" className="text-accent hover:underline">Log in</Link>
+              {' '}or{' '}
+              <Link href="/register" className="text-accent hover:underline">sign up</Link>
+              {' '}to purchase.
+            </p>
+          )}
+        </div>
+      ) : (
+        <div className="mt-6 overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+          <iframe
+            src={`${API_URL}/apps/${app.id}/bundle`}
+            sandbox="allow-scripts allow-forms allow-popups"
+            className="h-[70vh] w-full border-0"
+            title={app.name}
+          />
+        </div>
+      )}
 
       {/* Action bar */}
       <div className="mt-4 flex items-center gap-3">
@@ -198,15 +304,17 @@ export default function AppRunnerPage() {
           <Flag className="h-4 w-4" />
           Report
         </button>
-        <a
-          href={`${API_URL}/apps/${app.id}/bundle`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ml-auto inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ExternalLink className="h-4 w-4" />
-          Open in new tab
-        </a>
+        {!showPaywall && (
+          <a
+            href={`${API_URL}/apps/${app.id}/bundle`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ml-auto inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Open in new tab
+          </a>
+        )}
       </div>
     </div>
   );
