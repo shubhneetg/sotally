@@ -29,7 +29,14 @@ const app = new Hono();
 
 // Global middleware
 app.use('*', cors({
-  origin: env.FRONTEND_URL || 'https://sotally.com',
+  origin: (origin) => {
+    const allowed = [
+      env.FRONTEND_URL || 'https://sotally.com',
+      'http://localhost:3000',
+      'http://localhost:3001',
+    ];
+    return allowed.includes(origin) ? origin : allowed[0];
+  },
   credentials: true,
 }));
 app.use('*', rateLimit({ windowMs: 60_000, maxRequests: 120 }));

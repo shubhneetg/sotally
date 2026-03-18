@@ -12,7 +12,8 @@ test.describe('Storefront', () => {
   let slug: string;
   let token: string;
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({}, testInfo) => {
+    testInfo.setTimeout(180_000);
     slug = testSlug();
     const user = await createTestUser(
       slug,

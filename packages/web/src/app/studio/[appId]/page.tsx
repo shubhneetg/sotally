@@ -59,7 +59,7 @@ export default function StudioPage() {
   const params = useParams();
   const router = useRouter();
   const appId = params.appId as string;
-  const { isAuthenticated, token } = useAuthStore();
+  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
   const { addToast } = useToast();
 
   const [app, setApp] = useState<AppData | null>(null);
@@ -76,10 +76,10 @@ export default function StudioPage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated || !token) {
+    if (_hasHydrated && (!isAuthenticated || !token)) {
       router.push('/login?redirect=/studio/' + appId);
     }
-  }, [isAuthenticated, token, router, appId]);
+  }, [_hasHydrated, isAuthenticated, token, router, appId]);
 
   const fetchStatus = useCallback(async () => {
     if (!token) return;
@@ -261,7 +261,7 @@ export default function StudioPage() {
     }
   };
 
-  if (!isAuthenticated) return null;
+  if (!_hasHydrated || !isAuthenticated) return null;
 
   if (loading) {
     return (

@@ -34,13 +34,14 @@ interface FeedApp {
 
 export default function FeedPage() {
   const router = useRouter();
-  const { isAuthenticated, token } = useAuthStore();
+  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
 
   const [apps, setApps] = useState<FeedApp[]>([]);
   const [loading, setLoading] = useState(true);
   const [likingIds, setLikingIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     async function fetchFeed() {
       try {
         if (isAuthenticated && token) {
@@ -70,7 +71,7 @@ export default function FeedPage() {
       }
     }
     fetchFeed();
-  }, [isAuthenticated, token]);
+  }, [_hasHydrated, isAuthenticated, token]);
 
   async function toggleLike(appId: string, currentlyLiked: boolean) {
     if (!isAuthenticated || !token) {

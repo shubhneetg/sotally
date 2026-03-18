@@ -19,7 +19,7 @@ const SLUG_REGEX = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/;
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { isAuthenticated, token, user } = useAuthStore();
+  const { isAuthenticated, token, user, _hasHydrated } = useAuthStore();
   const { addToast } = useToast();
 
   const [step, setStep] = useState(1);
@@ -37,10 +37,24 @@ export default function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!isAuthenticated || !token) {
+    if (!_hasHydrated) return;
+    // Check both Zustand state and localStorage to handle hydration race
+    const state = useAuthStore.getState();
+    if (!state.isAuthenticated || !state.token) {
+      // Double-check localStorage before redirecting — Zustand may not have synced yet
+      try {
+        const raw = localStorage.getItem('sotally-auth');
+        if (raw) {
+          const stored = JSON.parse(raw);
+          if (stored?.state?.isAuthenticated && stored?.state?.token) {
+            // localStorage says authenticated — wait for Zustand to catch up
+            return;
+          }
+        }
+      } catch { /* ignore */ }
       router.push('/login?redirect=/onboarding');
     }
-  }, [isAuthenticated, token, router]);
+  }, [_hasHydrated, isAuthenticated, token, router]);
 
   useEffect(() => {
     if (user?.name) {
@@ -78,7 +92,8 @@ export default function OnboardingPage() {
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(
-          `${API_URL}/creator/check-slug?slug=${encodeURIComponent(slug)}`
+          `${API_URL}/storefront/check-slug?slug=${encodeURIComponent(slug)}`,
+          { headers: token ? { Authorization: `Bearer ${token}` } : {} }
         );
         const data = await res.json();
         setSlugAvailable(data.data?.available ?? data.available ?? false);
@@ -90,7 +105,7 @@ export default function OnboardingPage() {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [slug, validateSlug]);
+  }, [slug, validateSlug, token]);
 
   const handleSlugChange = (value: string) => {
     setSlug(value.toLowerCase().replace(/[^a-z0-9-]/g, ''));
@@ -102,7 +117,7 @@ export default function OnboardingPage() {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${API_URL}/creator/setup`, {
+      const res = await fetch(`${API_URL}/storefront/setup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -130,7 +145,7 @@ export default function OnboardingPage() {
     }
   };
 
-  if (!isAuthenticated) return null;
+  if (!_hasHydrated || !isAuthenticated) return null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-16">

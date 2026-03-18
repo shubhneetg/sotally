@@ -9,7 +9,7 @@
 import { test, expect } from '@playwright/test';
 import { randomEmail, randomName, TEST_PASSWORD, registerViaApi, loginUser } from './helpers';
 
-const API_URL = 'https://sotally.com/api';
+const API_URL = process.env.API_URL || 'http://localhost:4000';
 
 test.describe('Registration', () => {
   // Test 6: Successful registration via UI shows success message

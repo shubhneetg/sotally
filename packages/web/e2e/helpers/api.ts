@@ -57,7 +57,7 @@ export async function createTestUser(
 
   // Set up creator profile if slug provided
   if (slug) {
-    const setupRes = await fetch(`${API_URL}/creator/setup`, {
+    const setupRes = await fetch(`${API_URL}/storefront/setup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -107,7 +107,7 @@ export async function generateApp(
   }
 
   const body = await res.json();
-  const appId = body?.data?.id || body?.id;
+  const appId = body?.data?.appId || body?.data?.id || body?.id;
   if (!appId) {
     throw new Error(`No appId from generate: ${JSON.stringify(body)}`);
   }
@@ -213,23 +213,27 @@ export async function injectAuth(
   page: import('@playwright/test').Page,
   token: string,
 ): Promise<void> {
-  await page.goto('/', { waitUntil: 'domcontentloaded' });
-  await page.evaluate(
-    ({ token }) => {
-      localStorage.setItem(
-        'sotally-auth',
-        JSON.stringify({
-          state: {
-            token,
-            isAuthenticated: true,
-            isLoading: false,
-            error: null,
-            user: null,
-          },
-          version: 0,
-        }),
-      );
+  // First, fetch the user profile so we have a complete auth state
+  const res = await fetch(`${API_URL}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  let user = null;
+  if (res.ok) {
+    const body = await res.json();
+    user = body?.data?.user || null;
+  }
+
+  const authPayload = JSON.stringify({
+    state: {
+      token,
+      isAuthenticated: true,
+      user,
     },
-    { token },
-  );
+    version: 0,
+  });
+
+  // Set via addInitScript (runs before page JS on every navigation)
+  await page.addInitScript((payload) => {
+    localStorage.setItem('sotally-auth', payload);
+  }, authPayload);
 }

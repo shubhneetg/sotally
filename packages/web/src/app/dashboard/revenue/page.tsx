@@ -27,7 +27,7 @@ interface ConnectStatus {
 
 export default function RevenueDashboardPage() {
   const router = useRouter();
-  const { isAuthenticated, token } = useAuthStore();
+  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
   const { addToast } = useToast();
 
   const [apps, setApps] = useState<MyApp[]>([]);
@@ -36,6 +36,7 @@ export default function RevenueDashboardPage() {
   const [connectLoading, setConnectLoading] = useState(false);
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!isAuthenticated || !token) {
       router.push('/login?redirect=/dashboard/revenue');
       return;
@@ -73,7 +74,7 @@ export default function RevenueDashboardPage() {
     }
 
     fetchData();
-  }, [isAuthenticated, token, router, addToast]);
+  }, [_hasHydrated, isAuthenticated, token, router, addToast]);
 
   const handleConnectStripe = async () => {
     if (!token || connectLoading) return;
@@ -111,7 +112,7 @@ export default function RevenueDashboardPage() {
   }, 0);
   const thisMonthEarnings = (thisMonthEarningsCents / 100).toFixed(2);
 
-  if (!isAuthenticated) {
+  if (!_hasHydrated || !isAuthenticated) {
     return null;
   }
 

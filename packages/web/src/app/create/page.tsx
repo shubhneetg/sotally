@@ -17,7 +17,7 @@ const NICHE_OPTIONS = [
 
 export default function CreatePage() {
   const router = useRouter();
-  const { isAuthenticated, token } = useAuthStore();
+  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
   const { addToast } = useToast();
 
   const [prompt, setPrompt] = useState('');
@@ -26,10 +26,10 @@ export default function CreatePage() {
   const [inspirationSeed, setInspirationSeed] = useState(0);
 
   useEffect(() => {
-    if (!isAuthenticated || !token) {
+    if (_hasHydrated && (!isAuthenticated || !token)) {
       router.push('/login?redirect=/create');
     }
-  }, [isAuthenticated, token, router]);
+  }, [_hasHydrated, isAuthenticated, token, router]);
 
   // Pick 6 example prompts (one per niche, rotated by seed)
   const inspirationPrompts = useMemo(() => {
@@ -79,7 +79,7 @@ export default function CreatePage() {
       }
 
       const data = await res.json();
-      const appId = data.data?.id || data.id;
+      const appId = data.data?.appId || data.data?.id || data.id;
       router.push(`/studio/${appId}`);
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Failed to generate app', 'error');
@@ -88,7 +88,7 @@ export default function CreatePage() {
     }
   };
 
-  if (!isAuthenticated) return null;
+  if (!_hasHydrated || !isAuthenticated) return null;
 
   return (
     <div className="min-h-screen flex flex-col">

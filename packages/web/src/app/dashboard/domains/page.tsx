@@ -21,7 +21,7 @@ interface CustomDomain {
 
 export default function DomainsPage() {
   const router = useRouter();
-  const { isAuthenticated, token } = useAuthStore();
+  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
   const { addToast } = useToast();
 
   const [domains, setDomains] = useState<CustomDomain[]>([]);
@@ -31,12 +31,13 @@ export default function DomainsPage() {
   const [verifying, setVerifying] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!isAuthenticated || !token) {
       router.push('/login?redirect=/dashboard/domains');
       return;
     }
     fetchDomains();
-  }, [isAuthenticated, token, router]);
+  }, [_hasHydrated, isAuthenticated, token, router]);
 
   async function fetchDomains() {
     setLoading(true);
@@ -123,7 +124,7 @@ export default function DomainsPage() {
     }
   }
 
-  if (!isAuthenticated) return null;
+  if (!_hasHydrated || !isAuthenticated) return null;
 
   return (
     <div className="space-y-8">

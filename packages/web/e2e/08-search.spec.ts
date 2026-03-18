@@ -16,7 +16,7 @@ test.describe('Search', () => {
     await expect(searchInput).toBeVisible();
 
     // Niche filter pills
-    await expect(page.getByText('All niches')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'All niches' })).toBeVisible();
   });
 
   test('should return results for valid query', async ({ page }) => {
@@ -28,9 +28,9 @@ test.describe('Search', () => {
       .waitForSelector('.animate-pulse', { state: 'detached', timeout: 15_000 })
       .catch(() => {});
 
-    // Should show either results or "No results found"
-    const hasResults = await page.getByText(/result/i).isVisible().catch(() => false);
-    const noResults = await page.getByText(/No results found/i).isVisible().catch(() => false);
+    // Should show either results count or "No results found"
+    const hasResults = await page.getByText(/result\(s\) for/i).isVisible().catch(() => false);
+    const noResults = await page.getByText(/No published apps match/i).isVisible().catch(() => false);
 
     expect(hasResults || noResults).toBe(true);
   });

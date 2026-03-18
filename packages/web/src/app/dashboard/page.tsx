@@ -24,13 +24,14 @@ interface MyApp {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { isAuthenticated, token, user } = useAuthStore();
+  const { isAuthenticated, token, user, _hasHydrated } = useAuthStore();
   const { addToast } = useToast();
 
   const [myApps, setMyApps] = useState<MyApp[]>([]);
   const [appsLoading, setAppsLoading] = useState(true);
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!isAuthenticated || !token) {
       router.push('/login?redirect=/dashboard');
       return;
@@ -57,9 +58,9 @@ export default function DashboardPage() {
     }
 
     fetchMyApps();
-  }, [isAuthenticated, token, router]);
+  }, [_hasHydrated, isAuthenticated, token, router]);
 
-  if (!isAuthenticated) {
+  if (!_hasHydrated || !isAuthenticated) {
     return null;
   }
 

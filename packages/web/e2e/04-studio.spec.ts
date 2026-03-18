@@ -13,7 +13,8 @@ test.describe('Studio', () => {
   let appId: string;
   let generationStatus: string;
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({}, testInfo) => {
+    testInfo.setTimeout(180_000);
     const user = await createTestUser(
       testSlug(),
       'Studio Tester',

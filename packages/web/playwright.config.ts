@@ -1,4 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
+
+const HOME = process.env.HOME || '/home/jarvis';
+const localLibs = [
+  path.join(HOME, 'local-libs/usr/lib/x86_64-linux-gnu'),
+  path.join(HOME, 'local-libs/lib/x86_64-linux-gnu'),
+].join(':');
 
 export default defineConfig({
   testDir: './e2e',
@@ -21,7 +28,18 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+          env: {
+            ...process.env,
+            LD_LIBRARY_PATH: localLibs + (process.env.LD_LIBRARY_PATH ? ':' + process.env.LD_LIBRARY_PATH : ''),
+            FONTCONFIG_PATH: path.join(HOME, '.config/fontconfig'),
+            FONTCONFIG_FILE: path.join(HOME, '.config/fontconfig/fonts.conf'),
+          },
+        },
+      },
     },
   ],
   outputDir: 'test-results',

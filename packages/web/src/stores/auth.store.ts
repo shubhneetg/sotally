@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { api } from '@/lib/api';
 import { useCreditStore } from '@/stores/credit.store';
 
@@ -20,6 +20,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+  _hasHydrated: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, referralCode?: string) => Promise<void>;
   logout: () => void;
@@ -35,6 +36,7 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
       error: null,
+      _hasHydrated: false,
 
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
@@ -123,7 +125,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'sotally-auth',
+      storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token, isAuthenticated: state.isAuthenticated, user: state.user }),
+      onRehydrateStorage: () => () => {
+        useAuthStore.setState({ _hasHydrated: true });
+      },
     }
   )
 );

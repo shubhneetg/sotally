@@ -12,7 +12,8 @@ test.describe('App Runner / Detail Page', () => {
   let appId: string;
   let generated: boolean = false;
 
-  test.beforeAll(async () => {
+  test.beforeAll(async ({}, testInfo) => {
+    testInfo.setTimeout(180_000);
     const user = await createTestUser(
       testSlug(),
       'Runner Tester',

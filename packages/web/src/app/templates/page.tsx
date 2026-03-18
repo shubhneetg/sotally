@@ -33,7 +33,7 @@ const NICHE_OPTIONS = [
 
 export default function TemplatesPage() {
   const router = useRouter();
-  const { isAuthenticated, token } = useAuthStore();
+  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
   const { addToast } = useToast();
 
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -65,6 +65,7 @@ export default function TemplatesPage() {
   }
 
   async function handleUseTemplate(templateId: string) {
+    if (!_hasHydrated) return;
     if (!isAuthenticated || !token) {
       router.push('/login?redirect=/templates');
       return;

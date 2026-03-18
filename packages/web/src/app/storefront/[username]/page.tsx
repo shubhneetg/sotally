@@ -49,7 +49,7 @@ export default function StorefrontPage() {
       setError(null);
       try {
         const [profileRes, appsRes] = await Promise.all([
-          fetch(`${API_URL}/creator/profile?slug=${encodeURIComponent(username)}`),
+          fetch(`${API_URL}/storefront/profile?slug=${encodeURIComponent(username)}`),
           fetch(`${API_URL}/apps/by-creator?slug=${encodeURIComponent(username)}`),
         ]);
 

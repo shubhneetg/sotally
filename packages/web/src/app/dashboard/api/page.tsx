@@ -28,7 +28,7 @@ interface UsageStats {
 
 export default function ApiDashboardPage() {
   const router = useRouter();
-  const { isAuthenticated, token } = useAuthStore();
+  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
   const { addToast } = useToast();
 
   const [apiTokens, setApiTokens] = useState<ApiToken[]>([]);
@@ -39,12 +39,13 @@ export default function ApiDashboardPage() {
   const [usageStats] = useState<UsageStats>({ requestsToday: 0, requestsThisMonth: 0 });
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (!isAuthenticated || !token) {
       router.push('/login?redirect=/dashboard/api');
       return;
     }
     fetchTokens();
-  }, [isAuthenticated, token, router]);
+  }, [_hasHydrated, isAuthenticated, token, router]);
 
   async function fetchTokens() {
     setLoading(true);
@@ -109,7 +110,7 @@ export default function ApiDashboardPage() {
     }
   }
 
-  if (!isAuthenticated) return null;
+  if (!_hasHydrated || !isAuthenticated) return null;
 
   const curlExample = `curl -X GET "${API_URL.replace('/api', '')}/api/v1/apps" \\
   -H "Authorization: Bearer sk-your-api-key-here"`;
