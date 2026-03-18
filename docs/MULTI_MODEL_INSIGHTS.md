@@ -102,3 +102,51 @@ User discovers app → Uses it → Prompted to build own version
 ---
 
 *Sonnet UX critique pending — will be added when complete.*
+
+---
+
+## Sonnet — UX Audit (20 Code-Level Problems)
+
+### CRITICAL BUGS (Impact 5/5) — These Break Core User Journeys
+
+| # | Bug | Where | Fix |
+|---|-----|-------|-----|
+| 1 | **Prompt lost on redirect** — homepage prompt disappears after login redirect | `page.tsx:66-71`, `create/page.tsx:30-33` | Persist in sessionStorage or pass through URL |
+| 5 | **Explore cards link to /studio** — sends consumers into creator tool, hits auth wall | `explore/page.tsx:217-218` | Link to `/storefront/[username]/[slug]` instead |
+| 8 | **Homepage trending links to 404** — `/apps/[id]` route doesn't exist | `page.tsx:181` | Link to storefront app page |
+| 12 | **No link after publishing** — peak emotional moment is a dead end | `studio/[appId]/page.tsx:256-258` | Add "View on storefront →" link |
+| 20 | **No onboarding after first login** — users never discover their storefront | `dashboard/page.tsx:64-66` | Redirect to /onboarding if no storefront_slug |
+
+### HIGH (Impact 4/5)
+
+| # | Bug | Where |
+|---|-----|-------|
+| 3 | No time estimate during generation | `studio:33-40` |
+| 6 | Follow button hidden from guests (no CTA) | `storefront:200-214` |
+| 7 | Storefront has no header/footer — navigation dead end | `storefront:172` |
+| 10 | Create page silently redirects, no messaging | `create:30-33` |
+| 17 | No pricing shown on storefront app cards | `storefront:23-31` |
+
+### MEDIUM (Impact 3/5)
+
+| # | Bug | Where |
+|---|-----|-------|
+| 2 | Blank white flash on auth hydration | `create:92` |
+| 4 | Disabled iteration input with no explanation | `studio:446-464` |
+| 11 | Progress dots invisible on mobile | `studio:380-413` |
+| 15 | Fake search bar links to possibly missing route | `explore:88-95` |
+| 16 | iframe sandbox breaks localStorage in preview | `studio:503` |
+| 18 | Follow state not initialized from server | `storefront:43` |
+| 19 | Failed apps have no retry mechanism | `studio:507-515` |
+
+---
+
+## Combined Priority: Fix These First
+
+1. Fix broken links (Explore→Studio, Homepage→404, Post-publish dead end)
+2. Preserve prompt through login redirect
+3. Add onboarding redirect for new users
+4. "Made with Sotally" watermark on all free apps
+5. "Build YOUR version" button on every app page
+
+These 5 changes fix the core journey AND start the viral flywheel.
