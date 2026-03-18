@@ -20,6 +20,8 @@ import billingRoutes from './routes/billing';
 import templateRoutes from './routes/templates';
 import apiV1Routes from './routes/api-v1';
 import domainRoutes from './routes/domains';
+import socialRoutes from './routes/social';
+import notificationRoutes from './routes/notifications';
 import { handleWebhook } from './services/stripe.service';
 import { rateLimit } from './middleware/rate-limit';
 
@@ -54,6 +56,8 @@ app.route('/billing', billingRoutes);
 app.route('/templates', templateRoutes);
 app.route('/api/v1', apiV1Routes);
 app.route('/domains', domainRoutes);
+app.route('/social', socialRoutes);
+app.route('/notifications', notificationRoutes);
 
 // Stripe webhook — raw body, no auth
 app.post('/webhooks/stripe', async (c) => {

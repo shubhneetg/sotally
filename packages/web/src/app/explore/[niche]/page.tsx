@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Sparkles, Users, Heart } from 'lucide-react';
+import { ArrowLeft, Sparkles, Users, Heart, Star, Quote } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import { NICHE_LANDING } from '@/data/niche-landing';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sotally.com/api';
 
@@ -45,21 +46,53 @@ interface AppItem {
   } | null;
 }
 
+interface CreatorItem {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  storefrontSlug: string | null;
+  appCount: number;
+  followerCount: number;
+}
+
 export default function NicheExplorePage() {
   const params = useParams();
   const nicheSlug = params.niche as string;
   const niche = NICHE_META[nicheSlug];
+  const landing = NICHE_LANDING[nicheSlug];
 
   const [apps, setApps] = useState<AppItem[]>([]);
+  const [creators, setCreators] = useState<CreatorItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchApps() {
+    async function fetchData() {
       try {
         const res = await fetch(`${API_URL}/apps/explore?niche=${encodeURIComponent(nicheSlug)}`);
         if (res.ok) {
           const data = await res.json();
-          setApps(data.data || []);
+          const items: AppItem[] = data.data || [];
+          setApps(items);
+
+          // Extract unique creators from apps as featured creators
+          const creatorMap = new Map<string, CreatorItem>();
+          for (const app of items) {
+            if (app.creator && !creatorMap.has(app.creator.id)) {
+              creatorMap.set(app.creator.id, {
+                id: app.creator.id,
+                name: app.creator.name,
+                avatarUrl: app.creator.avatarUrl,
+                storefrontSlug: app.creator.storefrontSlug,
+                appCount: 0,
+                followerCount: 0,
+              });
+            }
+            if (app.creator) {
+              const existing = creatorMap.get(app.creator.id)!;
+              existing.appCount += 1;
+            }
+          }
+          setCreators(Array.from(creatorMap.values()).slice(0, 6));
         }
       } catch {
         // Non-critical
@@ -67,7 +100,7 @@ export default function NicheExplorePage() {
         setLoading(false);
       }
     }
-    fetchApps();
+    fetchData();
   }, [nicheSlug]);
 
   if (!niche) {
@@ -98,7 +131,7 @@ export default function NicheExplorePage() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      {/* Niche Header */}
+      {/* Hero Section */}
       <section
         className="border-b border-border"
         style={{ background: `linear-gradient(to bottom, ${niche.color}08, transparent)` }}
@@ -111,120 +144,226 @@ export default function NicheExplorePage() {
             <ArrowLeft className="h-4 w-4" />
             All niches
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-5">
             <div
-              className="flex h-16 w-16 items-center justify-center rounded-2xl text-3xl"
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-3xl"
               style={{ backgroundColor: `${niche.color}20` }}
             >
               {niche.icon}
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-primary sm:text-3xl">{niche.displayName}</h1>
-              <p className="mt-1 text-muted-foreground">{niche.description}</p>
+              <h1 className="text-2xl font-bold text-primary sm:text-3xl lg:text-4xl">
+                {landing ? landing.heroHeadline : niche.displayName}
+              </h1>
+              <p className="mt-2 max-w-2xl text-lg text-muted-foreground">
+                {landing ? landing.heroSubheadline : niche.description}
+              </p>
+              <div className="mt-6">
+                <Link
+                  href={`/create?niche=${nicheSlug}`}
+                  className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {landing ? landing.ctaText : `Create an app for ${niche.audienceNoun}`}
+                </Link>
+              </div>
             </div>
-          </div>
-          <div className="mt-6">
-            <Link
-              href={`/create?niche=${nicheSlug}`}
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
-            >
-              <Sparkles className="h-4 w-4" />
-              Create an app for {niche.audienceNoun}
-            </Link>
           </div>
         </div>
       </section>
 
-      {/* Apps Grid */}
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        {loading ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-border bg-card p-5 shadow-sm animate-pulse">
-                <div className="flex items-start gap-3">
-                  <div className="h-12 w-12 rounded-lg bg-muted" />
-                  <div className="flex-1 space-y-2">
-                    <div className="h-4 w-3/4 rounded bg-muted" />
-                    <div className="h-3 w-full rounded bg-muted" />
-                    <div className="h-3 w-1/2 rounded bg-muted" />
-                  </div>
+      {/* Example Apps (from landing data) */}
+      {landing && landing.exampleApps.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <h2 className="text-xl font-bold text-primary">What you can build</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Example apps created by {niche.creatorNoun}s like you.</p>
+          <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {landing.exampleApps.map((example, i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-border bg-card p-5 shadow-sm"
+              >
+                <div
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-lg"
+                  style={{ backgroundColor: `${niche.color}15` }}
+                >
+                  <Star className="h-5 w-5" style={{ color: niche.color }} />
                 </div>
+                <h3 className="mt-3 text-sm font-semibold text-primary">{example.name}</h3>
+                <p className="mt-1.5 text-xs text-muted-foreground line-clamp-3">
+                  {example.description}
+                </p>
               </div>
             ))}
           </div>
-        ) : apps.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card px-6 py-16 text-center">
-            <div className="text-4xl">{niche.icon}</div>
-            <h2 className="mt-4 text-lg font-semibold text-primary">No apps yet</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Be the first {niche.creatorNoun} to create an app in this niche.
-            </p>
-            <Link
-              href={`/create?niche=${nicheSlug}`}
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
-            >
-              <Sparkles className="h-4 w-4" />
-              Create the first app
-            </Link>
+        </section>
+      )}
+
+      {/* Featured Creators in this Niche */}
+      {creators.length > 0 && (
+        <section className="border-t border-border bg-muted/30">
+          <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+            <h2 className="text-xl font-bold text-primary">Featured creators</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Top {niche.creatorNoun}s building in {niche.shortName.toLowerCase()}.</p>
+            <div className="mt-6 flex flex-wrap gap-4">
+              {creators.map((creator) => (
+                <Link
+                  key={creator.id}
+                  href={creator.storefrontSlug ? `/${creator.storefrontSlug}` : `/creators/${creator.id}`}
+                  className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm transition-all hover:border-accent/50 hover:shadow-md"
+                >
+                  {creator.avatarUrl ? (
+                    <img
+                      src={creator.avatarUrl}
+                      alt={creator.name}
+                      className="h-10 w-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-sm font-semibold text-accent">
+                      {creator.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-primary">{creator.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {creator.appCount} {creator.appCount === 1 ? 'app' : 'apps'}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {apps.map((app) => (
-              <Link
-                key={app.id}
-                href={`/apps/${app.id}`}
-                className="group rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5"
-              >
-                <div className="flex items-start gap-3">
-                  <div
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-xl"
-                    style={{ backgroundColor: `${niche.color}15` }}
+        </section>
+      )}
+
+      {/* Testimonial */}
+      {landing?.testimonial && (
+        <section className="border-t border-border">
+          <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 text-center">
+            <Quote className="mx-auto h-8 w-8 text-muted-foreground/30" />
+            <blockquote className="mt-4 text-lg text-primary italic">
+              &ldquo;{landing.testimonial.quote}&rdquo;
+            </blockquote>
+            <div className="mt-4">
+              <p className="text-sm font-semibold text-primary">{landing.testimonial.name}</p>
+              <p className="text-xs text-muted-foreground">{landing.testimonial.role}</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Published Apps Grid */}
+      <section className="border-t border-border">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <h2 className="text-xl font-bold text-primary">Published apps</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Browse apps built for {niche.audienceNoun}.</p>
+
+          <div className="mt-6">
+            {loading ? (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="rounded-xl border border-border bg-card p-5 shadow-sm animate-pulse">
+                    <div className="flex items-start gap-3">
+                      <div className="h-12 w-12 rounded-lg bg-muted" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-3/4 rounded bg-muted" />
+                        <div className="h-3 w-full rounded bg-muted" />
+                        <div className="h-3 w-1/2 rounded bg-muted" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : apps.length === 0 ? (
+              <div className="rounded-xl border border-border bg-card px-6 py-16 text-center">
+                <div className="text-4xl">{niche.icon}</div>
+                <h3 className="mt-4 text-lg font-semibold text-primary">No apps yet</h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Be the first {niche.creatorNoun} to create an app in this niche.
+                </p>
+                <Link
+                  href={`/create?niche=${nicheSlug}`}
+                  className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Create the first app
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {apps.map((app) => (
+                  <Link
+                    key={app.id}
+                    href={`/apps/${app.id}`}
+                    className="group rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:border-accent/50 hover:shadow-md hover:-translate-y-0.5"
                   >
-                    {app.iconUrl ? (
-                      <img src={app.iconUrl} alt={app.name} className="h-12 w-12 rounded-lg object-cover" />
-                    ) : (
-                      niche.icon
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-primary group-hover:text-accent transition-colors truncate">
-                      {app.name}
-                    </h3>
-                    {app.creator && (
-                      <p className="text-xs text-muted-foreground">
-                        by {app.creator.name}
-                      </p>
-                    )}
-                    {app.description && (
-                      <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
-                        {app.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-                  {app.totalUsers > 0 && (
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      {app.totalUsers.toLocaleString()}
-                    </span>
-                  )}
-                  {app.likeCount > 0 && (
-                    <span className="flex items-center gap-1">
-                      <Heart className="h-3 w-3" />
-                      {app.likeCount.toLocaleString()}
-                    </span>
-                  )}
-                  {app.pricingModel === 'free' && (
-                    <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-600 font-medium">
-                      Free
-                    </span>
-                  )}
-                </div>
-              </Link>
-            ))}
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-xl"
+                        style={{ backgroundColor: `${niche.color}15` }}
+                      >
+                        {app.iconUrl ? (
+                          <img src={app.iconUrl} alt={app.name} className="h-12 w-12 rounded-lg object-cover" />
+                        ) : (
+                          niche.icon
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold text-primary group-hover:text-accent transition-colors truncate">
+                          {app.name}
+                        </h3>
+                        {app.creator && (
+                          <p className="text-xs text-muted-foreground">
+                            by {app.creator.name}
+                          </p>
+                        )}
+                        {app.description && (
+                          <p className="mt-1.5 text-xs text-muted-foreground line-clamp-2">
+                            {app.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
+                      {app.totalUsers > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {app.totalUsers.toLocaleString()}
+                        </span>
+                      )}
+                      {app.likeCount > 0 && (
+                        <span className="flex items-center gap-1">
+                          <Heart className="h-3 w-3" />
+                          {app.likeCount.toLocaleString()}
+                        </span>
+                      )}
+                      {app.pricingModel === 'free' && (
+                        <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-emerald-600 font-medium">
+                          Free
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="border-t border-border bg-accent/5 py-12 text-center">
+        <h2 className="text-2xl font-bold text-primary">Ready to build?</h2>
+        <p className="mt-2 text-muted-foreground">
+          Create your first {niche.shortName.toLowerCase()} app in under 5 minutes with AI.
+        </p>
+        <Link
+          href={`/create?niche=${nicheSlug}`}
+          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground hover:bg-accent/90 transition-colors"
+        >
+          <Sparkles className="h-4 w-4" />
+          {landing ? landing.ctaText : `Create an app for ${niche.audienceNoun}`}
+        </Link>
       </section>
 
       <Footer />
