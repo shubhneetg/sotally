@@ -9,11 +9,10 @@ import { useCreditStore } from '@/stores/credit.store';
 import { CreditBadge } from '@/components/credits/credit-badge';
 
 const navLinks = [
-  { href: '/tools', label: 'Tools' },
-  { href: '/integrations', label: 'Integrations' },
-  { href: '/guides', label: 'Guides' },
+  { href: '/explore', label: 'Explore' },
+  { href: '/search', label: 'Search' },
+  { href: '/create', label: 'Create' },
   { href: '/pricing', label: 'Pricing' },
-  { href: '/creator', label: 'For Creators' },
 ];
 
 export function Header() {
