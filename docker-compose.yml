@@ -42,7 +42,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      minio:
+        condition: service_healthy
 
+  # V1 tool execution worker (backward compat)
   worker:
     build:
       context: .
@@ -54,6 +57,29 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+
+  # V2 app generation worker
+  generation-worker:
+    build:
+      context: .
+      dockerfile: packages/api/Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    command: ["npx", "tsx", "packages/api/src/workers/generation.worker.ts"]
+    environment:
+      - GENERATION_CONCURRENCY=2
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
 
   postgres:
@@ -76,6 +102,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis_data:/data
     expose:
@@ -86,8 +113,30 @@ services:
       timeout: 3s
       retries: 5
 
+  # V2: Object storage for app bundles
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-sotally}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-sotally-secret-key}
+    volumes:
+      - minio_data:/data
+    expose:
+      - "9000"
+      - "9001"
+    ports:
+      - "9001:9001"  # MinIO console (dev only)
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
   redis_data:
   caddy_data:
   caddy_config:
+  minio_data:

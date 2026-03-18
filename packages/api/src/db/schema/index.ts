@@ -1,7 +1,11 @@
-// Users
-export { userRoleEnum, users } from './users';
+// ============================================================
+// V2 SCHEMA INDEX
+// ============================================================
 
-// Credits
+// Users
+export { userRoleEnum, planTierEnum, users } from './users';
+
+// Credits (V1 carry-over, unchanged)
 export {
   creditTransactionTypeEnum,
   creditPurchaseStatusEnum,
@@ -9,10 +13,21 @@ export {
   creditPurchases,
 } from './credits';
 
-// Categories
+// Categories (V1 carry-over)
 export { categories } from './categories';
 
-// Tools
+// V2 Apps (replaces V1 tools for new creation flow)
+export { appStatusEnum, appPricingModelEnum, apps } from './apps';
+export { appVersions } from './app-versions';
+export { generationTypeEnum, generationStatusEnum, appGenerations } from './app-generations';
+export { appData } from './app-data';
+export { sessionPaymentStatusEnum, appSessions } from './app-sessions';
+export { appLikes } from './app-likes';
+
+// Creator posts (V2 storefront feed)
+export { postTypeEnum, creatorPosts } from './creator-posts';
+
+// V1 Tools (kept for backward compat — existing data stays)
 export {
   executionTypeEnum,
   toolStatusEnum,
@@ -21,17 +36,17 @@ export {
   toolVersions,
 } from './tools';
 
-// Executions
+// V1 Executions (kept for backward compat)
 export {
   executionStatusEnum,
   pricingModelEnum,
   executions,
 } from './executions';
 
-// Reviews
+// Reviews (V1 carry-over — will also be used for app reviews)
 export { reviews } from './reviews';
 
-// Creators
+// Creators (V1 carry-over — earnings data migrated to users table)
 export {
   creatorLevelEnum,
   creatorTransactionTypeEnum,
@@ -41,7 +56,7 @@ export {
   creatorPayouts,
 } from './creators';
 
-// Affiliates
+// Affiliates (V1 carry-over)
 export {
   affiliateTierEnum,
   affiliateTransactionTypeEnum,
@@ -50,26 +65,26 @@ export {
   affiliateTransactions,
 } from './affiliates';
 
-// API Keys & Tokens
+// API Keys & Tokens (V1 carry-over)
 export { apiKeys, apiTokens } from './api-keys';
 
-// Notifications
+// Notifications (V1 carry-over)
 export { notifications } from './notifications';
 
-// Tool User Data
+// Tool User Data (V1 carry-over)
 export { toolUserData } from './tool-data';
 
-// Reports
+// Reports (V1 carry-over)
 export { reportReasonEnum, reportStatusEnum, toolReports } from './reports';
 
-// Subscriptions & Licenses
+// Subscriptions & Licenses (V1 carry-over)
 export { toolSubscriptions, toolLicenses } from './subscriptions';
 
-// Social (follows, collections)
+// Social — follows, collections (V1 carry-over)
 export { follows, toolCollections, collectionTools } from './social';
 
-// Bounties
+// Bounties (V1 carry-over)
 export { bounties, bountySubmissions } from './bounties';
 
-// Custom Domains
+// Custom Domains (V1 carry-over)
 export { customDomains } from './domains';

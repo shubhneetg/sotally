@@ -161,3 +161,6 @@ export const MIN_PAYOUT_THRESHOLD_CENTS: number = 1000;
 
 /** Affiliate default commission percent */
 export const DEFAULT_AFFILIATE_COMMISSION_PERCENT: number = 10;
+
+// V2 constants
+export * from './v2';

@@ -251,3 +251,6 @@ export interface PaginatedResponse<T> {
   pageSize: number;
   totalPages: number;
 }
+
+// V2 types
+export * from './v2';
