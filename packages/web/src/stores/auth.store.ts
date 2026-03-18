@@ -11,6 +11,7 @@ interface User {
   email: string;
   role: string;
   creditBalance?: number;
+  referralCode?: string;
 }
 
 interface AuthState {
