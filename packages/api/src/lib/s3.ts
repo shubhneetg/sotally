@@ -40,7 +40,7 @@ export async function uploadFile(
       Key: key,
       Body: body,
       ContentType: contentType,
-      ACL: 'public-read',
+      // ACL removed — MinIO uses bucket-level public policy instead
     })
   );
 
