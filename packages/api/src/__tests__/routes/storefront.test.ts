@@ -2,29 +2,49 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 
 // ─── Mock database ─────────────────────────────────────────────
-const mockSelect = vi.fn();
-const mockUpdate = vi.fn();
-const mockFrom = vi.fn();
-const mockWhere = vi.fn();
-const mockLimit = vi.fn();
-const mockReturning = vi.fn();
-const mockSet = vi.fn();
+let queryResults: any[][] = [];
+let queryIndex = 0;
+let updateResults: any[][] = [];
+let updateIndex = 0;
 
-function resetDbChain() {
-  mockLimit.mockResolvedValue([]);
-  mockWhere.mockReturnValue({ limit: mockLimit });
-  mockFrom.mockReturnValue({ where: mockWhere });
-  mockSelect.mockReturnValue({ from: mockFrom });
+function nextQueryResult() {
+  const result = queryResults[queryIndex] ?? [];
+  queryIndex++;
+  return result;
+}
 
-  mockReturning.mockResolvedValue([]);
-  mockSet.mockReturnValue({ where: vi.fn().mockReturnValue({ returning: mockReturning }) });
-  mockUpdate.mockReturnValue({ set: mockSet });
+function nextUpdateResult() {
+  const result = updateResults[updateIndex] ?? [];
+  updateIndex++;
+  return result;
+}
+
+function makeSelectChain(): any {
+  const chain: any = {
+    from: () => chain,
+    where: () => chain,
+    orderBy: () => chain,
+    limit: () => Promise.resolve(nextQueryResult()),
+    then: (resolve: any, reject?: any) => Promise.resolve(nextQueryResult()).then(resolve, reject),
+  };
+  return chain;
+}
+
+function makeUpdateChain(): any {
+  return {
+    set: () => ({
+      where: () => ({
+        returning: () => Promise.resolve(nextUpdateResult()),
+        then: (resolve: any, reject?: any) => Promise.resolve(nextUpdateResult()).then(resolve, reject),
+      }),
+    }),
+  };
 }
 
 vi.mock('../../db/client', () => ({
   db: {
-    select: (...args: any[]) => mockSelect(...args),
-    update: (...args: any[]) => mockUpdate(...args),
+    select: () => makeSelectChain(),
+    update: () => makeUpdateChain(),
   },
 }));
 
@@ -74,7 +94,10 @@ function createApp() {
 describe('Storefront Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    resetDbChain();
+    queryResults = [];
+    queryIndex = 0;
+    updateResults = [];
+    updateIndex = 0;
   });
 
   // ─── GET /storefront/check-slug ───────────────────────────────
@@ -100,8 +123,8 @@ describe('Storefront Routes', () => {
     it('should return available for unused slug', async () => {
       const app = createApp();
       const token = await createToken();
-      // Mock: no existing user with this slug
-      mockLimit.mockResolvedValueOnce([]);
+      // Query 0: no existing user with this slug
+      queryResults.push([]);
 
       const res = await app.request('/storefront/check-slug?slug=mynewstore', {
         headers: { Authorization: `Bearer ${token}` },
@@ -148,11 +171,27 @@ describe('Storefront Routes', () => {
       expect(body.data.available).toBe(false);
     });
 
+    it('should return unavailable for all reserved slugs', async () => {
+      const app = createApp();
+      const token = await createToken();
+      const reserved = ['admin', 'api', 'app', 'www', 'help', 'support', 'about', 'blog',
+        'docs', 'legal', 'terms', 'privacy', 'settings', 'dashboard', 'create',
+        'studio', 'onboarding', 'explore', 'search'];
+
+      for (const slug of reserved) {
+        const res = await app.request(`/storefront/check-slug?slug=${slug}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const body = await res.json();
+        expect(body.data.available).toBe(false);
+      }
+    });
+
     it('should return unavailable for slug taken by another user', async () => {
       const app = createApp();
       const token = await createToken();
-      // Mock: existing user with this slug
-      mockLimit.mockResolvedValueOnce([{ id: 'other-user' }]);
+      // Query 0: existing user with this slug
+      queryResults.push([{ id: 'other-user' }]);
 
       const res = await app.request('/storefront/check-slug?slug=takenslug', {
         headers: { Authorization: `Bearer ${token}` },
@@ -285,8 +324,6 @@ describe('Storefront Routes', () => {
         },
         body: JSON.stringify({ slug: 'admin' }),
       });
-      // Reserved slugs pass zod validation but get caught in the handler
-      // "admin" is 5 chars, lowercase, no hyphens at edges — passes regex
       expect(res.status).toBe(409);
       const body = await res.json();
       expect(body.error.code).toBe('CONFLICT');
@@ -295,8 +332,8 @@ describe('Storefront Routes', () => {
     it('should reject slug already taken by another user with 409', async () => {
       const app = createApp();
       const token = await createToken();
-      // Mock: slug taken by another user
-      mockLimit.mockResolvedValueOnce([{ id: 'other-user-456' }]);
+      // Query 0: slug taken by another user
+      queryResults.push([{ id: 'other-user-456' }]);
 
       const res = await app.request('/storefront/setup', {
         method: 'POST',
@@ -315,9 +352,9 @@ describe('Storefront Routes', () => {
     it('should succeed with valid slug', async () => {
       const app = createApp();
       const token = await createToken();
-      // Mock: slug not taken
-      mockLimit.mockResolvedValueOnce([]);
-      // Mock: update returns updated user
+      // Query 0: slug not taken
+      queryResults.push([]);
+      // Update 0: update user
       const updatedUser = {
         id: TEST_USER.id,
         name: 'Test User',
@@ -328,11 +365,7 @@ describe('Storefront Routes', () => {
         bannerUrl: null,
         onboardingComplete: true,
       };
-      mockSet.mockReturnValueOnce({
-        where: vi.fn().mockReturnValue({
-          returning: vi.fn().mockResolvedValue([updatedUser]),
-        }),
-      });
+      updateResults.push([updatedUser]);
 
       const res = await app.request('/storefront/setup', {
         method: 'POST',
@@ -351,12 +384,8 @@ describe('Storefront Routes', () => {
     it('should accept valid slug with hyphens', async () => {
       const app = createApp();
       const token = await createToken();
-      mockLimit.mockResolvedValueOnce([]);
-      mockSet.mockReturnValueOnce({
-        where: vi.fn().mockReturnValue({
-          returning: vi.fn().mockResolvedValue([{ id: TEST_USER.id, storefrontSlug: 'my-cool-store' }]),
-        }),
-      });
+      queryResults.push([]);
+      updateResults.push([{ id: TEST_USER.id, storefrontSlug: 'my-cool-store' }]);
 
       const res = await app.request('/storefront/setup', {
         method: 'POST',
@@ -365,6 +394,24 @@ describe('Storefront Routes', () => {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ slug: 'my-cool-store' }),
+      });
+      expect(res.status).toBe(200);
+    });
+
+    it('should allow user to keep their own slug', async () => {
+      const app = createApp();
+      const token = await createToken();
+      // Query 0: slug found but belongs to the same user
+      queryResults.push([{ id: TEST_USER.id }]);
+      updateResults.push([{ id: TEST_USER.id, storefrontSlug: 'mystore' }]);
+
+      const res = await app.request('/storefront/setup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ slug: 'mystore' }),
       });
       expect(res.status).toBe(200);
     });
@@ -383,8 +430,8 @@ describe('Storefront Routes', () => {
 
     it('should return 404 for unknown slug', async () => {
       const app = createApp();
-      // Mock: no user found
-      mockLimit.mockResolvedValueOnce([]);
+      // Query 0: no user found
+      queryResults.push([]);
 
       const res = await app.request('/storefront/profile?slug=nonexistent');
       expect(res.status).toBe(404);
@@ -406,7 +453,7 @@ describe('Storefront Routes', () => {
         appCount: 5,
         createdAt: new Date().toISOString(),
       };
-      mockLimit.mockResolvedValueOnce([mockUser]);
+      queryResults.push([mockUser]);
 
       const res = await app.request('/storefront/profile?slug=johndoe');
       expect(res.status).toBe(200);
@@ -419,11 +466,35 @@ describe('Storefront Routes', () => {
 
     it('should not require authentication (public endpoint)', async () => {
       const app = createApp();
-      mockLimit.mockResolvedValueOnce([{ id: 'user-1', name: 'Test' }]);
+      queryResults.push([{ id: 'user-1', name: 'Test' }]);
 
       const res = await app.request('/storefront/profile?slug=testuser');
-      // Should not return 401
       expect(res.status).not.toBe(401);
+    });
+
+    it('should include all expected profile fields', async () => {
+      const app = createApp();
+      const mockUser = {
+        id: 'user-1',
+        name: 'Jane',
+        bio: 'Bio text',
+        avatarUrl: null,
+        bannerUrl: null,
+        niche: 'tech',
+        followerCount: 0,
+        appCount: 0,
+        createdAt: new Date().toISOString(),
+      };
+      queryResults.push([mockUser]);
+
+      const res = await app.request('/storefront/profile?slug=jane');
+      const body = await res.json();
+      expect(body.data).toHaveProperty('id');
+      expect(body.data).toHaveProperty('name');
+      expect(body.data).toHaveProperty('bio');
+      expect(body.data).toHaveProperty('niche');
+      expect(body.data).toHaveProperty('followerCount');
+      expect(body.data).toHaveProperty('appCount');
     });
   });
 });
