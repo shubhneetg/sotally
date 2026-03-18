@@ -6,22 +6,13 @@ import { Check, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
+import { NICHES } from '@sotally/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sotally.com/api';
 
-const NICHES = [
+const NICHE_OPTIONS = [
   { value: '', label: 'Select a niche (optional)' },
-  { value: 'wellness', label: 'Wellness' },
-  { value: 'fitness', label: 'Fitness' },
-  { value: 'education', label: 'Education' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'nutrition', label: 'Nutrition' },
-  { value: 'parenting', label: 'Parenting' },
-  { value: 'language', label: 'Language' },
-  { value: 'business', label: 'Business' },
-  { value: 'real-estate', label: 'Real Estate' },
-  { value: 'content', label: 'Content' },
-  { value: 'design', label: 'Design' },
+  ...NICHES.map((n) => ({ value: n.slug, label: n.shortName })),
 ];
 
 const SLUG_REGEX = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/;
@@ -288,7 +279,7 @@ export default function OnboardingPage() {
                       onChange={(e) => setNiche(e.target.value)}
                       className="w-full appearance-none rounded-lg border border-border bg-background px-3 py-2.5 pr-10 text-sm text-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
                     >
-                      {NICHES.map((n) => (
+                      {NICHE_OPTIONS.map((n) => (
                         <option key={n.value} value={n.value}>
                           {n.label}
                         </option>

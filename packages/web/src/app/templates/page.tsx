@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { NICHES } from '@sotally/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sotally.com/api';
 
@@ -27,14 +28,7 @@ interface Template {
 
 const NICHE_OPTIONS = [
   { value: '', label: 'All Niches' },
-  { value: 'productivity', label: 'Productivity' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'education', label: 'Education' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'health', label: 'Health' },
-  { value: 'entertainment', label: 'Entertainment' },
-  { value: 'business', label: 'Business' },
-  { value: 'development', label: 'Development' },
+  ...NICHES.map((n) => ({ value: n.slug, label: n.shortName })),
 ];
 
 export default function TemplatesPage() {

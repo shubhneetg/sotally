@@ -5,23 +5,9 @@ import Link from 'next/link';
 import { Search, ArrowRight } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
+import { NICHES } from '@sotally/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sotally.com/api';
-
-const NICHES = [
-  { slug: 'wellness', displayName: 'Wellness Coaches', shortName: 'Wellness', icon: '🧘', color: '#6EE7B7', description: 'Apps for mindfulness, meditation, and mental health' },
-  { slug: 'astrology', displayName: 'Astrologers & Spiritual Guides', shortName: 'Astrology', icon: '🔮', color: '#A78BFA', description: 'Birth charts, tarot, numerology, and moon phases' },
-  { slug: 'fitness', displayName: 'Fitness Trainers', shortName: 'Fitness', icon: '💪', color: '#60A5FA', description: 'Workout generators, macro calculators, and progress trackers' },
-  { slug: 'education', displayName: 'Educators & Tutors', shortName: 'Education', icon: '📚', color: '#FBBF24', description: 'Quizzes, flashcards, study planners, and interactive lessons' },
-  { slug: 'finance', displayName: 'Personal Finance Coaches', shortName: 'Finance', icon: '💰', color: '#34D399', description: 'Budget trackers, calculators, and financial planning tools' },
-  { slug: 'nutrition', displayName: 'Nutritionists & Dietitians', shortName: 'Nutrition', icon: '🥗', color: '#4ADE80', description: 'Meal planners, food trackers, and dietary tools' },
-  { slug: 'parenting', displayName: 'Parenting Coaches', shortName: 'Parenting', icon: '👶', color: '#F9A8D4', description: 'Chore trackers, milestone tools, and family organizers' },
-  { slug: 'language', displayName: 'Language Teachers', shortName: 'Language', icon: '🌍', color: '#38BDF8', description: 'Vocabulary apps, quizzers, and conversation practice tools' },
-  { slug: 'business', displayName: 'Small Business Coaches', shortName: 'Business', icon: '💼', color: '#FB923C', description: 'Pricing calculators, invoicing tools, and client managers' },
-  { slug: 'real-estate', displayName: 'Real Estate Agents', shortName: 'Real Estate', icon: '🏠', color: '#818CF8', description: 'Mortgage calculators, property analyzers, and market tools' },
-  { slug: 'content', displayName: 'Content Creators', shortName: 'Content', icon: '🎬', color: '#F472B6', description: 'Content planners, analytics tools, and growth calculators' },
-  { slug: 'design', displayName: 'Creative Freelancers', shortName: 'Design', icon: '🎨', color: '#E879F9', description: 'Color palettes, brand tools, and design utilities' },
-];
 
 export default function ExplorePage() {
   const [nicheCounts, setNicheCounts] = useState<Record<string, number>>({});
