@@ -402,6 +402,140 @@ appRoutes.get('/by-slug', async (c) => {
   });
 });
 
+// ─── GET /apps/explore — Browse published apps, optionally by niche ─────────
+
+appRoutes.get('/explore', async (c) => {
+  const niche = c.req.query('niche');
+  const limit = Math.min(parseInt(c.req.query('limit') || '50', 10), 100);
+  const offset = parseInt(c.req.query('offset') || '0', 10);
+
+  const conditions = [eq(apps.status, 'published')];
+  if (niche) {
+    conditions.push(eq(apps.niche, niche));
+  }
+
+  const items = await db
+    .select({
+      id: apps.id,
+      slug: apps.slug,
+      name: apps.name,
+      description: apps.description,
+      iconUrl: apps.iconUrl,
+      niche: apps.niche,
+      pricingModel: apps.pricingModel,
+      totalSessions: apps.totalSessions,
+      totalUsers: apps.totalUsers,
+      likeCount: apps.likeCount,
+      avgRating: apps.avgRating,
+      isFeatured: apps.isFeatured,
+      publishedAt: apps.publishedAt,
+      creatorId: apps.creatorId,
+    })
+    .from(apps)
+    .where(and(...conditions))
+    .orderBy(desc(apps.publishedAt))
+    .limit(limit)
+    .offset(offset);
+
+  // Fetch creator info for each app
+  const creatorIds = [...new Set(items.map((a) => a.creatorId))];
+  const creators =
+    creatorIds.length > 0
+      ? await db
+          .select({
+            id: users.id,
+            name: users.name,
+            avatarUrl: users.avatarUrl,
+            storefrontSlug: users.storefrontSlug,
+          })
+          .from(users)
+          .where(sql`${users.id} IN ${creatorIds}`)
+      : [];
+
+  const creatorMap = new Map(creators.map((cr) => [cr.id, cr]));
+
+  const enriched = items.map((item) => ({
+    ...item,
+    creator: creatorMap.get(item.creatorId) || null,
+  }));
+
+  return c.json({ success: true, data: enriched, error: null });
+});
+
+// ─── GET /apps/niche-counts — Count published apps per niche ────────────────
+
+appRoutes.get('/niche-counts', async (c) => {
+  const counts = await db
+    .select({
+      niche: apps.niche,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(apps)
+    .where(eq(apps.status, 'published'))
+    .groupBy(apps.niche);
+
+  const countMap: Record<string, number> = {};
+  for (const row of counts) {
+    if (row.niche) {
+      countMap[row.niche] = row.count;
+    }
+  }
+
+  return c.json({ success: true, data: countMap, error: null });
+});
+
+// ─── GET /apps/featured — Featured published apps ───────────────────────────
+
+appRoutes.get('/featured', async (c) => {
+  const limit = Math.min(parseInt(c.req.query('limit') || '12', 10), 50);
+
+  const items = await db
+    .select({
+      id: apps.id,
+      slug: apps.slug,
+      name: apps.name,
+      description: apps.description,
+      iconUrl: apps.iconUrl,
+      niche: apps.niche,
+      pricingModel: apps.pricingModel,
+      totalSessions: apps.totalSessions,
+      totalUsers: apps.totalUsers,
+      likeCount: apps.likeCount,
+      avgRating: apps.avgRating,
+      isFeatured: apps.isFeatured,
+      publishedAt: apps.publishedAt,
+      creatorId: apps.creatorId,
+    })
+    .from(apps)
+    .where(and(eq(apps.status, 'published'), eq(apps.isFeatured, true)))
+    .orderBy(desc(apps.publishedAt))
+    .limit(limit);
+
+  // Fetch creator info
+  const creatorIds = [...new Set(items.map((a) => a.creatorId))];
+  const creators =
+    creatorIds.length > 0
+      ? await db
+          .select({
+            id: users.id,
+            name: users.name,
+            avatarUrl: users.avatarUrl,
+            storefrontSlug: users.storefrontSlug,
+          })
+          .from(users)
+          .where(sql`${users.id} IN ${creatorIds}`)
+      : [];
+
+  const creatorMap = new Map(creators.map((cr) => [cr.id, cr]));
+
+  const enriched = items.map((item) => ({
+    ...item,
+    creator: creatorMap.get(item.creatorId) || null,
+  }));
+
+  return c.json({ success: true, data: enriched, error: null });
+});
+
 // ─── GET /apps/:id — Get app details ────────────────────────────────────────
 
 appRoutes.get('/:id', optionalAuthMiddleware, async (c) => {
