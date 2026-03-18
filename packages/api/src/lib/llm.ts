@@ -58,7 +58,7 @@ function resolveProvider(): ProviderConfig {
     return {
       provider: 'moonshot',
       apiKey: env.MOONSHOT_API_KEY,
-      baseUrl: 'https://api.moonshot.cn/v1',
+      baseUrl: 'https://api.moonshot.ai/v1',
       model: env.GENERATION_MODEL || 'moonshot-v1-128k',
     };
   }
@@ -93,7 +93,7 @@ function resolveProvider(): ProviderConfig {
     return {
       provider: 'moonshot',
       apiKey: env.MOONSHOT_API_KEY,
-      baseUrl: 'https://api.moonshot.cn/v1',
+      baseUrl: 'https://api.moonshot.ai/v1',
       model: env.GENERATION_MODEL || 'moonshot-v1-128k',
     };
   }
