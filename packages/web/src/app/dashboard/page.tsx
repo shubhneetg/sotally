@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Plus, Eye, Calendar, Sparkles, Users, LayoutGrid } from 'lucide-react';
-import { useAuthStore } from '@/stores/auth.store';
+import { useAuthStore, useAuthHydrated } from '@/stores/auth.store';
 import { useToast } from '@/components/ui/toast';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,8 @@ interface MyApp {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { isAuthenticated, token, user, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, token, user } = useAuthStore();
+  const _hasHydrated = useAuthHydrated();
   const { addToast } = useToast();
 
   const [myApps, setMyApps] = useState<MyApp[]>([]);

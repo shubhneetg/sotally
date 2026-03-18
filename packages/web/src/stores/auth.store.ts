@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { api } from '@/lib/api';
@@ -127,9 +128,30 @@ export const useAuthStore = create<AuthState>()(
       name: 'sotally-auth',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ token: state.token, isAuthenticated: state.isAuthenticated, user: state.user }),
-      onRehydrateStorage: () => () => {
-        useAuthStore.setState({ _hasHydrated: true });
-      },
     }
   )
 );
+
+/**
+ * Hook to track Zustand persist hydration.
+ * Returns true once the store has finished rehydrating from localStorage.
+ */
+export function useAuthHydrated(): boolean {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => {
+    // In Zustand v5, check if state differs from initial defaults
+    // by reading localStorage directly and comparing
+    const raw = localStorage.getItem('sotally-auth');
+    if (raw) {
+      try {
+        const stored = JSON.parse(raw);
+        if (stored?.state) {
+          useAuthStore.setState(stored.state);
+        }
+      } catch { /* ignore */ }
+    }
+    setHydrated(true);
+  }, []);
+  return hydrated;
+}
+

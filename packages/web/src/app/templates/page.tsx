@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth.store';
+import { useAuthStore, useAuthHydrated } from '@/stores/auth.store';
 import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +33,8 @@ const NICHE_OPTIONS = [
 
 export default function TemplatesPage() {
   const router = useRouter();
-  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, token } = useAuthStore();
+  const _hasHydrated = useAuthHydrated();
   const { addToast } = useToast();
 
   const [templates, setTemplates] = useState<Template[]>([]);

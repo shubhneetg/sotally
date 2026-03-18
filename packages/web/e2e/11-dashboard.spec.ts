@@ -46,6 +46,7 @@ test.describe('Dashboard', () => {
       .waitForSelector('.animate-pulse', { state: 'detached', timeout: 15_000 })
       .catch(() => {});
 
+    // Either app cards linking to studio, or "Create your first app" empty state, or "Create Your First App" CTA
     const hasApps = await page
       .locator('a[href*="/studio/"]')
       .first()
@@ -53,23 +54,28 @@ test.describe('Dashboard', () => {
       .catch(() => false);
 
     const hasEmpty = await page
-      .getByText(/Create your first app/i)
+      .getByRole('heading', { name: /Create your first app/i })
       .isVisible()
       .catch(() => false);
 
-    expect(hasApps || hasEmpty).toBe(true);
+    const hasCTA = await page
+      .getByRole('link', { name: /Create Your First App/i })
+      .isVisible()
+      .catch(() => false);
+
+    expect(hasApps || hasEmpty || hasCTA).toBe(true);
   });
 
   test('should have revenue, API, domains nav items', async ({ page }) => {
     await page.goto('/dashboard');
     await page.waitForLoadState('domcontentloaded');
 
-    // Sidebar nav items
+    // Sidebar nav items (labels include emoji icons)
     const navLabels = ['Revenue', 'API', 'Domains'];
 
     for (const label of navLabels) {
       await expect(
-        page.getByRole('link', { name: label, exact: true }),
+        page.getByRole('link', { name: new RegExp(label) }),
       ).toBeVisible();
     }
   });

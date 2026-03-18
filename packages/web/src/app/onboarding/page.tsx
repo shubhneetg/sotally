@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, Loader2, AlertCircle, ChevronDown } from 'lucide-react';
-import { useAuthStore } from '@/stores/auth.store';
+import { useAuthStore, useAuthHydrated } from '@/stores/auth.store';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { NICHES } from '@sotally/shared';
@@ -19,7 +19,8 @@ const SLUG_REGEX = /^[a-z0-9][a-z0-9-]*[a-z0-9]$/;
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { isAuthenticated, token, user, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, token, user } = useAuthStore();
+  const _hasHydrated = useAuthHydrated();
   const { addToast } = useToast();
 
   const [step, setStep] = useState(1);

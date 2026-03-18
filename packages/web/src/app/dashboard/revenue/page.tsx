@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { DollarSign, TrendingUp, ExternalLink, AlertCircle } from 'lucide-react';
-import { useAuthStore } from '@/stores/auth.store';
+import { useAuthStore, useAuthHydrated } from '@/stores/auth.store';
 import { useToast } from '@/components/ui/toast';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sotally.com/api';
@@ -27,7 +27,8 @@ interface ConnectStatus {
 
 export default function RevenueDashboardPage() {
   const router = useRouter();
-  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, token } = useAuthStore();
+  const _hasHydrated = useAuthHydrated();
   const { addToast } = useToast();
 
   const [apps, setApps] = useState<MyApp[]>([]);

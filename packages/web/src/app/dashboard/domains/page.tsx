@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth.store';
+import { useAuthStore, useAuthHydrated } from '@/stores/auth.store';
 import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,8 @@ interface CustomDomain {
 
 export default function DomainsPage() {
   const router = useRouter();
-  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, token } = useAuthStore();
+  const _hasHydrated = useAuthHydrated();
   const { addToast } = useToast();
 
   const [domains, setDomains] = useState<CustomDomain[]>([]);

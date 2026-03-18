@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Heart, Users, Calendar, UserPlus, Compass } from 'lucide-react';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
-import { useAuthStore } from '@/stores/auth.store';
+import { useAuthStore, useAuthHydrated } from '@/stores/auth.store';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://sotally.com/api';
 
@@ -34,7 +34,8 @@ interface FeedApp {
 
 export default function FeedPage() {
   const router = useRouter();
-  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, token } = useAuthStore();
+  const _hasHydrated = useAuthHydrated();
 
   const [apps, setApps] = useState<FeedApp[]>([]);
   const [loading, setLoading] = useState(true);

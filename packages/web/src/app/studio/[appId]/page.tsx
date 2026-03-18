@@ -15,7 +15,7 @@ import {
   MessageSquare,
   Monitor,
 } from 'lucide-react';
-import { useAuthStore } from '@/stores/auth.store';
+import { useAuthStore, useAuthHydrated } from '@/stores/auth.store';
 import { useToast } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 
@@ -59,7 +59,8 @@ export default function StudioPage() {
   const params = useParams();
   const router = useRouter();
   const appId = params.appId as string;
-  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, token } = useAuthStore();
+  const _hasHydrated = useAuthHydrated();
   const { addToast } = useToast();
 
   const [app, setApp] = useState<AppData | null>(null);

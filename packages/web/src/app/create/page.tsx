@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sparkles, ChevronDown, Shuffle } from 'lucide-react';
-import { useAuthStore } from '@/stores/auth.store';
+import { useAuthStore, useAuthHydrated } from '@/stores/auth.store';
 import { useToast } from '@/components/ui/toast';
 import { Header } from '@/components/layout/header';
 import { NICHES } from '@sotally/shared';
@@ -17,7 +17,8 @@ const NICHE_OPTIONS = [
 
 export default function CreatePage() {
   const router = useRouter();
-  const { isAuthenticated, token, _hasHydrated } = useAuthStore();
+  const { isAuthenticated, token } = useAuthStore();
+  const _hasHydrated = useAuthHydrated();
   const { addToast } = useToast();
 
   const [prompt, setPrompt] = useState('');
