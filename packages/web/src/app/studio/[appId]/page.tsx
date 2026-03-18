@@ -12,6 +12,8 @@ import {
   XCircle,
   ArrowLeft,
   Rocket,
+  MessageSquare,
+  Monitor,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth.store';
 import { useToast } from '@/components/ui/toast';
@@ -68,6 +70,7 @@ export default function StudioPage() {
   const [iterating, setIterating] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
+  const [mobileTab, setMobileTab] = useState<'chat' | 'preview'>('chat');
 
   const chatEndRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -337,10 +340,41 @@ export default function StudioPage() {
         </div>
       </header>
 
+      {/* Mobile tab bar */}
+      <div className="flex shrink-0 border-b border-border lg:hidden">
+        <button
+          onClick={() => setMobileTab('chat')}
+          className={cn(
+            'flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors',
+            mobileTab === 'chat'
+              ? 'border-b-2 border-accent text-accent'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <MessageSquare className="h-4 w-4" />
+          Chat
+        </button>
+        <button
+          onClick={() => setMobileTab('preview')}
+          className={cn(
+            'flex flex-1 items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors',
+            mobileTab === 'preview'
+              ? 'border-b-2 border-accent text-accent'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <Monitor className="h-4 w-4" />
+          Preview
+        </button>
+      </div>
+
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel — Chat */}
-        <div className="flex w-full flex-col border-r border-border lg:w-[40%]">
+        <div className={cn(
+          'flex w-full flex-col border-r border-border lg:flex lg:w-[40%]',
+          mobileTab === 'chat' ? 'flex' : 'hidden'
+        )}>
           {/* Status indicator */}
           {isInProgress && (
             <div className="shrink-0 border-b border-border bg-muted/30 px-4 py-3">
@@ -432,7 +466,10 @@ export default function StudioPage() {
         </div>
 
         {/* Right panel — Preview */}
-        <div className="hidden flex-1 flex-col lg:flex">
+        <div className={cn(
+          'flex-1 flex-col lg:flex',
+          mobileTab === 'preview' ? 'flex' : 'hidden'
+        )}>
           {/* Preview toolbar */}
           <div className="flex shrink-0 items-center justify-between border-b border-border bg-muted/30 px-4 py-2">
             <span className="text-xs font-medium text-muted-foreground">Preview</span>
