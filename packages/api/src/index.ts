@@ -13,6 +13,9 @@ import streamRoutes from './routes/stream';
 import affiliateRoutes from './routes/affiliates';
 import bountyRoutes from './routes/bounties';
 import healthRoutes from './routes/health';
+import appRoutes from './routes/apps';
+import storefrontRoutes from './routes/storefront';
+import appDataRoutes from './routes/app-data';
 import { handleWebhook } from './services/stripe.service';
 import { rateLimit } from './middleware/rate-limit';
 
@@ -40,6 +43,9 @@ app.route('/settings', settingsRoutes);
 app.route('/stream', streamRoutes);
 app.route('/affiliates', affiliateRoutes);
 app.route('/bounties', bountyRoutes);
+app.route('/apps', appRoutes);
+app.route('/storefront', storefrontRoutes);
+app.route('/app-data', appDataRoutes);
 
 // Stripe webhook — raw body, no auth
 app.post('/webhooks/stripe', async (c) => {
