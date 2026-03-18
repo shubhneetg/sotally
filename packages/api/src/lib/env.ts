@@ -13,13 +13,20 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
 
-  // V1 legacy
-  OPENAI_API_KEY: z.string().optional(),
-
-  // V2: AI generation
-  ANTHROPIC_API_KEY: z.string().optional(),
-  GENERATION_MODEL: z.string().default('claude-sonnet-4-20250514'),
+  // V2: Multi-model LLM support
+  // Set GENERATION_PROVIDER to explicitly choose, or leave empty for auto-detect
+  GENERATION_PROVIDER: z.enum(['anthropic', 'openai', 'moonshot', 'openai-compatible']).optional(),
+  GENERATION_MODEL: z.string().optional(), // auto-selected per provider if not set
   GENERATION_CONCURRENCY: z.coerce.number().default(2),
+
+  // LLM API keys — at least one required for app generation
+  ANTHROPIC_API_KEY: z.string().optional(),
+  OPENAI_API_KEY: z.string().optional(),
+  MOONSHOT_API_KEY: z.string().optional(),
+
+  // Generic OpenAI-compatible provider (DeepSeek, Groq, Together, etc.)
+  OPENAI_COMPATIBLE_API_KEY: z.string().optional(),
+  OPENAI_COMPATIBLE_BASE_URL: z.string().optional(),
 
   // V2: Object storage (MinIO / S3 compatible)
   S3_ENDPOINT: z.string().default('http://minio:9000'),

@@ -1,9 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
-import { env } from '../lib/env';
+import { complete } from '../lib/llm';
 import type { AppIntent, AppType } from './types';
 import { APP_TYPES } from './types';
-
-const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
 const INTENT_SYSTEM_PROMPT = `You are an expert app architect for Sotally, a platform where creators build mini web apps.
 
@@ -52,23 +49,20 @@ export async function parseIntent(prompt: string, niche?: string): Promise<AppIn
     ? `Niche/audience: ${niche}\n\nApp idea: ${prompt}`
     : prompt;
 
-  const response = await client.messages.create({
-    model: env.GENERATION_MODEL,
-    max_tokens: 1024,
-    temperature: 0.3,
+  const response = await complete({
     system: INTENT_SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: userMessage }],
+    userMessage,
+    maxTokens: 1024,
+    temperature: 0.3,
   });
-
-  const text = response.content[0].type === 'text' ? response.content[0].text : '';
 
   let parsed: any;
   try {
-    // Strip potential markdown fences if Claude adds them despite instructions
-    const cleaned = text.replace(/^```(?:json)?\s*\n?/m, '').replace(/\n?```\s*$/m, '').trim();
+    // Strip potential markdown fences if LLM adds them despite instructions
+    const cleaned = response.text.replace(/^```(?:json)?\s*\n?/m, '').replace(/\n?```\s*$/m, '').trim();
     parsed = JSON.parse(cleaned);
   } catch {
-    throw new Error(`Intent parsing failed: LLM returned invalid JSON. Raw: ${text.slice(0, 200)}`);
+    throw new Error(`Intent parsing failed: LLM returned invalid JSON. Raw: ${response.text.slice(0, 200)}`);
   }
 
   // Validate app_type

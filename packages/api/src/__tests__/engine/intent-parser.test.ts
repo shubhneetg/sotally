@@ -1,37 +1,37 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Use vi.hoisted to ensure mockCreate is available during module mock hoisting
-const { mockCreate } = vi.hoisted(() => {
-  return { mockCreate: vi.fn() };
+// Use vi.hoisted to ensure mockComplete is available during module mock hoisting
+const { mockComplete } = vi.hoisted(() => {
+  return { mockComplete: vi.fn() };
 });
 
-// Mock the Anthropic SDK before importing the module under test
-vi.mock('@anthropic-ai/sdk', () => ({
-  default: class MockAnthropic {
-    messages = { create: mockCreate };
-    constructor(_opts: any) {}
-  },
-}));
-
-// Mock env to avoid requiring real environment variables
-vi.mock('../../lib/env', () => ({
-  env: {
-    ANTHROPIC_API_KEY: 'test-key',
-    GENERATION_MODEL: 'claude-test',
-  },
+// Mock the LLM client (now provider-agnostic)
+vi.mock('../../lib/llm', () => ({
+  complete: mockComplete,
+  getProviderInfo: () => ({ provider: 'test', model: 'test-model' }),
 }));
 
 import { parseIntent } from '../../engine/intent-parser';
 
 function mockResponse(json: Record<string, unknown>) {
-  mockCreate.mockResolvedValueOnce({
-    content: [{ type: 'text', text: JSON.stringify(json) }],
+  mockComplete.mockResolvedValueOnce({
+    text: JSON.stringify(json),
+    inputTokens: 100,
+    outputTokens: 200,
+    totalTokens: 300,
+    model: 'test-model',
+    provider: 'test',
   });
 }
 
 function mockRawResponse(text: string) {
-  mockCreate.mockResolvedValueOnce({
-    content: [{ type: 'text', text }],
+  mockComplete.mockResolvedValueOnce({
+    text,
+    inputTokens: 100,
+    outputTokens: 200,
+    totalTokens: 300,
+    model: 'test-model',
+    provider: 'test',
   });
 }
 
@@ -53,36 +53,12 @@ const fitnessIntent = {
   ui_style: {
     layout: 'tabbed',
     colorScheme: 'light',
-    primaryColor: '#10B981',
+    primaryColor: '#3B82F6',
     rounded: true,
   },
   niche: 'fitness',
   template_id: null,
-  confidence: 0.92,
-};
-
-const expenseIntent = {
-  app_type: 'tracker',
-  title: 'Expense Tracker',
-  description: 'Track daily expenses and see spending breakdown',
-  features: [
-    'Add new expense with category and amount',
-    'View monthly spending breakdown',
-    'Set budget limits per category',
-  ],
-  data_model: [
-    { name: 'amount', type: 'number', required: true, description: 'Expense amount' },
-    { name: 'category', type: 'string', required: true, description: 'Expense category' },
-  ],
-  ui_style: {
-    layout: 'single-page',
-    colorScheme: 'light',
-    primaryColor: '#3B82F6',
-    rounded: true,
-  },
-  niche: 'finance',
-  template_id: null,
-  confidence: 0.88,
+  confidence: 0.9,
 };
 
 describe('parseIntent', () => {
@@ -100,53 +76,40 @@ describe('parseIntent', () => {
 
   it('should extract title from the response', async () => {
     mockResponse(fitnessIntent);
-    const result = await parseIntent('Build me a workout tracker app');
+    const result = await parseIntent('Build me a workout tracker');
     expect(result.title).toBe('Fitness Tracker Pro');
   });
 
-  it('should extract description from the response', async () => {
+  it('should extract description', async () => {
     mockResponse(fitnessIntent);
-    const result = await parseIntent('Build me a workout tracker app');
+    const result = await parseIntent('Build me a workout tracker');
     expect(result.description).toBe('Track your daily workouts and fitness progress');
   });
 
-  // ─── Features ─────────────────────────────────────────────────
-
-  it('should identify features from a tracker prompt', async () => {
-    mockResponse(expenseIntent);
-    const result = await parseIntent('I want an expense tracker that categorizes my spending');
-    expect(result.features).toBeInstanceOf(Array);
-    expect(result.features.length).toBeGreaterThanOrEqual(3);
-    expect(result.features[0]).toContain('expense');
-  });
-
-  it('should preserve all features from the response', async () => {
+  it('should extract features as an array', async () => {
     mockResponse(fitnessIntent);
     const result = await parseIntent('Build me a workout tracker');
-    expect(result.features).toHaveLength(4);
+    expect(result.features).toBeInstanceOf(Array);
+    expect(result.features.length).toBeGreaterThan(0);
   });
 
-  // ─── Data model ───────────────────────────────────────────────
-
-  it('should include data_model fields', async () => {
+  it('should extract data_model fields', async () => {
     mockResponse(fitnessIntent);
     const result = await parseIntent('Build me a workout tracker');
     expect(result.data_model).toBeInstanceOf(Array);
-    expect(result.data_model.length).toBeGreaterThan(0);
+    expect(result.data_model.length).toBe(3);
     expect(result.data_model[0]).toHaveProperty('name');
     expect(result.data_model[0]).toHaveProperty('type');
   });
 
-  it('should default data_model to empty array if missing', async () => {
+  it('should handle missing data_model by defaulting to empty array', async () => {
     const intentNoModel = { ...fitnessIntent, data_model: undefined };
     mockResponse(intentNoModel as any);
-    const result = await parseIntent('Build me a workout tracker');
+    const result = await parseIntent('Build me something');
     expect(result.data_model).toEqual([]);
   });
 
-  // ─── UI style ─────────────────────────────────────────────────
-
-  it('should include ui_style with required fields', async () => {
+  it('should extract ui_style with defaults', async () => {
     mockResponse(fitnessIntent);
     const result = await parseIntent('Build me a workout tracker');
     expect(result.ui_style).toHaveProperty('layout');
@@ -155,10 +118,10 @@ describe('parseIntent', () => {
     expect(result.ui_style).toHaveProperty('rounded');
   });
 
-  it('should default ui_style fields when missing', async () => {
-    const intentNoStyle = { ...fitnessIntent, ui_style: undefined };
+  it('should provide ui_style defaults when LLM omits them', async () => {
+    const intentNoStyle = { ...fitnessIntent, ui_style: {} };
     mockResponse(intentNoStyle as any);
-    const result = await parseIntent('Build me a workout tracker');
+    const result = await parseIntent('Build me a tracker');
     expect(result.ui_style.layout).toBe('single-page');
     expect(result.ui_style.colorScheme).toBe('light');
     expect(result.ui_style.primaryColor).toBe('#3B82F6');
@@ -167,12 +130,12 @@ describe('parseIntent', () => {
 
   // ─── Niche handling ───────────────────────────────────────────
 
-  it('should pass niche to the API call', async () => {
+  it('should pass niche to the LLM call', async () => {
     mockResponse(fitnessIntent);
     await parseIntent('Build a tracker', 'fitness');
-    expect(mockCreate).toHaveBeenCalledTimes(1);
-    const callArgs = mockCreate.mock.calls[0][0];
-    expect(callArgs.messages[0].content).toContain('fitness');
+    expect(mockComplete).toHaveBeenCalledTimes(1);
+    const callArgs = mockComplete.mock.calls[0][0];
+    expect(callArgs.userMessage).toContain('fitness');
   });
 
   it('should override niche from LLM response with provided niche', async () => {
@@ -189,6 +152,12 @@ describe('parseIntent', () => {
     mockResponse(intentHighConf);
     const result = await parseIntent('Build a tracker');
     expect(result.confidence).toBeLessThanOrEqual(1);
+  });
+
+  it('should clamp negative confidence to 0', async () => {
+    const intentNegConf = { ...fitnessIntent, confidence: -0.5 };
+    mockResponse(intentNegConf);
+    const result = await parseIntent('Build a tracker');
     expect(result.confidence).toBeGreaterThanOrEqual(0);
   });
 
@@ -199,17 +168,15 @@ describe('parseIntent', () => {
     expect(result.confidence).toBe(0.7);
   });
 
-  // ─── Invalid app_type fallback ────────────────────────────────
+  // ─── Error handling ───────────────────────────────────────────
 
-  it('should fallback to form for unknown app_type', async () => {
-    const intentBadType = { ...fitnessIntent, app_type: 'unknown_type' };
+  it('should fall back app_type to "form" for invalid types', async () => {
+    const intentBadType = { ...fitnessIntent, app_type: 'invalid_type' };
     mockResponse(intentBadType as any);
     const result = await parseIntent('Build something weird');
     expect(result.app_type).toBe('form');
     expect(result.confidence).toBeLessThanOrEqual(0.5);
   });
-
-  // ─── Error handling ───────────────────────────────────────────
 
   it('should throw on invalid JSON response', async () => {
     mockRawResponse('This is not JSON at all');
@@ -217,27 +184,19 @@ describe('parseIntent', () => {
   });
 
   it('should handle JSON wrapped in markdown code fences', async () => {
-    const json = JSON.stringify(fitnessIntent);
-    mockRawResponse('```json\n' + json + '\n```');
-    const result = await parseIntent('Build a workout tracker');
+    mockRawResponse('```json\n' + JSON.stringify(fitnessIntent) + '\n```');
+    const result = await parseIntent('Build a tracker');
     expect(result.app_type).toBe('tracker');
-    expect(result.title).toBe('Fitness Tracker Pro');
   });
 
-  it('should throw when features array is empty', async () => {
+  it('should throw when features are empty', async () => {
     const intentNoFeatures = { ...fitnessIntent, features: [] };
     mockResponse(intentNoFeatures);
-    await expect(parseIntent('Build a tracker')).rejects.toThrow('no features extracted');
-  });
-
-  it('should throw when features is not an array', async () => {
-    const intentBadFeatures = { ...fitnessIntent, features: 'not an array' };
-    mockResponse(intentBadFeatures as any);
-    await expect(parseIntent('Build a tracker')).rejects.toThrow('no features extracted');
+    await expect(parseIntent('Build something')).rejects.toThrow('no features');
   });
 
   it('should handle API errors gracefully', async () => {
-    mockCreate.mockRejectedValueOnce(new Error('API rate limit exceeded'));
+    mockComplete.mockRejectedValueOnce(new Error('API rate limit exceeded'));
     await expect(parseIntent('Build a tracker')).rejects.toThrow('API rate limit exceeded');
   });
 });

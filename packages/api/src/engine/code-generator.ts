@@ -1,8 +1,5 @@
-import Anthropic from '@anthropic-ai/sdk';
-import { env } from '../lib/env';
+import { complete, type LLMResponse } from '../lib/llm';
 import type { AppIntent, GenerationResult } from './types';
-
-const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
 const GENERATION_SYSTEM_PROMPT = `You are an expert React developer building self-contained single-file web apps for Sotally.
 
@@ -99,16 +96,14 @@ export async function generateApp(intent: AppIntent): Promise<GenerationResult> 
   const userPrompt = buildGenerationPrompt(intent);
 
   try {
-    const response = await client.messages.create({
-      model: env.GENERATION_MODEL,
-      max_tokens: 8192,
-      temperature: 0.4,
+    const response = await complete({
       system: GENERATION_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userPrompt }],
+      userMessage: userPrompt,
+      maxTokens: 8192,
+      temperature: 0.4,
     });
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
-    const code = cleanCodeOutput(text);
+    const code = cleanCodeOutput(response.text);
 
     if (!code || code.length < 100) {
       return {
@@ -161,16 +156,14 @@ ${prompt}
 Apply the requested changes and return the complete updated App.tsx file.`;
 
   try {
-    const response = await client.messages.create({
-      model: env.GENERATION_MODEL,
-      max_tokens: 8192,
-      temperature: 0.3,
+    const response = await complete({
       system: ITERATION_SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: userPrompt }],
+      userMessage: userPrompt,
+      maxTokens: 8192,
+      temperature: 0.3,
     });
 
-    const text = response.content[0].type === 'text' ? response.content[0].text : '';
-    const code = cleanCodeOutput(text);
+    const code = cleanCodeOutput(response.text);
 
     if (!code || code.length < 100) {
       return {
@@ -241,10 +234,10 @@ function cleanCodeOutput(raw: string): string {
   return code.trim();
 }
 
-function extractTokenUsage(response: Anthropic.Message) {
+function extractTokenUsage(response: LLMResponse) {
   return {
-    inputTokens: response.usage.input_tokens,
-    outputTokens: response.usage.output_tokens,
-    totalTokens: response.usage.input_tokens + response.usage.output_tokens,
+    inputTokens: response.inputTokens,
+    outputTokens: response.outputTokens,
+    totalTokens: response.totalTokens,
   };
 }
