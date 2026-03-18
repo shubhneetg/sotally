@@ -74,7 +74,7 @@ appRoutes.post(
       .values({
         creatorId: user.id,
         slug,
-        name: prompt.slice(0, 255),
+        name: prompt.slice(0, 100).replace(/[.!?].*$/, '') || prompt.slice(0, 100),
         originalPrompt: prompt,
         status: 'generating',
         niche: niche ?? null,

@@ -247,15 +247,21 @@ export async function runGenerationPipeline(params: PipelineParams): Promise<Pip
       })
       .returning({ id: appVersions.id });
 
-    // Update app record
+    // Update app record — set proper name/description from intent if initial generation
+    const appUpdate: Record<string, any> = {
+      currentVersionId: version.id,
+      status: 'draft',
+      generationCount: sql`${apps.generationCount} + 1`,
+      updatedAt: new Date(),
+    };
+    if (type === 'initial' && intentData) {
+      appUpdate.name = intentData.title;
+      appUpdate.description = intentData.description;
+      appUpdate.tags = [intentData.app_type];
+    }
     await db
       .update(apps)
-      .set({
-        currentVersionId: version.id,
-        status: 'draft',
-        generationCount: sql`${apps.generationCount} + 1`,
-        updatedAt: new Date(),
-      })
+      .set(appUpdate)
       .where(eq(apps.id, appId));
 
     // ─── Step 8: Mark generation as succeeded ────────────────
